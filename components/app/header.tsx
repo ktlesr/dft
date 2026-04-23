@@ -51,16 +51,19 @@ export function Header({ user, unreadNotifications = 0 }: HeaderProps) {
         </SheetContent>
       </Sheet>
 
-      {/* Search */}
-      <div className="relative hidden w-full max-w-md md:block">
+      {/* Search — submits to /ara as GET ?q=... */}
+      <form action="/ara" method="get" className="relative hidden w-full max-w-md md:block">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
+          name="q"
           type="search"
           placeholder="Portal içinde ara…"
           className="pl-9"
           aria-label="Portal içinde ara"
+          minLength={2}
+          maxLength={100}
         />
-      </div>
+      </form>
 
       <div className="ml-auto flex items-center gap-2">
         <Button asChild variant="ghost" size="icon" className="relative" aria-label="Bildirimler">

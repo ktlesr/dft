@@ -61,17 +61,23 @@ ENV HOSTNAME=0.0.0.0
 RUN groupadd --system --gid 1001 nodejs \
  && useradd --system --uid 1001 --gid nodejs nextjs
 
-# Next.js standalone output (server + traced node_modules)
+# Next.js standalone output (server + traced @prisma/client for app runtime)
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
-# Prisma artefacts — client is needed by the app, CLI + schema are
-# needed by docker-entrypoint.sh to apply the schema at startup.
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
+# Prisma schema — needed by the CLI at startup for db push / migrate deploy.
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+
+# Prisma CLI — installed globally via npm rather than copied from the
+# pnpm-built `node_modules/` (pnpm stores deps under `.pnpm/` with
+# symlinks that don't survive a plain Docker COPY). Global install gives
+# us a clean, non-symlinked `/usr/local/bin/prisma` for the entrypoint.
+# App runtime uses the traced `@prisma/client` already inside the Next
+# standalone output.
+ARG PRISMA_VERSION=6.19.3
+RUN npm install -g prisma@${PRISMA_VERSION} \
+ && npm cache clean --force
 
 # Persistent upload dir — mount a named volume here in docker-compose.
 RUN mkdir -p /app/storage/uploads && chown -R nextjs:nodejs /app/storage

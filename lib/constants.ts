@@ -107,3 +107,7 @@ export const MAX_UPLOAD_BYTES = Number(process.env.MAX_UPLOAD_BYTES ?? 15 * 1024
 
 /** Maximum files per upload form submission. */
 export const MAX_ATTACHMENTS_PER_REQUEST = 10;
+
+/** Bulk import (Excel) — separate cap from generic upload path. */
+export const MAX_BULK_IMPORT_BYTES = 5 * 1024 * 1024; // 5 MB
+export const MAX_BULK_IMPORT_ROWS = 1000;

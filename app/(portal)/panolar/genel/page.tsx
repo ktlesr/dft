@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { Search, Upload } from "lucide-react";
 
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,19 @@ export default async function GeneralBoardPage({ searchParams }: { searchParams:
         title="Genel Pano"
         description="Tüm DFT üyelerine açık paylaşımlar: haberler, duyurular, öneriler, fikirler, kaynaklar."
         breadcrumbs={[{ label: "Panolar", href: "/panolar" }, { label: "Genel" }]}
-        actions={<NewBoardPostDialog scope="GENERAL" canPin={admin} />}
+        actions={
+          <>
+            {admin ? (
+              <Button asChild variant="secondary">
+                <Link href="/panolar/genel/toplu">
+                  <Upload className="h-4 w-4" />
+                  Toplu yükle
+                </Link>
+              </Button>
+            ) : null}
+            <NewBoardPostDialog scope="GENERAL" canPin={admin} />
+          </>
+        }
       />
 
       <form action="/panolar/genel" className="mb-4 flex flex-wrap items-center gap-2">

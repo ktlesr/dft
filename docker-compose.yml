@@ -97,10 +97,12 @@ services:
     # through the reverse proxy. No host port binding either.
 
 volumes:
+  # Project-scoped volume names so we never share Postgres data with
+  # another Dokploy app that happens to pick a similar slug.
   dft_pgdata:
-    name: dft_portal_pgdata
+    name: tr33_dft_pgdata
   dft_uploads:
-    name: dft_portal_uploads
+    name: tr33_dft_uploads
 
 networks:
   # Dokploy creates this shared network out-of-band; Traefik joins it and

@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * Edge middleware — two responsibilities:
+ * Edge proxy (renamed from "middleware" in Next 16) — two responsibilities:
  *
  * 1. Auth gate (defense-in-depth): redirect unauthenticated traffic away
  *    from protected routes based on session cookie presence. The
@@ -100,7 +100,7 @@ const STATIC_SECURITY_HEADERS: Array<[string, string]> = [
   ["X-Robots-Tag", "noindex, nofollow, noarchive, nosnippet"],
 ];
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // ── Auth gate ──────────────────────────────────────────────────

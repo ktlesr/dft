@@ -44,10 +44,14 @@ services:
       DATABASE_URL: "postgresql://dft:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in env}@postgres:5432/dft_portal?schema=public"
       UPLOAD_DIR: /app/storage/uploads
       MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-15728640}
-      ENABLE_PUBLIC_SIGNUP: ${ENABLE_PUBLIC_SIGNUP:-true}
+      ENABLE_PUBLIC_SIGNUP: ${ENABLE_PUBLIC_SIGNUP:-false}
       REQUIRE_ADMIN_APPROVAL: ${REQUIRE_ADMIN_APPROVAL:-true}
-    ports:
-      - "3000:3000"
+    # Dokploy / Traefik attaches to this container on port 3000 through the
+    # internal docker network — we do NOT publish the port to the host
+    # (which would collide with Dokploy's own panel and other apps).
+    # The Dockerfile's `EXPOSE 3000` is still honoured.
+    expose:
+      - "3000"
     volumes:
       - dft_uploads:/app/storage/uploads
     healthcheck:

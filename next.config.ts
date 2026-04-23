@@ -1,9 +1,9 @@
 import type { NextConfig } from "next";
 
 /**
- * Security headers are emitted by `middleware.ts` instead of here so we can
- * mint a per-request CSP nonce. Keep this file focused on build + runtime
- * behaviour.
+ * Security headers are emitted by `proxy.ts` (was `middleware.ts` pre-Next-16)
+ * instead of here so we can mint a per-request CSP nonce. Keep this file
+ * focused on build + runtime behaviour.
  */
 const nextConfig: NextConfig = {
   reactStrictMode: true,

@@ -5,7 +5,15 @@ import { signIn } from "next-auth/react";
 
 import { Button } from "@/components/ui/button";
 
-export function GoogleSignInButton({ disabled }: { disabled?: boolean }) {
+export function GoogleSignInButton({
+  disabled,
+  label = "Google ile giriş yap",
+  redirectTo = "/panel",
+}: {
+  disabled?: boolean;
+  label?: string;
+  redirectTo?: string;
+}) {
   const [pending, setPending] = React.useState(false);
 
   return (
@@ -16,11 +24,11 @@ export function GoogleSignInButton({ disabled }: { disabled?: boolean }) {
       disabled={disabled || pending}
       onClick={() => {
         setPending(true);
-        signIn("google", { redirectTo: "/panel" }).catch(() => setPending(false));
+        signIn("google", { redirectTo }).catch(() => setPending(false));
       }}
     >
       <GoogleIcon className="h-4 w-4" />
-      {pending ? "Yönlendiriliyor…" : "Google ile giriş yap"}
+      {pending ? "Yönlendiriliyor…" : label}
     </Button>
   );
 }

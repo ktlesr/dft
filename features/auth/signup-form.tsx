@@ -7,8 +7,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { signupAction, type FormState } from "./actions";
 import { FieldError } from "./field-error";
+import { GoogleSignInButton } from "./google-signin-button";
 
 const INITIAL: FormState = { ok: true };
 
@@ -102,6 +104,17 @@ export function SignupForm() {
           Başvurunuz yönetici onayına sunulur. Onay sonrası portala erişebilirsiniz.
         </p>
       </form>
+
+      <div className="flex items-center gap-3">
+        <Separator className="flex-1" />
+        <span className="text-[11px] uppercase tracking-wider text-muted-foreground">veya</span>
+        <Separator className="flex-1" />
+      </div>
+
+      <GoogleSignInButton label="Google ile üye ol" disabled={pending} />
+      <p className="text-center text-[11px] text-muted-foreground">
+        Google ile kayıt olan hesaplar da yönetici onayıyla aktifleşir.
+      </p>
     </div>
   );
 }

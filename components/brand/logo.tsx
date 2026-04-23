@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
  */
 
 const LOGO_SRC = "/dft-logo.svg";
+const VERTICAL_LOGO_SRC = "/yesil-dft.svg";
 const LOGO_ALT = "DFT — Kapalı Portal";
 
 type LockupProps = {
@@ -47,6 +48,27 @@ export function BrandLockup({ className, size = "md", title = LOGO_ALT }: Lockup
     <span className={cn("inline-flex items-center text-foreground", heightClass, className)}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={LOGO_SRC} alt={title} className="block h-full w-auto select-none" />
+    </span>
+  );
+}
+
+/**
+ * Vertical ("yesil") DFT lockup — big globe icon + DFT letters + subtitle.
+ * Used on auth screens (login, signup) where the brand should dominate
+ * above a centred content card. Aspect ratio is roughly 0.92:1
+ * (991.32 × 1081.55). Size via explicit height class on `className`.
+ */
+export function BrandVertical({
+  className,
+  title = LOGO_ALT,
+}: {
+  className?: string;
+  title?: string;
+}) {
+  return (
+    <span className={cn("inline-flex items-center justify-center text-foreground", className)}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={VERTICAL_LOGO_SRC} alt={title} className="block h-full w-auto select-none" />
     </span>
   );
 }

@@ -2,20 +2,30 @@
 # DFT Portal — PRODUCTION stack (Dokploy / self-hosted Docker host)
 #
 # Services:
-#   app       — Next.js (built from ./Dockerfile)
-#   postgres  — Postgres 16, persisted to the `dft_portal_pgdata` volume
+#   app       — Next.js (built from ./Dockerfile), attached to dokploy-network
+#                so Traefik (Dokploy's reverse proxy) can route HTTP traffic
+#                to container port 3000.
+#   postgres  — Postgres 16, persisted to the `dft_portal_pgdata` volume.
+#                Kept on the internal `default` network only — never reachable
+#                from Traefik or the host.
 #
 # Required environment variables (set in Dokploy or a .env file):
 #   AUTH_SECRET           — 32-byte base64 (openssl rand -base64 32)
-#   AUTH_URL              — public URL of the portal (e.g. https://portal.dft.tr)
+#   AUTH_URL              — public URL of the portal (e.g. https://dft.example.tr)
 #   APP_URL               — same as AUTH_URL (used inside emails / links)
 #   POSTGRES_PASSWORD     — strong DB password
 #
 # Optional:
-#   AUTH_GOOGLE_ID / AUTH_GOOGLE_SECRET  — Google OAuth creds
-#   MAX_UPLOAD_BYTES      — default 15 MB
-#   ENABLE_PUBLIC_SIGNUP  — default "true"
-#   REQUIRE_ADMIN_APPROVAL — default "true"
+#   RESEND_API_KEY, MAIL_FROM       — prod email delivery
+#   MAX_UPLOAD_BYTES                — default 15 MB
+#   ENABLE_PUBLIC_SIGNUP            — default "false" (closed system)
+#   REQUIRE_ADMIN_APPROVAL          — default "true"
+#
+# Note on Traefik labels: this file intentionally does NOT hard-code the
+# per-host Traefik router rules (they embed the Dokploy app slug and the
+# domain). Dokploy's UI injects those labels onto the `app` service at
+# deploy time — as long as `app` is attached to `dokploy-network` (see
+# below), Dokploy targets the correct service.
 #
 # For local development run only the DB with:
 #   pnpm db:up      (delegates to docker-compose.dev.yml)
@@ -39,13 +49,13 @@ services:
       AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET in env}
       AUTH_URL: ${AUTH_URL:?set AUTH_URL in env}
       AUTH_TRUST_HOST: "true"
-      AUTH_GOOGLE_ID: ${AUTH_GOOGLE_ID:-}
-      AUTH_GOOGLE_SECRET: ${AUTH_GOOGLE_SECRET:-}
       DATABASE_URL: "postgresql://dft:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in env}@postgres:5432/dft_portal?schema=public"
       UPLOAD_DIR: /app/storage/uploads
       MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-15728640}
       ENABLE_PUBLIC_SIGNUP: ${ENABLE_PUBLIC_SIGNUP:-false}
       REQUIRE_ADMIN_APPROVAL: ${REQUIRE_ADMIN_APPROVAL:-true}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      MAIL_FROM: ${MAIL_FROM:-DFT Portal <no-reply@localhost>}
     # Dokploy / Traefik attaches to this container on port 3000 through the
     # internal docker network — we do NOT publish the port to the host
     # (which would collide with Dokploy's own panel and other apps).
@@ -60,6 +70,11 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
+    networks:
+      # `default` → reach postgres via the compose-internal network.
+      # `dokploy-network` → be reachable by Traefik for public HTTPS.
+      - default
+      - dokploy-network
 
   postgres:
     image: postgres:16-alpine
@@ -78,12 +93,17 @@ services:
       timeout: 5s
       retries: 20
       start_period: 10s
-    # No host port binding in production — the DB is only reachable
-    # through the internal Docker network (`app` service). Expose only
-    # if you explicitly need external tooling access.
+    # Intentionally NOT on dokploy-network — DB must never be reachable
+    # through the reverse proxy. No host port binding either.
 
 volumes:
   dft_pgdata:
     name: dft_portal_pgdata
   dft_uploads:
     name: dft_portal_uploads
+
+networks:
+  # Dokploy creates this shared network out-of-band; Traefik joins it and
+  # routes incoming HTTP(S) traffic to any container that advertises it.
+  dokploy-network:
+    external: true

@@ -1,30 +1,10 @@
 import type { NextConfig } from "next";
 
-const cspDirectives = [
-  "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https:",
-  "font-src 'self' data:",
-  "connect-src 'self'",
-  "frame-ancestors 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-];
-
-const securityHeaders = [
-  { key: "X-Frame-Options", value: "DENY" },
-  { key: "X-Content-Type-Options", value: "nosniff" },
-  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
-  { key: "X-DNS-Prefetch-Control", value: "off" },
-  { key: "Content-Security-Policy", value: cspDirectives.join("; ") },
-  {
-    key: "Strict-Transport-Security",
-    value: "max-age=63072000; includeSubDomains; preload",
-  },
-];
-
+/**
+ * Security headers are emitted by `middleware.ts` instead of here so we can
+ * mint a per-request CSP nonce. Keep this file focused on build + runtime
+ * behaviour.
+ */
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
@@ -34,17 +14,6 @@ const nextConfig: NextConfig = {
   ...(process.env.BUILD_STANDALONE === "true" ? { output: "standalone" as const } : {}),
   experimental: {
     serverActions: { bodySizeLimit: "15mb" },
-  },
-  async headers() {
-    return [
-      {
-        source: "/(.*)",
-        headers: [
-          ...securityHeaders,
-          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive, nosnippet" },
-        ],
-      },
-    ];
   },
 };
 

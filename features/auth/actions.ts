@@ -10,8 +10,8 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { createToken, hashToken } from "@/lib/tokens";
-import { sendMail, passwordResetEmail, emailVerificationEmail } from "@/lib/mail";
-import { forgotSchema, loginSchema, resetSchema, signupSchema } from "./schemas";
+import { sendMail, passwordResetEmail } from "@/lib/mail";
+import { forgotSchema, loginSchema, resetSchema } from "./schemas";
 
 export type FormState = {
   ok: boolean;
@@ -79,80 +79,10 @@ export async function loginAction(_prev: FormState, formData: FormData): Promise
 }
 
 // ─── SIGNUP ───────────────────────────────────────────────────────────
-
-export async function signupAction(_prev: FormState, formData: FormData): Promise<FormState> {
-  const ip = await getClientIp();
-  const rl = await rateLimit(`signup:${ip}`, 5, 60 * 60_000);
-  if (!rl.allowed) {
-    return {
-      ok: false,
-      message: `Çok fazla başvuru. ${Math.ceil(rl.retryAfterSeconds / 60)} dakika sonra tekrar deneyin.`,
-    };
-  }
-
-  const parsed = signupSchema.safeParse({
-    name: formData.get("name"),
-    organization: formData.get("organization") ?? undefined,
-    email: formData.get("email"),
-    password: formData.get("password"),
-    confirmPassword: formData.get("confirmPassword"),
-  });
-  if (!parsed.success) {
-    return { ok: false, errors: fieldErrors(parsed.error) };
-  }
-
-  const existing = await prisma.user.findUnique({ where: { email: parsed.data.email } });
-  // Return success regardless to avoid user enumeration. We still skip creation.
-  if (existing) {
-    await audit({
-      action: "USER_SIGNUP",
-      metadata: { email: parsed.data.email, duplicate: true },
-    });
-    return {
-      ok: true,
-      message: "Başvurunuz alındı. Onay sonrası giriş yapabileceksiniz.",
-    };
-  }
-
-  const passwordHash = await hashPassword(parsed.data.password);
-  const user = await prisma.user.create({
-    data: {
-      email: parsed.data.email,
-      name: parsed.data.name,
-      passwordHash,
-      status: "PENDING_APPROVAL",
-      profile: {
-        create: { organization: parsed.data.organization ?? null },
-      },
-      roles: { create: { role: "USER" } },
-    },
-  });
-
-  // Email verification token (Auth.js adapter-compatible VerificationToken table).
-  const { token, tokenHash } = createToken();
-  const expires = new Date(Date.now() + 24 * 60 * 60_000);
-  await prisma.verificationToken.create({
-    data: { identifier: parsed.data.email, token: tokenHash, expires },
-  });
-
-  const verifyLink = `${process.env.APP_URL ?? ""}/api/auth/dogrula?token=${token}&email=${encodeURIComponent(
-    parsed.data.email,
-  )}`;
-  const { subject, text } = emailVerificationEmail(verifyLink);
-  await sendMail({ to: parsed.data.email, subject, text });
-
-  await audit({
-    action: "USER_SIGNUP",
-    actorId: user.id,
-    metadata: { email: parsed.data.email },
-  });
-
-  return {
-    ok: true,
-    message:
-      "Başvurunuz alındı. E-posta adresinize doğrulama bağlantısı gönderildi. Yönetici onayı sonrası portala erişebileceksiniz.",
-  };
-}
+// Public signup was removed intentionally: DFT Portal is a closed system.
+// Users are provisioned by admins through the invite flow (see
+// `features/invites/actions.ts` → acceptInvite) or created directly from
+// the admin panel.
 
 // ─── FORGOT PASSWORD ──────────────────────────────────────────────────
 

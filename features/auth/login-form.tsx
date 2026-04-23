@@ -8,10 +8,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { loginAction, type FormState } from "./actions";
 import { FieldError } from "./field-error";
-import { GoogleSignInButton } from "./google-signin-button";
 
 const INITIAL: FormState = { ok: true };
 
@@ -77,14 +75,6 @@ export function LoginForm({ banner }: { banner?: "dogrulandi" | "dogrulama-hata"
           {pending ? "Giriş yapılıyor…" : "Giriş yap"}
         </Button>
       </form>
-
-      <div className="flex items-center gap-3">
-        <Separator className="flex-1" />
-        <span className="text-[11px] uppercase tracking-wider text-muted-foreground">veya</span>
-        <Separator className="flex-1" />
-      </div>
-
-      <GoogleSignInButton disabled={pending} />
     </div>
   );
 }

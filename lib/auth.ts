@@ -3,7 +3,6 @@ import "server-only";
 import NextAuth, { CredentialsSignin } from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import Credentials from "next-auth/providers/credentials";
-import Google from "next-auth/providers/google";
 import { z } from "zod";
 import type { GroupCode, Role, UserStatus } from "@prisma/client";
 
@@ -81,11 +80,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   providers: [
-    Google({
-      clientId: process.env.AUTH_GOOGLE_ID,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET,
-      allowDangerousEmailAccountLinking: true,
-    }),
+    // DFT Portal is a closed system — access is issued by admins.
+    // Credentials is the only provider; Google OAuth was removed to
+    // keep signup off the public surface entirely.
     Credentials({
       name: "credentials",
       credentials: {
@@ -145,29 +142,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
 
   callbacks: {
-    async signIn({ user, account, profile }) {
-      // Google OAuth: auto-create a PENDING_APPROVAL record and require admin to approve.
-      if (account?.provider === "google" && profile?.email) {
-        const existing = await prisma.user.findUnique({
-          where: { email: profile.email.toLowerCase() },
-        });
-        if (!existing) {
-          await prisma.user.create({
-            data: {
-              email: profile.email.toLowerCase(),
-              name: (profile.name as string | undefined) ?? null,
-              image: (profile.picture as string | undefined) ?? null,
-              emailVerified: new Date(),
-              status: "PENDING_APPROVAL",
-              profile: { create: {} },
-              roles: { create: { role: "USER" } },
-            },
-          });
-        }
-      }
-      return true;
-    },
-
     async jwt({ token, user, trigger }) {
       const t = token as typeof token & DFTClaims;
 

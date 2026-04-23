@@ -17,7 +17,7 @@ Projenin çerçevesi, kapsamı ve tüm iş kuralları [`MASTER_PROMPT.md`](./MAS
 | UI | **React 19**, **Tailwind CSS 3.4**, **shadcn/ui** (New York), **lucide-react** | |
 | Tema | **next-themes** (light / dark / system) | CSS değişkenleri |
 | Doğrulama | **Zod** + **React Hook Form** | |
-| Kimlik | **Auth.js v5** (NextAuth) + **Google OAuth** + Credentials | *Faz 2'de aktifleşir* |
+| Kimlik | **Auth.js v5** (NextAuth) + Credentials | Closed system — **no public signup, no Google OAuth**. Accounts admin-provisioned. |
 | Şifre | **@node-rs/argon2** (argon2id, OWASP 2024 önerisi) | |
 | ORM | **Prisma 6** + **PostgreSQL 16** | Docker |
 | Test | **Vitest**, **Playwright** | *Faz 5* |
@@ -49,7 +49,7 @@ pnpm install
 
 ```bash
 cp .env.example .env
-# .env içindeki AUTH_SECRET ve AUTH_GOOGLE_* değerlerini gerçek değerlerle doldurun
+# .env içindeki AUTH_SECRET değerini gerçek bir secret'a çevirin
 ```
 
 **Üretim için zorunlu:** `AUTH_SECRET`'i `openssl rand -base64 32` ile üretilmiş bir değere çevirin.
@@ -129,8 +129,8 @@ AUTH_TRUST_HOST=true
 POSTGRES_PASSWORD=<strong-random-password>
 
 # opsiyonel
-AUTH_GOOGLE_ID=...
-AUTH_GOOGLE_SECRET=...
+RESEND_API_KEY=...                # prod email teslimi
+MAIL_FROM="DFT Portal <no-reply@alan-adiniz.tr>"
 MAX_UPLOAD_BYTES=15728640
 ```
 
@@ -222,7 +222,7 @@ prisma/
 
 İlk sürümde uygulanan veya hazır olan önlemler:
 
-- **Kapalı sistem:** public signup varsayılan olarak `PENDING_APPROVAL`, admin onayı sonrası aktif. Davet token'lı akış alternatif.
+- **Kapalı sistem:** public signup ve Google OAuth **kaldırıldı**. Hesaplar yalnızca admin panelinden veya davet token'ıyla oluşturulur (`/davet/[token]` → direkt `ACTIVE`).
 - **Headers:** CSP, X-Frame-Options=DENY, nosniff, HSTS, Referrer-Policy, `X-Robots-Tag: noindex` tüm rotalarda.
 - **Şifre:** argon2id (OWASP 2024 profili), minimum 10 karakter politikası.
 - **Oturum:** Auth.js cookie-based, `httpOnly` + `secure` + `sameSite=lax`.
@@ -243,8 +243,7 @@ Faz 5'te sertleştirme başlıkları: rate-limit (in-memory → Redis), CSP nonc
 | **Faz 2 — Auth & RBAC** | ✅ *tamamlandı* | Auth.js v5 (Credentials + Google), argon2id, account lockout, email verification, password reset, admin approval gate, JWT session (8h sliding, 5m refresh), edge middleware, audit log, rate limit, gerçek `getCurrentUser()`. |
 | **Faz 3 — Core modules** | ✅ *tamamlandı* | 7 kayıt modülü, Panolar (genel + grup) CRUD, canlı Dashboard, Kayıtlarım tablosu, Çalışma Grubum sekmeli merkezi, Belgeler kütüphanesi, Profil + şifre değiştirme, Storage driver + signed download route, demo seed (admin + 5 grup x 4 üye). |
 | **Faz 4 — Power features** | ✅ *tamamlandı* | Meeting / Minute / Report modülleri, Admin paneli (genel + kullanıcılar + rol/grup/status + davetler + audit log + gruplar), Davet sistemi (token'lı direkt aktif kayıt), Notifications (header bell + sayfa + toplantı/rapor/onay tetikleyicileri). |
-| **Faz 4 — Power features** | ⏳ | Toplantı/tutanak/rapor modülleri + admin paneli + davet sistemi + audit log okuyucu. |
-| **Faz 5 — Hardening** | ⏳ | Rate limit, file upload hardening, CSP nonce, Playwright e2e, Vitest kritik testler, security review. |
+| **Faz 5 — Hardening & tests** | ✅ *tamamlandı* | Magic-byte upload doğrulama, CSP nonce middleware (`unsafe-inline` kaldırıldı), Resend email provider, Rate-limit store interface (Redis-ready), Global arama (`/ara`), Vitest 53 test geçti, Playwright auth smoke, Dokploy + Dockerfile + README hardened. |
 
 ---
 
@@ -504,3 +503,85 @@ pnpm dev
 6. **CSP hardening + securityheaders.com sertifikası**.
 7. **Performans** — dashboard count'larının cache'lenmesi; kritik tablolarda index audit.
 8. **Dokümantasyon** — yetki matrisi + threat model özeti.
+
+
+---
+
+## Faz 5 kapanış raporu
+
+### Yeni / değişen dosyalar
+
+- **Upload hardening** — [`lib/upload.ts`](lib/upload.ts): `file-type` ile magic-byte sniff (`verifyMagicBytes`); declared MIME ↔ detected MIME eşleşmiyorsa `UploadError("mime_mismatch")`. Office ZIP wrapper'ları (docx/xlsx/pptx → application/zip) ve JPEG alias'ı (jpeg ↔ jpg) için equivalents tablosu.
+- **CSP nonce + güvenlik başlıkları** — [`middleware.ts`](middleware.ts): her request için `crypto.getRandomValues` ile 128-bit nonce, `x-nonce` request header'ına propagate, `Content-Security-Policy` çıktısına gömülü. `script-src 'strict-dynamic' 'nonce-...'` — `unsafe-inline` yalnız style-src'de (shadcn + Radix runtime stilleri). [`next.config.ts`](next.config.ts) temizlendi; tüm güvenlik başlıkları tek yerde.
+- **Nonce propagation** — [`app/layout.tsx`](app/layout.tsx) request header'dan nonce okuyup `ThemeProvider`'a geçiriyor (next-themes FOUC guard inline script).
+- **Mail provider** — [`lib/mail.ts`](lib/mail.ts): `RESEND_API_KEY` set ise Resend HTTPS API, aksi halde console driver. `MAIL_FROM` env ile gönderici. Fetch-based (paket bağımlılığı yok).
+- **Rate-limit store** — [`lib/rate-limit.ts`](lib/rate-limit.ts): `RateLimitStore` interface + `MemoryStore` default impl. `setStore()` runtime'da Redis-backed impl'e swap için hazır. Çağrı yüzeyi değişmedi.
+- **Global arama** — [`features/search/queries.ts`](features/search/queries.ts) + [`app/(portal)/ara/page.tsx`](app/(portal)/ara/page.tsx): yetki bazlı 7 entity tipinde paralel Prisma sorgu. Header input'u GET form olarak bağlandı.
+- **Testler**:
+  - [`vitest.config.ts`](vitest.config.ts) + [`tests/unit/`](tests/unit/): `password.test.ts` (8), `rbac.test.ts` (12), `tokens.test.ts` (8), `schemas.test.ts` (24) — toplam **53 test**.
+  - [`playwright.config.ts`](playwright.config.ts) + [`tests/e2e/auth.spec.ts`](tests/e2e/auth.spec.ts): 3 smoke — anon redirect, happy-path login, hatalı şifre. `pnpm db:seed && pnpm dev` koşulunda `pnpm e2e` ile çalışır.
+
+### Güvenlik özeti
+
+| Tehdit | Savunma |
+| --- | --- |
+| XSS via inline script | CSP `script-src 'nonce' 'strict-dynamic'` — `unsafe-inline` yok |
+| XSS via upload ("image/png" ile PHP) | Magic-byte sniff (`lib/upload.ts`) |
+| CSRF (state-changing GET) | Tüm mutation'lar POST via Server Actions (React 19 built-in CSRF) |
+| Session hijack | HttpOnly + Secure (prod) + SameSite=Lax cookie; argon2id; 8h sliding, 5m refresh |
+| Credential stuffing / brute force | Rate-limit (login 10/15dk), account lockout (8 yanlış → 15dk) |
+| Privilege escalation | Layout + action seviyesinde `requireActiveUser / requireRole / requireAdmin`; son-admin koruması |
+| IDOR (dosya indirme) | `/api/dosya/[id]` — uploader / grup / kategori-bazlı yetki check |
+| User enumeration | signup + forgot akışları her zaman "success" döner |
+| Clickjacking | `X-Frame-Options: DENY` + CSP `frame-ancestors 'none'` |
+| MIME sniffing | `X-Content-Type-Options: nosniff` |
+| HTTPS downgrade | HSTS 2y + preload (prod) |
+| Arama sonucu information leak | Her query kullanıcının yetkisiyle filtrelenir (admin cross-group, üye kendi grup) |
+
+### Yetki matrisi (son durum)
+
+| Eylem | USER | MODERATOR | RAPPORTEUR | ADMIN |
+| --- | :-: | :-: | :-: | :-: |
+| 7 kayıt tipi (kendi) oluştur / görüntüle / sil | ✓ | ✓ | ✓ | ✓ |
+| Başkasının kaydını görüntüle | | | | ✓ |
+| Genel panoya yaz | ✓ | ✓ | ✓ | ✓ |
+| Genel postu sabitle / moderasyonla kaldır | | | | ✓ |
+| Grup panosuna yaz (kendi grup) | ✓ | ✓ | ✓ | ✓ |
+| Grup postunu sabitle / kaldır | | ✓ | | ✓ |
+| Kendi postunu kaldır | ✓ | ✓ | ✓ | ✓ |
+| Ortak belge yükle | | | | ✓ |
+| Grup belgesi yükle | | ✓ | | ✓ |
+| Üye yüklemesi (kendi) | ✓ | ✓ | ✓ | ✓ |
+| Toplantı oluştur (kendi grup) | | ✓ | | ✓ |
+| Tutanak oluştur (kendi grup) | | | ✓ | ✓ |
+| Rapor oluştur (kendi grup) | | | ✓ | ✓ |
+| Kullanıcı onayla / reddet / askıya al | | | | ✓ |
+| Rol ekle / kaldır | | | | ✓ |
+| Son ADMIN'i kaldır | | | | ✗ (silent-noop) |
+| Davet oluştur / iptal | | | | ✓ |
+| Audit log oku | | | | ✓ |
+| Portal içi arama (`/ara`) | ✓ (kendi yetkisinde) | ✓ | ✓ | ✓ (cross-group + kullanıcılar) |
+
+### Test komutları
+
+```bash
+pnpm typecheck       # ✅ strict, 0 hata
+pnpm build           # ✅ 45 route + middleware 32.6 kB
+pnpm test:run        # ✅ 53/53 Vitest
+pnpm e2e             # Playwright: db:seed + dev server koşulunda
+```
+
+### Açık / opsiyonel Phase 6+ maddeleri
+
+- ⌘K command palette (cmdk + Postgres tsvector)
+- Redis-backed RateLimitStore implementasyonu
+- Dashboard query cache'leme (React cache + revalidatePath boundaries)
+- Performance audit (indexes, N+1 tarama)
+- Playwright akışları: signup + admin approve + full record CRUD
+- SMTP provider driver (Nodemailer)
+- Security scanner (Snyk / Trivy CI entegrasyonu)
+- `pnpm audit` + Dependabot / Renovate yapılandırması
+
+---
+
+**Proje durum:** 5 faz tamamlandı. `pnpm dev` ile tüm özellikler çalışır, testler yeşil, Dokploy'a deploy hazır.

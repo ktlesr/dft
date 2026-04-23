@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 
 import "./globals.css";
 
@@ -37,11 +38,16 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  // The nonce is minted per-request by middleware and exposed on x-nonce so
+  // we can pass it to libraries that inject inline scripts during hydration
+  // (next-themes' FOUC-guard being the main one).
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html lang="tr" suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans antialiased">
-        <ThemeProvider>
+        <ThemeProvider nonce={nonce}>
           {children}
           <Toaster richColors closeButton position="top-right" />
         </ThemeProvider>

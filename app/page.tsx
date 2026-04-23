@@ -18,12 +18,9 @@ export default async function LandingPage() {
         <BrandLockup />
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <Button asChild variant="ghost" size="sm">
-            <Link href="/giris">Giriş yap</Link>
-          </Button>
           <Button asChild size="sm" variant="brand">
-            <Link href="/kayit">
-              Başvuru yap
+            <Link href="/giris">
+              Giriş yap
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
@@ -43,7 +40,7 @@ export default async function LandingPage() {
           <p className="text-pretty text-base leading-relaxed text-muted-foreground md:text-lg">
             Proje başvurularınız, etkinlik kayıtlarınız, çalışma grubu toplantılarınız,
             tutanaklar, raporlar ve belgeleriniz tek bir güvenli portalda.
-            Bu portal kamuya açık değildir; erişim admin onayı gerektirir.
+            Portal tamamen kapalı bir sistemdir — hesap erişimi yalnızca yönetici tarafından verilir.
           </p>
           <div className="flex flex-wrap items-center gap-3 pt-2">
             <Button asChild size="lg" variant="brand">
@@ -51,9 +48,6 @@ export default async function LandingPage() {
                 Portala giriş yap
                 <ArrowRight className="h-4 w-4" />
               </Link>
-            </Button>
-            <Button asChild size="lg" variant="outline">
-              <Link href="/kayit">Üyelik başvurusu</Link>
             </Button>
           </div>
         </div>
@@ -71,8 +65,8 @@ export default async function LandingPage() {
           />
           <FeatureCard
             icon={<Lock className="h-5 w-5" />}
-            title="Kapalı erişim"
-            description="Kayıt sonrası admin onayı gerekir. Portal arama motorlarında indexlenmez."
+            title="Yalnızca yönetici erişimi"
+            description="Üyelik açık başvuruya kapalıdır. Hesaplar yönetici tarafından oluşturulup kullanıcılara teslim edilir."
           />
         </div>
       </main>

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,19 +17,20 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
     <Card className="border-border/60 shadow-lg">
       <CardHeader className="space-y-1.5">
         <CardTitle className="text-xl">Portala giriş yap</CardTitle>
-        <CardDescription>DFT Kapalı Portalı yalnızca yetkili üyelere açıktır.</CardDescription>
+        <CardDescription>
+          DFT Kapalı Portalı yalnızca yetkili üyelere açıktır. Hesap erişimi yönetici tarafından
+          verilir.
+        </CardDescription>
       </CardHeader>
 
       <CardContent>
         <LoginForm banner={banner} />
       </CardContent>
 
-      <CardFooter className="flex flex-col gap-2 border-t pt-5 text-center text-sm">
-        <p className="text-muted-foreground">
-          Hesabın yok mu?{" "}
-          <Link href="/kayit" className="font-medium text-primary hover:underline">
-            Üyelik başvurusu yap
-          </Link>
+      <CardFooter className="flex flex-col gap-2 border-t pt-5 text-center text-xs text-muted-foreground">
+        <p>
+          Erişim talebiniz için DFT yöneticileriyle iletişime geçin. Hesap oluşturulduğunda size
+          e-posta ile bildirilir.
         </p>
       </CardFooter>
     </Card>

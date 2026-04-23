@@ -1,16 +1,20 @@
 /**
- * Simple in-memory rate limiter.
+ * Rate limiter with a pluggable store.
  *
- * Good enough for Phase 2 / single-node dev. In Phase 5 this gets swapped
- * for a Redis-backed implementation (same interface) so it survives
- * multiple Next.js instances and restarts.
+ * Phase 5 ships an in-memory store (single-node, zero-dep). To scale to
+ * multiple instances or survive restarts, drop in a Redis-backed store
+ * that implements the same `RateLimitStore` interface:
+ *
+ *     export const store: RateLimitStore = new RedisStore(process.env.REDIS_URL);
+ *     import { setStore } from "@/lib/rate-limit";
+ *     setStore(store);
+ *
+ * Interface contract: `hit(key, limit, windowMs)` atomically increments
+ * a counter and returns the current count + reset time. Atomicity is
+ * required — a non-atomic read-then-write leaks requests under load.
  */
 
 import { headers } from "next/headers";
-
-type Bucket = { count: number; resetAt: number };
-
-const buckets = new Map<string, Bucket>();
 
 export type RateLimitResult = {
   allowed: boolean;
@@ -18,28 +22,71 @@ export type RateLimitResult = {
   retryAfterSeconds: number;
 };
 
+export interface RateLimitStore {
+  hit(key: string, limit: number, windowMs: number): Promise<RateLimitResult>;
+}
+
+/* ── In-memory store (default) ─────────────────────────────────── */
+
+type Bucket = { count: number; resetAt: number };
+
+class MemoryStore implements RateLimitStore {
+  private readonly buckets = new Map<string, Bucket>();
+
+  constructor() {
+    // GC expired buckets so the Map doesn't grow unbounded in long-running dev.
+    if (typeof globalThis !== "undefined" && !(globalThis as { __rlGc?: boolean }).__rlGc) {
+      (globalThis as { __rlGc?: boolean }).__rlGc = true;
+      setInterval(() => this.sweep(), 60_000).unref?.();
+    }
+  }
+
+  async hit(key: string, limit: number, windowMs: number): Promise<RateLimitResult> {
+    const now = Date.now();
+    const b = this.buckets.get(key);
+
+    if (!b || b.resetAt <= now) {
+      this.buckets.set(key, { count: 1, resetAt: now + windowMs });
+      return {
+        allowed: true,
+        remaining: limit - 1,
+        retryAfterSeconds: Math.ceil(windowMs / 1000),
+      };
+    }
+
+    b.count += 1;
+    const remaining = Math.max(0, limit - b.count);
+    const retryAfterSeconds = Math.max(1, Math.ceil((b.resetAt - now) / 1000));
+    return { allowed: b.count <= limit, remaining, retryAfterSeconds };
+  }
+
+  private sweep() {
+    const now = Date.now();
+    for (const [k, b] of this.buckets) {
+      if (b.resetAt <= now) this.buckets.delete(k);
+    }
+  }
+}
+
+let store: RateLimitStore = new MemoryStore();
+
+export function setStore(next: RateLimitStore): void {
+  store = next;
+}
+
+/* ── Public API ────────────────────────────────────────────────── */
+
 export async function rateLimit(
   key: string,
   limit: number,
   windowMs: number,
 ): Promise<RateLimitResult> {
-  const now = Date.now();
-  const b = buckets.get(key);
-
-  if (!b || b.resetAt <= now) {
-    buckets.set(key, { count: 1, resetAt: now + windowMs });
-    return { allowed: true, remaining: limit - 1, retryAfterSeconds: Math.ceil(windowMs / 1000) };
-  }
-
-  b.count += 1;
-  const remaining = Math.max(0, limit - b.count);
-  const retryAfterSeconds = Math.max(1, Math.ceil((b.resetAt - now) / 1000));
-  return { allowed: b.count <= limit, remaining, retryAfterSeconds };
+  return store.hit(key, limit, windowMs);
 }
 
 /**
- * Extract the best-effort client IP from request headers.
- * Works behind reverse proxies (Vercel, nginx, Cloudflare).
+ * Best-effort client IP. Works behind reverse proxies (Vercel, nginx,
+ * Cloudflare) via the standard `x-forwarded-for` chain.
  */
 export async function getClientIp(): Promise<string> {
   const h = await headers();
@@ -54,15 +101,4 @@ export async function getClientIp(): Promise<string> {
 export async function getUserAgent(): Promise<string | null> {
   const h = await headers();
   return h.get("user-agent");
-}
-
-/** Periodic GC — keep the bucket map from growing unbounded in long-running dev. */
-if (typeof globalThis !== "undefined" && !(globalThis as { __rlGc?: boolean }).__rlGc) {
-  (globalThis as { __rlGc?: boolean }).__rlGc = true;
-  setInterval(() => {
-    const now = Date.now();
-    for (const [k, b] of buckets) {
-      if (b.resetAt <= now) buckets.delete(k);
-    }
-  }, 60_000).unref?.();
 }

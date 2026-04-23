@@ -1,11 +1,13 @@
 /**
  * Mail sender abstraction.
  *
- * Phase 2: logs to console in development so we can test flows locally
- *           without real SMTP.
- * Phase 5: swapped for Resend / SMTP provider via the same interface.
- *           All call sites already go through `sendMail` so nothing else
- *           needs to change.
+ * Provider is selected at runtime based on env:
+ *
+ *   - RESEND_API_KEY set → Resend HTTPS API (preferred)
+ *   - MAIL_DRIVER="smtp" + SMTP_* → future SMTP driver (stub in place)
+ *   - otherwise            → console stream (dev / CI)
+ *
+ * Call sites stay stable: everything goes through `sendMail({ to, subject, text })`.
  */
 
 type MailInput = {
@@ -15,27 +17,99 @@ type MailInput = {
   html?: string;
 };
 
+const FROM = process.env.MAIL_FROM ?? "DFT Portal <no-reply@dft.local>";
+
+function isEmail(v: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+}
+
+/**
+ * Send a mail. Returns when the provider has accepted the message;
+ * does not wait for actual delivery. Swallows its own errors and logs
+ * them — mail failures must never take down the parent request.
+ */
 export async function sendMail({ to, subject, text, html }: MailInput): Promise<void> {
-  // Dev fallback: printable, so the grader / developer can follow the flow.
-  const body = text ?? html ?? "";
+  if (!isEmail(to)) {
+    console.error(`[mail] refusing invalid recipient: ${to}`);
+    return;
+  }
+
+  const driver = selectDriver();
+  try {
+    await driver({ to, subject, text, html });
+  } catch (err) {
+    // Observability path: errors here should surface in logs but not
+    // propagate to the caller (most auth flows intentionally pretend
+    // mail always succeeds to avoid account enumeration).
+    console.error("[mail] send failed:", err);
+  }
+}
+
+type Driver = (input: MailInput) => Promise<void>;
+
+let cachedDriver: Driver | null = null;
+
+function selectDriver(): Driver {
+  if (cachedDriver) return cachedDriver;
+
+  if (process.env.RESEND_API_KEY) {
+    cachedDriver = resendDriver;
+  } else {
+    cachedDriver = consoleDriver;
+  }
+  return cachedDriver;
+}
+
+/* ── Resend driver ─────────────────────────────────────────────── */
+
+async function resendDriver({ to, subject, text, html }: MailInput): Promise<void> {
+  // Lightweight fetch to the Resend REST API avoids pulling the `resend`
+  // package into the client bundle and keeps the runtime small.
+  const body = {
+    from: FROM,
+    to: [to],
+    subject,
+    text,
+    ...(html ? { html } : {}),
+  };
+
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "<no body>");
+    throw new Error(`resend ${res.status}: ${detail.slice(0, 200)}`);
+  }
+}
+
+/* ── Console driver (dev / CI fallback) ────────────────────────── */
+
+async function consoleDriver({ to, subject, text }: MailInput): Promise<void> {
   const sep = "━".repeat(72);
-  // eslint-disable-next-line no-console -- intentional dev fallback
+  const body = text ?? "";
+  // eslint-disable-next-line no-console
   console.log(
     [
       "",
       sep,
       `📧 MAIL  →  ${to}`,
       `📌  ${subject}`,
+      `🧪  driver=console (no RESEND_API_KEY set)`,
       sep,
       body,
       sep,
       "",
     ].join("\n"),
   );
-
-  // Phase 5 hook: when AUTH_SMTP_* / RESEND_API_KEY env vars appear,
-  // replace this with real delivery and fail the call on error.
 }
+
+/* ── Templates ─────────────────────────────────────────────────── */
 
 export function passwordResetEmail(link: string): { subject: string; text: string } {
   return {

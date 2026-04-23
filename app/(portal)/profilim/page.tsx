@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { requireActiveUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { GROUP_LABELS, ROLE_LABELS, USER_STATUS_LABELS } from "@/lib/constants";
+import { formatDateTime } from "@/lib/utils";
 import { ProfileForm } from "@/features/profile/profile-form";
 import { PasswordChangeForm } from "@/features/profile/password-form";
 
@@ -99,21 +100,71 @@ export default async function ProfilePage() {
 
         <TabsContent value="guvenlik">
           <Card>
-            <CardContent className="p-6">
-              {hasPassword ? (
-                <PasswordChangeForm />
-              ) : (
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    Bu hesap şifresiz. Portal'a Google ile giriş yapıyorsunuz; şifre değiştirme
-                    seçeneği yalnızca şifreyle oluşturulmuş hesaplar için geçerlidir.
-                  </p>
+            <CardContent className="space-y-6 p-6">
+              <section>
+                <h3 className="text-sm font-semibold">Şifre değiştirme</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Hesabınıza en az 10 karakterlik, büyük-küçük harf, rakam ve özel karakter içeren güçlü bir şifre belirleyin.
+                </p>
+                <div className="mt-4">
+                  {hasPassword ? (
+                    <PasswordChangeForm />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Bu hesap şifresiz oluşturulmuş. Yeni bir şifre ayarlamak için yönetici ile iletişime geçin.
+                    </p>
+                  )}
                 </div>
-              )}
-              <Separator className="my-6" />
-              <p className="text-xs text-muted-foreground">
-                Oturum ayarları ve cihaz yönetimi Faz 5'te eklenecek.
-              </p>
+              </section>
+
+              <Separator />
+
+              <section>
+                <h3 className="text-sm font-semibold">Oturum bilgileri</h3>
+                <dl className="mt-3 grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      Son giriş
+                    </dt>
+                    <dd className="mt-1 text-sm">
+                      {userRow?.lastLoginAt ? formatDateTime(userRow.lastLoginAt) : "—"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      Oturum süresi
+                    </dt>
+                    <dd className="mt-1 text-sm">8 saat (her istekte yenilenir)</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      Hesap kilidi
+                    </dt>
+                    <dd className="mt-1 text-sm">
+                      Art arda 8 başarısız giriş → 15 dakika kilit
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      Çıkış
+                    </dt>
+                    <dd className="mt-1 text-sm">
+                      Sağ üstteki menüden &quot;Çıkış yap&quot; — bu cihazdaki oturumu sonlandırır.
+                    </dd>
+                  </div>
+                </dl>
+              </section>
+
+              <Separator />
+
+              <section className="rounded-md border border-amber-500/30 bg-amber-500/5 p-4">
+                <h3 className="text-sm font-semibold">Güvenlik ipuçları</h3>
+                <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                  <li>• Şifrenizi kimseyle paylaşmayın; yöneticiler dahi şifrenizi göremez (argon2id ile hashlenmiştir).</li>
+                  <li>• Şüpheli bir giriş gördüğünüzde <strong>hemen şifrenizi değiştirin</strong> ve yöneticinize bildirin.</li>
+                  <li>• Paylaşımlı bir cihazda giriş yaptıysanız işiniz bitince &quot;Çıkış yap&quot;&apos;ı kullanın.</li>
+                </ul>
+              </section>
             </CardContent>
           </Card>
         </TabsContent>

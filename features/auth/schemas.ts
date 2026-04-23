@@ -2,8 +2,11 @@ import { z } from "zod";
 
 const email = z
   .string({ required_error: "E-posta zorunludur." })
+  // Trim BEFORE validating — accidental leading/trailing whitespace is
+  // a common paste artefact and would otherwise fail the email regex.
+  .trim()
   .email("Geçerli bir e-posta girin.")
-  .transform((v) => v.toLowerCase().trim());
+  .transform((v) => v.toLowerCase());
 
 const password = z
   .string({ required_error: "Şifre zorunludur." })
@@ -19,23 +22,8 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Şifre zorunludur."),
 });
 
-export const signupSchema = z
-  .object({
-    name: z
-      .string({ required_error: "Ad soyad zorunludur." })
-      .trim()
-      .min(2, "Ad soyad çok kısa.")
-      .max(100, "Ad soyad çok uzun."),
-    organization: z.string().trim().max(120).optional(),
-    email,
-    password,
-    confirmPassword: z.string(),
-  })
-  .refine((v) => v.password === v.confirmPassword, {
-    path: ["confirmPassword"],
-    message: "Şifreler eşleşmiyor.",
-  });
-
+// Public signup was removed — DFT Portal is invite / admin-provisioning
+// only. The `password` helper is still used below for password-reset.
 export const forgotSchema = z.object({ email });
 
 export const resetSchema = z
@@ -49,7 +37,6 @@ export const resetSchema = z
     message: "Şifreler eşleşmiyor.",
   });
 
-export type SignupInput = z.infer<typeof signupSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ForgotInput = z.infer<typeof forgotSchema>;
 export type ResetInput = z.infer<typeof resetSchema>;

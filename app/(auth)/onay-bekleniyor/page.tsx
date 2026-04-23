@@ -13,9 +13,10 @@ export default function PendingApprovalPage() {
         <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
           <Clock className="h-5 w-5" />
         </div>
-        <CardTitle className="text-xl">Onay bekleniyor</CardTitle>
+        <CardTitle className="text-xl">Hesabınız onay bekliyor</CardTitle>
         <CardDescription>
-          Başvurunuz yöneticilere iletildi. Hesabınız aktifleştirildiğinde e-posta ile bilgilendirileceksiniz.
+          Portal kapalı bir sistemdir. Yönetici hesabınızı aktifleştirdiğinde size e-posta ile
+          bilgi verilir. Gecikme durumunda DFT yöneticileriyle iletişime geçebilirsiniz.
         </CardDescription>
       </CardHeader>
       <CardContent>

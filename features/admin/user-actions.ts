@@ -7,12 +7,138 @@ import { z } from "zod";
 import { audit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
+import { hashPassword } from "@/lib/password";
 import { approvalNotificationEmail, sendMail } from "@/lib/mail";
 import type { GroupCode, Role } from "@prisma/client";
 
 type ActionResult = { ok: true } | { ok: false; message: string };
 
 const idSchema = z.string().min(1);
+
+export type CreateUserFormState = {
+  ok: boolean;
+  message?: string;
+  errors?: Record<string, string[]>;
+};
+
+/* ───────── Admin creates a user directly (skips invite / approval) ─────────
+ *
+ * Admins get a full create-user form on the admin panel: set a temporary
+ * password, pick a group + extra roles, hand the credentials to the member.
+ * The resulting account is immediately `ACTIVE` with `emailVerified` set —
+ * no invite acceptance or admin approval step required.
+ *
+ * `USER` is always included in the role set; any admin-selected elevated
+ * roles (MODERATOR / RAPPORTEUR / ADMIN) are added on top.
+ */
+
+const NEW_USER_GROUP = z.enum(["UAK", "E2SC", "DFSF", "PGD", "PA", "NONE"]);
+const EXTRA_ROLE = z.enum(["MODERATOR", "RAPPORTEUR", "ADMIN"]);
+
+const createUserSchema = z.object({
+  name: z
+    .string({ required_error: "Ad soyad zorunludur." })
+    .trim()
+    .min(2, "Ad soyad çok kısa.")
+    .max(100, "Ad soyad çok uzun."),
+  email: z
+    .string({ required_error: "E-posta zorunludur." })
+    .trim()
+    .email("Geçerli bir e-posta girin.")
+    .transform((v) => v.toLowerCase()),
+  password: z
+    .string({ required_error: "Şifre zorunludur." })
+    .min(10, "Şifre en az 10 karakter olmalı.")
+    .max(128, "Şifre çok uzun.")
+    .refine((v) => /[a-z]/.test(v), "Küçük harf içermeli.")
+    .refine((v) => /[A-Z]/.test(v), "Büyük harf içermeli.")
+    .refine((v) => /[0-9]/.test(v), "Rakam içermeli.")
+    .refine((v) => /[^A-Za-z0-9]/.test(v), "En az bir özel karakter içermeli."),
+  groupCode: NEW_USER_GROUP,
+  extraRoles: z.array(EXTRA_ROLE).default([]),
+});
+
+function fieldErrors(err: z.ZodError): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  for (const issue of err.issues) {
+    const key = issue.path.join(".") || "_";
+    (out[key] ??= []).push(issue.message);
+  }
+  return out;
+}
+
+export async function createUserByAdmin(
+  _prev: CreateUserFormState,
+  fd: FormData,
+): Promise<CreateUserFormState> {
+  const admin = await requireAdmin();
+
+  const extraRolesRaw = fd.getAll("extraRoles").map(String).filter(Boolean);
+  const parsed = createUserSchema.safeParse({
+    name: fd.get("name"),
+    email: fd.get("email"),
+    password: fd.get("password"),
+    groupCode: fd.get("groupCode") ?? "NONE",
+    extraRoles: extraRolesRaw,
+  });
+  if (!parsed.success) {
+    return { ok: false, errors: fieldErrors(parsed.error) };
+  }
+
+  const existing = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+  if (existing) {
+    return { ok: false, errors: { email: ["Bu e-posta ile zaten bir hesap mevcut."] } };
+  }
+
+  const group =
+    parsed.data.groupCode === "NONE"
+      ? null
+      : await prisma.group.findUnique({ where: { code: parsed.data.groupCode as GroupCode } });
+
+  const passwordHash = await hashPassword(parsed.data.password);
+
+  // USER is implicit; admin-selected extras are layered on top (deduped).
+  const roles = Array.from(new Set<Role>(["USER", ...parsed.data.extraRoles]));
+
+  const created = await prisma.user.create({
+    data: {
+      email: parsed.data.email,
+      name: parsed.data.name,
+      passwordHash,
+      status: "ACTIVE",
+      emailVerified: new Date(),
+      approvedById: admin.id,
+      approvedAt: new Date(),
+      groupId: group?.id ?? null,
+      profile: { create: {} },
+      roles: {
+        createMany: {
+          data: roles.map((role) => ({ role, grantedById: admin.id })),
+        },
+      },
+    },
+  });
+
+  await audit({
+    action: "USER_APPROVED",
+    actorId: admin.id,
+    targetType: "User",
+    targetId: created.id,
+    metadata: {
+      createdBy: "admin_panel",
+      email: parsed.data.email,
+      groupCode: group?.code ?? null,
+      roles,
+    },
+  });
+
+  revalidatePath("/yonetim");
+  revalidatePath("/yonetim/kullanicilar");
+
+  // Redirect must come *after* the state is safe to persist. Next's redirect()
+  // throws a NEXT_REDIRECT which the form action framework propagates.
+  redirect(`/yonetim/kullanicilar/${created.id}?olusturuldu=1`);
+}
 
 /** Approve a PENDING / REJECTED / SUSPENDED user → ACTIVE. */
 export async function approveUser(formData: FormData): Promise<void> {

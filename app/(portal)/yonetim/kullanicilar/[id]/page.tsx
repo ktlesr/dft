@@ -29,12 +29,21 @@ import type { GroupCode, Role } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 type Params = Promise<{ id: string }>;
+type SearchParams = Promise<{ olusturuldu?: string }>;
 
 const ALL_ROLES: Role[] = ["USER", "MODERATOR", "RAPPORTEUR", "ADMIN"];
 const GROUP_CODES: GroupCode[] = ["UAK", "E2SC", "DFSF", "PGD", "PA"];
 
-export default async function AdminUserDetail({ params }: { params: Params }) {
+export default async function AdminUserDetail({
+  params,
+  searchParams,
+}: {
+  params: Params;
+  searchParams: SearchParams;
+}) {
   const { id } = await params;
+  const sp = await searchParams;
+  const justCreated = sp.olusturuldu === "1";
   const admin = await requireAdmin();
 
   const user = await prisma.user.findUnique({
@@ -83,6 +92,16 @@ export default async function AdminUserDetail({ params }: { params: Params }) {
         }
       />
       <AdminPanelNav />
+
+      {justCreated ? (
+        <div className="mb-6 rounded-md border border-accent/40 bg-accent/10 px-4 py-3 text-sm">
+          <span className="font-medium">Kullanıcı oluşturuldu.</span>{" "}
+          <span className="text-muted-foreground">
+            E-posta ve geçici şifreyi kullanıcıya güvenli bir kanaldan iletin. İlk girişte
+            Profil → Güvenlik sekmesinden şifreyi değiştirebilir.
+          </span>
+        </div>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">

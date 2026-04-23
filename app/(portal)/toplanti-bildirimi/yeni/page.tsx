@@ -1,0 +1,40 @@
+import { redirect } from "next/navigation";
+
+import { PageHeader } from "@/components/app/page-header";
+import { EmptyState } from "@/components/app/empty-state";
+import { MeetingForm } from "@/features/meeting/meeting-form";
+import { requireActiveUser } from "@/lib/current-user";
+import { canCreateMeeting } from "@/lib/rbac";
+import { GROUP_LABELS } from "@/lib/constants";
+import { Users } from "lucide-react";
+
+export const metadata = { title: "Toplantı Bildirimi Ekle" };
+export const dynamic = "force-dynamic";
+
+export default async function NewMeetingPage() {
+  const user = await requireActiveUser();
+  if (!user.groupId) {
+    return (
+      <div className="mx-auto max-w-3xl">
+        <PageHeader title="Toplantı Bildirimi Ekle" breadcrumbs={[{ label: "Toplantı Bildirimi" }]} />
+        <EmptyState
+          icon={Users}
+          title="Bir çalışma grubuna atanmadınız"
+          description="Yöneticiniz grubu atadıktan sonra toplantı bildirimi oluşturabilirsiniz."
+        />
+      </div>
+    );
+  }
+  if (!canCreateMeeting(user, user.groupId)) redirect("/yetkisiz");
+
+  return (
+    <div className="mx-auto max-w-3xl">
+      <PageHeader
+        title="Toplantı Bildirimi Ekle"
+        description={`${user.groupCode ?? "Grup"} · ${user.groupCode ? GROUP_LABELS[user.groupCode].description : ""}`}
+        breadcrumbs={[{ label: "Toplantı Bildirimi" }]}
+      />
+      <MeetingForm />
+    </div>
+  );
+}

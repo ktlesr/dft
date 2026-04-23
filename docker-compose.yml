@@ -1,0 +1,85 @@
+# ────────────────────────────────────────────────────────────────────
+# DFT Portal — PRODUCTION stack (Dokploy / self-hosted Docker host)
+#
+# Services:
+#   app       — Next.js (built from ./Dockerfile)
+#   postgres  — Postgres 16, persisted to the `dft_portal_pgdata` volume
+#
+# Required environment variables (set in Dokploy or a .env file):
+#   AUTH_SECRET           — 32-byte base64 (openssl rand -base64 32)
+#   AUTH_URL              — public URL of the portal (e.g. https://portal.dft.tr)
+#   APP_URL               — same as AUTH_URL (used inside emails / links)
+#   POSTGRES_PASSWORD     — strong DB password
+#
+# Optional:
+#   AUTH_GOOGLE_ID / AUTH_GOOGLE_SECRET  — Google OAuth creds
+#   MAX_UPLOAD_BYTES      — default 15 MB
+#   ENABLE_PUBLIC_SIGNUP  — default "true"
+#   REQUIRE_ADMIN_APPROVAL — default "true"
+#
+# For local development run only the DB with:
+#   pnpm db:up      (delegates to docker-compose.dev.yml)
+# ────────────────────────────────────────────────────────────────────
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dft-portal:latest
+    container_name: dft-portal-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_APP_NAME: "DFT Portal"
+      APP_URL: ${APP_URL:?set APP_URL in env}
+      AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET in env}
+      AUTH_URL: ${AUTH_URL:?set AUTH_URL in env}
+      AUTH_TRUST_HOST: "true"
+      AUTH_GOOGLE_ID: ${AUTH_GOOGLE_ID:-}
+      AUTH_GOOGLE_SECRET: ${AUTH_GOOGLE_SECRET:-}
+      DATABASE_URL: "postgresql://dft:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in env}@postgres:5432/dft_portal?schema=public"
+      UPLOAD_DIR: /app/storage/uploads
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-15728640}
+      ENABLE_PUBLIC_SIGNUP: ${ENABLE_PUBLIC_SIGNUP:-true}
+      REQUIRE_ADMIN_APPROVAL: ${REQUIRE_ADMIN_APPROVAL:-true}
+    ports:
+      - "3000:3000"
+    volumes:
+      - dft_uploads:/app/storage/uploads
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok||r.status===307||r.status===302?0:1)).catch(()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: dft-portal-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dft
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in env}
+      POSTGRES_DB: dft_portal
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - dft_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dft -d dft_portal"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    # No host port binding in production — the DB is only reachable
+    # through the internal Docker network (`app` service). Expose only
+    # if you explicitly need external tooling access.
+
+volumes:
+  dft_pgdata:
+    name: dft_portal_pgdata
+  dft_uploads:
+    name: dft_portal_uploads

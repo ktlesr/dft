@@ -1,0 +1,50 @@
+# Source control
+.git
+.gitignore
+.github
+
+# Local env (never ship secrets into the image)
+.env
+.env.local
+.env.*.local
+
+# Node / pnpm
+node_modules
+.pnpm-store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Next.js build artefacts (will be rebuilt inside the image)
+.next
+out
+
+# TypeScript incremental
+*.tsbuildinfo
+
+# IDE
+.idea
+.vscode
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Local runtime data (never copy dev uploads into image)
+storage
+uploads
+
+# Test output
+coverage
+playwright-report
+test-results
+.playwright
+
+# Dev-only compose override + docs unused at runtime
+docker-compose.dev.yml
+README.md
+MASTER_PROMPT.md
+
+# Logs
+*.log

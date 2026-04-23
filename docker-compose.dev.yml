@@ -1,0 +1,38 @@
+# ────────────────────────────────────────────────────────────────────
+# DFT Portal — DEVELOPMENT stack
+#
+# Starts *only* Postgres on host port 5433 so the Next.js dev server
+# (run locally with `pnpm dev`) can connect.  The app itself runs on
+# the host via pnpm, not inside a container, so HMR stays fast.
+#
+# Usage:
+#   pnpm db:up      # start postgres
+#   pnpm db:down    # stop postgres
+#   pnpm dev        # Next on http://localhost:3000
+# ────────────────────────────────────────────────────────────────────
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: dft-portal-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dft
+      POSTGRES_PASSWORD: dft_dev_pass
+      POSTGRES_DB: dft_portal
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    ports:
+      # Host 5433 → container 5432 to avoid clashing with any other
+      # local Postgres instance on 5432.
+      - "5433:5432"
+    volumes:
+      - dft_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dft -d dft_portal"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  dft_postgres_data:
+    name: dft_portal_pgdata

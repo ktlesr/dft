@@ -1,0 +1,107 @@
+"use client";
+
+import { useActionState } from "react";
+import Link from "next/link";
+import { AlertCircle, Loader2 } from "lucide-react";
+
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { AttachmentInput } from "@/features/shared/attachment-input";
+import { Field } from "@/features/shared/form-field";
+import { REPORT_KIND_LABELS } from "@/lib/constants";
+import { createReport, type ReportFormState } from "./actions";
+
+const INITIAL: ReportFormState = { ok: true };
+
+export function ReportForm({ defaultKind = "YOL_HARITASI" }: { defaultKind?: keyof typeof REPORT_KIND_LABELS }) {
+  const [state, action, pending] = useActionState(createReport, INITIAL);
+
+  // First Yol Haritası period per MASTER_PROMPT: 1 Haziran 2026 – 31 Ağustos 2026.
+  const defaults = {
+    YOL_HARITASI: { periodStart: "2026-06-01", periodEnd: "2026-08-31" },
+    IKI_AYLIK: { periodStart: "", periodEnd: "" },
+    KAPANIS: { periodStart: "", periodEnd: "" },
+    ANLIK_NOT: { periodStart: "", periodEnd: "" },
+  } as const;
+  const pd = defaults[defaultKind];
+
+  return (
+    <form action={action}>
+      <Card>
+        <CardContent className="space-y-5 p-6">
+          {!state.ok && state.message ? (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{state.message}</AlertDescription>
+            </Alert>
+          ) : null}
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field name="kind" label="Rapor türü" required error={state.errors?.kind}>
+              <Select name="kind" defaultValue={defaultKind}>
+                <SelectTrigger id="kind">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(REPORT_KIND_LABELS).map(([k, label]) => (
+                    <SelectItem key={k} value={k}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+
+            <Field name="title" label="Başlık" required error={state.errors?.title}>
+              <Input id="title" name="title" required maxLength={200} />
+            </Field>
+
+            <Field name="periodStart" label="Dönem başlangıcı" error={state.errors?.periodStart}>
+              <Input id="periodStart" name="periodStart" type="date" defaultValue={pd.periodStart} />
+            </Field>
+            <Field name="periodEnd" label="Dönem bitişi" error={state.errors?.periodEnd}>
+              <Input id="periodEnd" name="periodEnd" type="date" defaultValue={pd.periodEnd} />
+            </Field>
+
+            <Field name="summary" label="Kısa özet" error={state.errors?.summary} className="md:col-span-2">
+              <Textarea id="summary" name="summary" rows={3} maxLength={3000} />
+            </Field>
+
+            <Field name="body" label="Rapor metni" required error={state.errors?.body} className="md:col-span-2">
+              <Textarea id="body" name="body" rows={12} required maxLength={50_000} />
+            </Field>
+
+            <Field name="outputs" label="Çıktılar / öneriler" hint="Kapanış ve Yol Haritası raporlarında kullanılabilir." error={state.errors?.outputs} className="md:col-span-2">
+              <Textarea id="outputs" name="outputs" rows={4} maxLength={10_000} />
+            </Field>
+          </div>
+
+          <div>
+            <p className="mb-1.5 text-sm font-medium">Ek dosyalar</p>
+            <AttachmentInput disabled={pending} />
+          </div>
+
+          <div className="flex items-center justify-end gap-2 border-t pt-5">
+            <Button asChild variant="ghost" disabled={pending}>
+              <Link href="/calisma-grubum">Vazgeç</Link>
+            </Button>
+            <Button type="submit" variant="brand" disabled={pending}>
+              {pending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Kaydediliyor…
+                </>
+              ) : (
+                "Raporu kaydet"
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </form>
+  );
+}

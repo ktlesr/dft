@@ -1,0 +1,18 @@
+# Enforce LF line endings for all text files — keeps CI builds,
+# Docker images and cross-OS collaboration consistent.
+* text=auto eol=lf
+
+# Shell scripts MUST be LF; Docker runs these on Linux.
+*.sh text eol=lf
+Dockerfile* text eol=lf
+docker-compose*.yml text eol=lf
+
+# Keep declared binary to avoid noisy diffs / CRLF munging.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary

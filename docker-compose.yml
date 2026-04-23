@@ -93,6 +93,12 @@ services:
       timeout: 5s
       retries: 20
       start_period: 10s
+    # Defensive opt-out: Dokploy sometimes injects Traefik labels onto
+    # every service in a compose project. Explicit `traefik.enable=false`
+    # guarantees Traefik will never route public HTTP traffic to this
+    # container, even if it accidentally ends up on `dokploy-network`.
+    labels:
+      - "traefik.enable=false"
     # Intentionally NOT on dokploy-network — DB must never be reachable
     # through the reverse proxy. No host port binding either.
 

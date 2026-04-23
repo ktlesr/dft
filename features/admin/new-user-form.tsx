@@ -148,19 +148,35 @@ export function NewUserForm() {
 
           <fieldset className="space-y-2 rounded-md border p-3">
             <legend className="px-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Ek roller (USER her zaman atanır)
+              Roller
             </legend>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {/* USER is the baseline membership — shown always-checked +
+                  disabled so admins can see what the account gets and add
+                  elevated roles on top. */}
+              <label className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm">
+                <Checkbox checked disabled aria-label="Üye rolü her zaman atanır" />
+                <div className="flex flex-col">
+                  <span>{ROLE_LABELS.USER}</span>
+                  <span className="text-[10px] text-muted-foreground">Her zaman atanır</span>
+                </div>
+              </label>
               {(["MODERATOR", "RAPPORTEUR", "ADMIN"] as const).map((r) => (
                 <label
                   key={r}
-                  className="flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm"
+                  className="flex cursor-pointer items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm transition-colors hover:border-primary/40"
                 >
                   <Checkbox name="extraRoles" value={r} />
                   <span>{ROLE_LABELS[r]}</span>
                 </label>
               ))}
             </div>
+            <p className="px-1 text-[11px] text-muted-foreground">
+              <strong>Üye</strong> portala erişimin temel rolüdür; tüm hesaplara atanır. Üzerine
+              ihtiyaca göre <strong>Moderatör</strong> (grup panosu moderasyonu + toplantı
+              bildirimi), <strong>Raportör</strong> (tutanak + rapor) veya
+              <strong> Yönetici</strong> (tam erişim) ekleyebilirsiniz.
+            </p>
           </fieldset>
 
           <Alert>

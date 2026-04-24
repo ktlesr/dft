@@ -94,12 +94,8 @@ export function EventForm() {
             <Input id="externalUrl" name="externalUrl" type="url" placeholder="https://…" />
           </Field>
 
-          <Field name="summary" label="Kısa özet" error={state.errors?.summary} className="md:col-span-2">
-            <Textarea id="summary" name="summary" rows={4} maxLength={3000} />
-          </Field>
-
-          <Field name="notes" label="Notlar" error={state.errors?.notes} className="md:col-span-2">
-            <Textarea id="notes" name="notes" rows={3} maxLength={2000} />
+          <Field name="summary" label="Etkinlik açıklaması" error={state.errors?.summary} className="md:col-span-2">
+            <Textarea id="summary" name="summary" rows={5} maxLength={3000} />
           </Field>
         </div>
       </FormShell>

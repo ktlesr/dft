@@ -201,6 +201,9 @@ function describe(
     }
     case "etkinlik": {
       const r = row as Extract<typeof row, { name: string }>;
+      // Legacy rows may have content in both `summary` and `notes`; merge
+      // for display so old data isn't lost after the Faz 6 field merge.
+      const description = [r.summary, r.notes].filter(Boolean).join("\n\n");
       return {
         title: r.name,
         fields: [
@@ -218,8 +221,7 @@ function describe(
               </a>
             ) : null,
           },
-          { label: "Özet", value: r.summary },
-          { label: "Notlar", value: r.notes },
+          { label: "Etkinlik açıklaması", value: description || null },
         ],
       };
     }

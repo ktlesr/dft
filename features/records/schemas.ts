@@ -142,9 +142,9 @@ export const eventSchema = z.object({
     .optional()
     .or(z.literal("").transform(() => undefined)),
   externalUrl: optionalHttpsUrl,
-  // `topic` was dropped from the form in Faz 6; column stays for legacy.
+  // `topic` + `notes` dropped from the form in Faz 6; columns stay for
+  // legacy rows. UI label for `summary` is "Etkinlik açıklaması".
   summary: longText(3000),
-  notes: longText(2000),
 });
 export type EventInput = z.infer<typeof eventSchema>;
 

@@ -275,7 +275,6 @@ export async function createEventRecord(
     format: fd.get("format"),
     externalUrl: fd.get("externalUrl"),
     summary: fd.get("summary"),
-    notes: fd.get("notes"),
   });
   if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
 
@@ -291,7 +290,7 @@ export async function createEventRecord(
       format: parsed.data.format ?? null,
       externalUrl: parsed.data.externalUrl ?? null,
       summary: parsed.data.summary ?? null,
-      notes: parsed.data.notes ?? null,
+      notes: null,
     },
   });
 

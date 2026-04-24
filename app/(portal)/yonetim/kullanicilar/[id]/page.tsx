@@ -42,25 +42,31 @@ export default async function AdminUserDetail({
   const justCreated = sp.olusturuldu === "1";
   const admin = await requireAdmin();
 
-  const user = await prisma.user.findUnique({
-    where: { id },
-    include: {
-      roles: true,
-      group: true,
-      profile: true,
-      approvedBy: { select: { name: true, email: true } },
-      _count: {
-        select: {
-          projectApps: { where: { deletedAt: null } },
-          events: { where: { deletedAt: null } },
-          boardPosts: { where: { deletedAt: null } },
-          meetings: { where: { deletedAt: null } },
-          minutes: { where: { deletedAt: null } },
-          reports: { where: { deletedAt: null } },
+  const [user, allGroups] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id },
+      include: {
+        roles: true,
+        group: true,
+        profile: true,
+        approvedBy: { select: { name: true, email: true } },
+        _count: {
+          select: {
+            projectApps: { where: { deletedAt: null } },
+            events: { where: { deletedAt: null } },
+            boardPosts: { where: { deletedAt: null } },
+            meetings: { where: { deletedAt: null } },
+            minutes: { where: { deletedAt: null } },
+            reports: { where: { deletedAt: null } },
+          },
         },
       },
-    },
-  });
+    }),
+    prisma.group.findMany({
+      orderBy: { code: "asc" },
+      select: { code: true, description: true },
+    }),
+  ]);
   if (!user) notFound();
 
   const userRoles = user.roles.map((r) => r.role);
@@ -279,7 +285,11 @@ export default async function AdminUserDetail({
               <CardTitle className="text-base">Çalışma grubu</CardTitle>
             </CardHeader>
             <CardContent>
-              <UserGroupForm userId={user.id} defaultCode={user.group?.code ?? null} />
+              <UserGroupForm
+                userId={user.id}
+                defaultCode={user.group?.code ?? null}
+                groups={allGroups}
+              />
             </CardContent>
           </Card>
 

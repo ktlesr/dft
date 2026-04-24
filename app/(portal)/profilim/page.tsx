@@ -5,7 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { requireActiveUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
-import { GROUP_LABELS, ROLE_LABELS, USER_STATUS_LABELS } from "@/lib/constants";
+import { ROLE_LABELS, USER_STATUS_LABELS } from "@/lib/constants";
 import { formatDateTime, initials } from "@/lib/utils";
 import { ProfileForm } from "@/features/profile/profile-form";
 import { PasswordChangeForm } from "@/features/profile/password-form";
@@ -61,9 +61,11 @@ export default async function ProfilePage() {
               user.groupCode ? (
                 <span className="inline-flex items-center gap-2">
                   <Badge variant="outline">{user.groupCode}</Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {GROUP_LABELS[user.groupCode].description}
-                  </span>
+                  {user.groupDescription ? (
+                    <span className="text-xs text-muted-foreground">
+                      {user.groupDescription}
+                    </span>
+                  ) : null}
                 </span>
               ) : (
                 "—"

@@ -31,14 +31,6 @@ enum Role {
   ADMIN
 }
 
-enum GroupCode {
-  UAK
-  E2SC
-  DFSF
-  PGD
-  PA
-}
-
 enum BoardScope {
   GENERAL
   GROUP
@@ -203,8 +195,11 @@ model Profile {
 }
 
 model Group {
+  // Faz 7: `code` formerly a `GroupCode` enum limited to 5 values.
+  // Replaced with a free-form String so admins can create new groups at
+  // runtime. Legacy rows (UAK/E2SC/DFSF/PGD/PA) keep their codes.
   id          String    @id @default(cuid())
-  code        GroupCode @unique
+  code        String    @unique
   name        String
   description String?
   users       User[]

@@ -10,11 +10,7 @@ import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/app/empty-state";
 import { requireAdmin } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
-import {
-  GROUP_LABELS,
-  ROLE_LABELS,
-  USER_STATUS_LABELS,
-} from "@/lib/constants";
+import { ROLE_LABELS, USER_STATUS_LABELS } from "@/lib/constants";
 import { avatarUrl, formatDate, initials } from "@/lib/utils";
 import { AdminPanelNav } from "@/components/app/admin-nav";
 import { approveUser, rejectUser } from "@/features/admin/user-actions";
@@ -49,7 +45,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
     orderBy: [{ status: "asc" }, { createdAt: "desc" }],
     include: {
       roles: { select: { role: true } },
-      group: { select: { code: true } },
+      group: { select: { code: true, description: true } },
     },
     take: 100,
   });
@@ -148,9 +144,11 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
                         {u.group?.code ? (
                           <span className="inline-flex items-center gap-1.5">
                             <Badge variant="outline">{u.group.code}</Badge>
-                            <span className="hidden text-[11px] text-muted-foreground sm:inline">
-                              {GROUP_LABELS[u.group.code].description}
-                            </span>
+                            {u.group.description ? (
+                              <span className="hidden text-[11px] text-muted-foreground sm:inline">
+                                {u.group.description}
+                              </span>
+                            ) : null}
                           </span>
                         ) : (
                           <span className="text-xs text-muted-foreground">—</span>

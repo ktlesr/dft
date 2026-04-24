@@ -12,7 +12,7 @@ import { listBoardPosts } from "@/features/board/queries";
 import { NewBoardPostDialog } from "@/features/board/new-post-dialog";
 import { PostCard } from "@/features/board/post-card";
 import { isAdmin, isModerator } from "@/lib/rbac";
-import { BOARD_KIND_LABELS, BOARD_KIND_BY_SCOPE, GROUP_LABELS } from "@/lib/constants";
+import { BOARD_KIND_LABELS, BOARD_KIND_BY_SCOPE } from "@/lib/constants";
 import type { BoardPostKind } from "@prisma/client";
 
 export const metadata = { title: "Grup Panosu" };
@@ -67,7 +67,9 @@ export default async function GroupBoardPage({ searchParams }: { searchParams: S
         }
       />
 
-      <p className="mb-4 text-xs text-muted-foreground">{GROUP_LABELS[user.groupCode].description}</p>
+      {user.groupDescription ? (
+        <p className="mb-4 text-xs text-muted-foreground">{user.groupDescription}</p>
+      ) : null}
 
       <form action="/panolar/grup" className="mb-4 flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[220px] max-w-md">

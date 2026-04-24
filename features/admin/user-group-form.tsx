@@ -5,9 +5,8 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { GroupSelect } from "./group-select";
+import { GroupSelect, type GroupOption } from "./group-select";
 import { changeUserGroup } from "./user-actions";
-import type { GroupCode } from "@prisma/client";
 
 /**
  * Small client wrapper around the admin "change group" form. The server
@@ -18,9 +17,11 @@ import type { GroupCode } from "@prisma/client";
 export function UserGroupForm({
   userId,
   defaultCode,
+  groups,
 }: {
   userId: string;
-  defaultCode: GroupCode | null;
+  defaultCode: string | null;
+  groups: GroupOption[];
 }) {
   const [pending, startTransition] = React.useTransition();
 
@@ -38,7 +39,7 @@ export function UserGroupForm({
   return (
     <form action={handleSubmit} className="space-y-2">
       <input type="hidden" name="userId" value={userId} />
-      <GroupSelect name="groupCode" defaultCode={defaultCode} />
+      <GroupSelect name="groupCode" defaultCode={defaultCode} groups={groups} />
       <Button type="submit" variant="brand" className="w-full" disabled={pending}>
         {pending ? (
           <>

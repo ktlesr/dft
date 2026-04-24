@@ -9,8 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { GROUP_LABELS } from "@/lib/constants";
-import type { GroupCode } from "@prisma/client";
 
 /**
  * Group selector for the admin "change user group" form.
@@ -18,18 +16,26 @@ import type { GroupCode } from "@prisma/client";
  * Radix Select forbids empty-string item values, so the UI uses a
  * `__NONE__` sentinel for "no group". A sibling hidden input mirrors the
  * selection as the exact value the server action expects (`""` for
- * unassigned, otherwise the `GroupCode`).
+ * unassigned, otherwise the `code`).
+ *
+ * Faz 7: `groups` is now a runtime prop fetched from the DB (admin-managed
+ * groups) instead of a hardcoded enum.
  */
 
 const NONE = "__NONE__";
-const GROUP_CODES: GroupCode[] = ["UAK", "E2SC", "DFSF", "PGD", "PA"];
+
+export type GroupOption = {
+  code: string;
+  description: string | null;
+};
 
 type Props = {
   name: string;
-  defaultCode?: GroupCode | null;
+  defaultCode?: string | null;
+  groups: GroupOption[];
 };
 
-export function GroupSelect({ name, defaultCode }: Props) {
+export function GroupSelect({ name, defaultCode, groups }: Props) {
   const [value, setValue] = React.useState<string>(defaultCode ?? NONE);
 
   return (
@@ -40,10 +46,12 @@ export function GroupSelect({ name, defaultCode }: Props) {
         </SelectTrigger>
         <SelectContent>
           <SelectItem value={NONE}>— Grup atanmamış —</SelectItem>
-          {GROUP_CODES.map((c) => (
-            <SelectItem key={c} value={c}>
-              <span className="font-medium">{c}</span>{" "}
-              <span className="text-muted-foreground">· {GROUP_LABELS[c].description}</span>
+          {groups.map((g) => (
+            <SelectItem key={g.code} value={g.code}>
+              <span className="font-medium">{g.code}</span>
+              {g.description ? (
+                <span className="text-muted-foreground"> · {g.description}</span>
+              ) : null}
             </SelectItem>
           ))}
         </SelectContent>

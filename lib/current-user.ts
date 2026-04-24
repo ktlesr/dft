@@ -3,7 +3,7 @@ import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 
-import type { GroupCode, Role, UserStatus } from "@prisma/client";
+import type { Role, UserStatus } from "@prisma/client";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -16,7 +16,9 @@ export type CurrentUser = {
   status: UserStatus;
   roles: Role[];
   groupId: string | null;
-  groupCode: GroupCode | null;
+  groupCode: string | null;
+  groupName: string | null;
+  groupDescription: string | null;
 };
 
 /**
@@ -45,6 +47,8 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     roles: row.roles.map((r) => r.role),
     groupId: row.groupId,
     groupCode: row.group?.code ?? null,
+    groupName: row.group?.name ?? null,
+    groupDescription: row.group?.description ?? null,
   };
 });
 

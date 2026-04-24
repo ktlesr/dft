@@ -10,7 +10,7 @@ import { hashPassword } from "@/lib/password";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { createToken, hashToken } from "@/lib/tokens";
 import { sendMail } from "@/lib/mail";
-import type { GroupCode, Role } from "@prisma/client";
+import type { Role } from "@prisma/client";
 
 export type InviteFormState = {
   ok: boolean;
@@ -28,11 +28,18 @@ const createSchema = z.object({
     .email("Geçerli bir e-posta girin.")
     .transform((v) => v.toLowerCase()),
   // "NONE" is a Radix-friendly sentinel (empty strings are reserved there)
-  // and is normalised to `undefined` before we look up the group.
+  // and is normalised to `undefined` before we look up the group. Codes
+  // are validated against the DB at use time — Faz 7 made them dynamic.
   groupCode: z
-    .enum(["UAK", "E2SC", "DFSF", "PGD", "PA", "NONE"])
+    .string()
+    .trim()
+    .max(50)
     .optional()
-    .transform((v) => (v === "NONE" ? undefined : v)),
+    .transform((v) => (!v || v === "NONE" ? undefined : v))
+    .refine(
+      (v) => v === undefined || /^[A-Z0-9_-]+$/i.test(v),
+      "Geçersiz grup kodu.",
+    ),
   roles: z
     .array(z.enum(["USER", "MODERATOR", "RAPPORTEUR", "ADMIN"]))
     .optional()
@@ -74,8 +81,11 @@ export async function createInvite(
   }
 
   const group = parsed.data.groupCode
-    ? await prisma.group.findUnique({ where: { code: parsed.data.groupCode as GroupCode } })
+    ? await prisma.group.findUnique({ where: { code: parsed.data.groupCode } })
     : null;
+  if (parsed.data.groupCode && !group) {
+    return { ok: false, errors: { groupCode: ["Seçilen grup bulunamadı."] } };
+  }
 
   const { token, tokenHash } = createToken();
   const expiresAt = new Date(Date.now() + parsed.data.daysValid * 86_400_000);

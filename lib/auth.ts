@@ -4,7 +4,7 @@ import NextAuth, { CredentialsSignin } from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import Credentials from "next-auth/providers/credentials";
 import { z } from "zod";
-import type { GroupCode, Role, UserStatus } from "@prisma/client";
+import type { Role, UserStatus } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/password";
@@ -20,7 +20,7 @@ type DFTClaims = {
   status?: UserStatus;
   roles?: Role[];
   groupId?: string | null;
-  groupCode?: GroupCode | null;
+  groupCode?: string | null;
   lastSync?: number;
 };
 
@@ -32,7 +32,7 @@ type DFTAuthorized = {
   status: UserStatus;
   roles: Role[];
   groupId: string | null;
-  groupCode: GroupCode | null;
+  groupCode: string | null;
 };
 
 /**
@@ -188,7 +188,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           status: UserStatus;
           roles: Role[];
           groupId: string | null;
-          groupCode: GroupCode | null;
+          groupCode: string | null;
         };
       };
       if (t.uid) s.user.id = t.uid;

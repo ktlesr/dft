@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { prisma } from "@/lib/prisma";
 import { hashToken } from "@/lib/tokens";
-import { GROUP_LABELS, ROLE_LABELS } from "@/lib/constants";
+import { ROLE_LABELS } from "@/lib/constants";
 import { AcceptInviteForm } from "@/features/invites/accept-form";
 
 export const metadata = { title: "Davet kabul" };
@@ -18,9 +18,13 @@ export default async function AcceptInvitePage({ params }: { params: Params }) {
     where: { tokenHash: hashToken(token) },
   });
 
-  const groups = await prisma.group.findMany();
-  const groupMap = new Map(groups.map((g) => [g.id, g.code]));
-  const groupCode = invite?.groupId ? groupMap.get(invite.groupId) : null;
+  const groups = await prisma.group.findMany({
+    select: { id: true, code: true, description: true },
+  });
+  const groupMap = new Map(groups.map((g) => [g.id, g]));
+  const inviteGroup = invite?.groupId ? groupMap.get(invite.groupId) : null;
+  const groupCode = inviteGroup?.code ?? null;
+  const groupDescription = inviteGroup?.description ?? null;
 
   if (!invite) notFound();
 
@@ -42,7 +46,12 @@ export default async function AcceptInvitePage({ params }: { params: Params }) {
           <>
             <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/30 p-3">
               <span className="text-sm font-medium">{invite.email}</span>
-              {groupCode ? <Badge variant="outline">{groupCode} · {GROUP_LABELS[groupCode].description}</Badge> : null}
+              {groupCode ? (
+                <Badge variant="outline">
+                  {groupCode}
+                  {groupDescription ? ` · ${groupDescription}` : ""}
+                </Badge>
+              ) : null}
               {(invite.roles.length > 0 ? invite.roles : (["USER"] as const)).map((r) => (
                 <Badge key={r} variant="secondary">
                   {ROLE_LABELS[r]}

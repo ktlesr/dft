@@ -23,7 +23,7 @@ import { Sidebar } from "@/components/app/sidebar";
 import { SignOutMenuItem } from "@/components/app/sign-out-menu-item";
 import { ROLE_LABELS } from "@/lib/constants";
 import { avatarUrl, initials } from "@/lib/utils";
-import type { Role, GroupCode } from "@prisma/client";
+import type { Role } from "@prisma/client";
 
 type HeaderProps = {
   user: {
@@ -32,7 +32,8 @@ type HeaderProps = {
     email: string;
     image: string | null;
     roles: Role[];
-    groupCode: GroupCode | null;
+    groupCode: string | null;
+    groupDescription: string | null;
   };
   unreadNotifications?: number;
 };

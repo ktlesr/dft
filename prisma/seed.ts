@@ -12,11 +12,11 @@
  * content where possible.
  */
 import { hash } from "@node-rs/argon2";
-import { PrismaClient, Role, GroupCode, Prisma } from "@prisma/client";
+import { PrismaClient, Role, Prisma } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const GROUPS: { code: GroupCode; name: string; description: string }[] = [
+const GROUPS: { code: string; name: string; description: string }[] = [
   { code: "UAK", name: "UAK", description: "Uluslararası ve Akademik Koordinasyon" },
   { code: "E2SC", name: "E2SC", description: "Education, Employment, Social & Community" },
   { code: "DFSF", name: "DFSF", description: "Digital, Finance, Services & Foresight" },
@@ -79,7 +79,7 @@ async function main() {
     ),
   );
   const byCode = new Map(groups.map((g) => [g.code, g]));
-  const gid = (c: GroupCode) => {
+  const gid = (c: string) => {
     const g = byCode.get(c);
     if (!g) throw new Error(`missing group ${c}`);
     return g.id;
@@ -96,7 +96,7 @@ async function main() {
   });
 
   console.log("• Group moderators & rapporteurs & members…");
-  type Created = { code: GroupCode; moderator: string; rapporteur: string; members: string[] };
+  type Created = { code: string; moderator: string; rapporteur: string; members: string[] };
   const pwd = "Uye!2026Dev";
   const created: Created[] = [];
   for (const g of GROUPS) {

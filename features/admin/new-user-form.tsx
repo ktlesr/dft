@@ -13,10 +13,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Field } from "@/features/shared/form-field";
-import { GROUP_LABELS, ROLE_LABELS } from "@/lib/constants";
+import { ROLE_LABELS } from "@/lib/constants";
 import { createUserByAdmin, type CreateUserFormState } from "./user-actions";
 
 const INITIAL: CreateUserFormState = { ok: true };
+
+export type NewUserGroupOption = {
+  code: string;
+  description: string | null;
+};
 
 /** Generate a human-pronounceable strong password that satisfies the policy. */
 function generatePassword(): string {
@@ -44,7 +49,7 @@ function generatePassword(): string {
   return out.join("");
 }
 
-export function NewUserForm() {
+export function NewUserForm({ groups }: { groups: NewUserGroupOption[] }) {
   const [state, action, pending] = useActionState(createUserByAdmin, INITIAL);
   const [showPassword, setShowPassword] = React.useState(false);
   const [password, setPassword] = React.useState("");
@@ -137,9 +142,10 @@ export function NewUserForm() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="NONE">Grup atanmasın</SelectItem>
-                {(Object.keys(GROUP_LABELS) as Array<keyof typeof GROUP_LABELS>).map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c} · {GROUP_LABELS[c].description}
+                {groups.map((g) => (
+                  <SelectItem key={g.code} value={g.code}>
+                    {g.code}
+                    {g.description ? ` · ${g.description}` : ""}
                   </SelectItem>
                 ))}
               </SelectContent>

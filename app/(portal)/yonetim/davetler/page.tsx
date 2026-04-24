@@ -26,8 +26,12 @@ export default async function AdminInvitesPage() {
     },
   });
 
-  const groups = await prisma.group.findMany();
+  const groups = await prisma.group.findMany({
+    orderBy: { code: "asc" },
+    select: { id: true, code: true, description: true },
+  });
   const groupMap = new Map(groups.map((g) => [g.id, g.code]));
+  const inviteFormGroups = groups.map((g) => ({ code: g.code, description: g.description }));
 
   const now = Date.now();
 
@@ -45,7 +49,7 @@ export default async function AdminInvitesPage() {
           <CardTitle className="text-base">Yeni davet</CardTitle>
         </CardHeader>
         <CardContent>
-          <NewInviteForm />
+          <NewInviteForm groups={inviteFormGroups} />
         </CardContent>
       </Card>
 

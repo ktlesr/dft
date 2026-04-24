@@ -8,15 +8,15 @@ import { BrandLockup } from "@/components/brand/logo";
 import { Badge } from "@/components/ui/badge";
 import { filterNavForRoles, NAV_GROUPS, type NavItem } from "@/components/app/nav-config";
 import { cn } from "@/lib/utils";
-import { GROUP_LABELS } from "@/lib/constants";
-import type { Role, GroupCode } from "@prisma/client";
+import type { Role } from "@prisma/client";
 
 type SidebarProps = {
   user: {
     name: string | null;
     email: string;
     roles: Role[];
-    groupCode: GroupCode | null;
+    groupCode: string | null;
+    groupDescription: string | null;
   } | null;
   className?: string;
 };
@@ -57,9 +57,11 @@ export function Sidebar({ user, className }: SidebarProps) {
               {user.groupCode}
             </Badge>
           </div>
-          <p className="mt-1 truncate text-xs text-muted-foreground">
-            {GROUP_LABELS[user.groupCode].description}
-          </p>
+          {user.groupDescription ? (
+            <p className="mt-1 truncate text-xs text-muted-foreground">
+              {user.groupDescription}
+            </p>
+          ) : null}
         </div>
       ) : null}
 

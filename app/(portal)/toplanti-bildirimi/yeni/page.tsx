@@ -5,7 +5,6 @@ import { EmptyState } from "@/components/app/empty-state";
 import { MeetingForm } from "@/features/meeting/meeting-form";
 import { requireActiveUser } from "@/lib/current-user";
 import { canCreateMeeting } from "@/lib/rbac";
-import { GROUP_LABELS } from "@/lib/constants";
 import { Users } from "lucide-react";
 
 export const metadata = { title: "Toplantı Bildirimi Ekle" };
@@ -31,7 +30,7 @@ export default async function NewMeetingPage() {
     <div className="mx-auto max-w-3xl">
       <PageHeader
         title="Toplantı Bildirimi Ekle"
-        description={`${user.groupCode ?? "Grup"} · ${user.groupCode ? GROUP_LABELS[user.groupCode].description : ""}`}
+        description={`${user.groupCode ?? "Grup"}${user.groupDescription ? ` · ${user.groupDescription}` : ""}`}
         breadcrumbs={[{ label: "Toplantı Bildirimi" }]}
       />
       <MeetingForm />

@@ -9,7 +9,7 @@ import { requireAdmin } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password";
 import { approvalNotificationEmail, sendMail } from "@/lib/mail";
-import type { GroupCode, Role } from "@prisma/client";
+import type { Role } from "@prisma/client";
 
 type ActionResult = { ok: true } | { ok: false; message: string };
 
@@ -32,8 +32,16 @@ export type CreateUserFormState = {
  * roles (MODERATOR / RAPPORTEUR / ADMIN) are added on top.
  */
 
-const NEW_USER_GROUP = z.enum(["UAK", "E2SC", "DFSF", "PGD", "PA", "NONE"]);
 const EXTRA_ROLE = z.enum(["MODERATOR", "RAPPORTEUR", "ADMIN"]);
+
+// Faz 7: group codes are now free-form strings kept in the DB. Accept any
+// well-formed code string (validated against existence at use time) or the
+// `NONE` sentinel meaning "unassigned".
+const NEW_USER_GROUP = z
+  .string()
+  .trim()
+  .max(50)
+  .refine((v) => v === "NONE" || /^[A-Z0-9_-]+$/i.test(v), "Geçersiz grup kodu.");
 
 const createUserSchema = z.object({
   name: z
@@ -93,7 +101,10 @@ export async function createUserByAdmin(
   const group =
     parsed.data.groupCode === "NONE"
       ? null
-      : await prisma.group.findUnique({ where: { code: parsed.data.groupCode as GroupCode } });
+      : await prisma.group.findUnique({ where: { code: parsed.data.groupCode } });
+  if (parsed.data.groupCode !== "NONE" && !group) {
+    return { ok: false, errors: { groupCode: ["Seçilen grup bulunamadı."] } };
+  }
 
   const passwordHash = await hashPassword(parsed.data.password);
 
@@ -263,15 +274,25 @@ export async function removeRole(formData: FormData): Promise<void> {
   revalidatePath(`/yonetim/kullanicilar/${userId}`);
 }
 
-const groupValues = ["UAK", "E2SC", "DFSF", "PGD", "PA", ""] as const;
-const groupSchema = z.enum(groupValues);
+// Faz 7: group codes are free-form now. Validation is just a shape check;
+// existence is verified against the DB below.
+const groupSchema = z
+  .string()
+  .trim()
+  .max(50)
+  .refine((v) => v === "" || /^[A-Z0-9_-]+$/i.test(v), "Geçersiz grup kodu.");
 
 export async function changeUserGroup(formData: FormData): Promise<void> {
   const admin = await requireAdmin();
   const userId = idSchema.parse(formData.get("userId"));
   const code = groupSchema.parse(formData.get("groupCode"));
 
-  const target = code === "" ? null : await prisma.group.findUnique({ where: { code: code as GroupCode } });
+  const target = code === "" ? null : await prisma.group.findUnique({ where: { code } });
+  if (code !== "" && !target) {
+    // Silently noop — form options are sourced from DB so this path only
+    // fires on a crafted client.
+    return;
+  }
   await prisma.user.update({
     where: { id: userId },
     data: { groupId: target?.id ?? null },

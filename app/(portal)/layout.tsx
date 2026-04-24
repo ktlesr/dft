@@ -22,6 +22,7 @@ export default async function PortalLayout({ children }: { children: React.React
     image: user.image,
     roles: user.roles,
     groupCode: user.groupCode,
+    groupDescription: user.groupDescription,
   };
 
   const sidebarUser = {
@@ -29,6 +30,7 @@ export default async function PortalLayout({ children }: { children: React.React
     email: user.email,
     roles: user.roles,
     groupCode: user.groupCode,
+    groupDescription: user.groupDescription,
   };
 
   return (

@@ -1,9 +1,16 @@
-import type { GroupCode, Role } from "@prisma/client";
+import type { Role } from "@prisma/client";
 
 export const APP_NAME = "DFT Portal";
 export const APP_FULL_NAME = "DFT Kapalı Portalı";
 
-export const GROUP_LABELS: Record<GroupCode, { name: string; description: string }> = {
+/**
+ * Faz 7: Groups are now fully dynamic (admin-managed). `GROUP_LABELS`
+ * persists only as a fallback dictionary for the 5 codes that were
+ * hard-coded before — handy when a legacy row surfaces and its `Group`
+ * relation isn't in scope. New callers should prefer `group.name` /
+ * `group.description` fetched from the DB.
+ */
+export const GROUP_LABELS: Record<string, { name: string; description: string }> = {
   UAK: {
     name: "UAK",
     description: "Uluslararası ve Akademik Koordinasyon",

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { requireAdmin } from "@/lib/current-user";
+import { prisma } from "@/lib/prisma";
 import { NewUserForm } from "@/features/admin/new-user-form";
 import { AdminPanelNav } from "@/components/app/admin-nav";
 
@@ -12,6 +13,10 @@ export const dynamic = "force-dynamic";
 
 export default async function NewUserPage() {
   await requireAdmin();
+  const groups = await prisma.group.findMany({
+    orderBy: { code: "asc" },
+    select: { code: true, description: true },
+  });
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -33,7 +38,7 @@ export default async function NewUserPage() {
         }
       />
       <AdminPanelNav />
-      <NewUserForm />
+      <NewUserForm groups={groups} />
     </div>
   );
 }

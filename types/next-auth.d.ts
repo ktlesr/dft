@@ -1,4 +1,4 @@
-import type { GroupCode, Role, UserStatus } from "@prisma/client";
+import type { Role, UserStatus } from "@prisma/client";
 import type { DefaultSession } from "next-auth";
 
 /**
@@ -13,7 +13,7 @@ declare module "@auth/core/types" {
       status: UserStatus;
       roles: Role[];
       groupId: string | null;
-      groupCode: GroupCode | null;
+      groupCode: string | null;
     } & DefaultSession["user"];
   }
 
@@ -21,7 +21,7 @@ declare module "@auth/core/types" {
     status?: UserStatus;
     roles?: Role[];
     groupId?: string | null;
-    groupCode?: GroupCode | null;
+    groupCode?: string | null;
   }
 }
 
@@ -31,7 +31,7 @@ declare module "@auth/core/jwt" {
     status?: UserStatus;
     roles?: Role[];
     groupId?: string | null;
-    groupCode?: GroupCode | null;
+    groupCode?: string | null;
     lastSync?: number;
   }
 }
@@ -43,7 +43,7 @@ declare module "next-auth" {
       status: UserStatus;
       roles: Role[];
       groupId: string | null;
-      groupCode: GroupCode | null;
+      groupCode: string | null;
     } & DefaultSession["user"];
   }
 
@@ -51,6 +51,6 @@ declare module "next-auth" {
     status?: UserStatus;
     roles?: Role[];
     groupId?: string | null;
-    groupCode?: GroupCode | null;
+    groupCode?: string | null;
   }
 }

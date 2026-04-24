@@ -12,7 +12,6 @@ import { requireActiveUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import {
   BOARD_KIND_LABELS,
-  GROUP_LABELS,
   REPORT_KIND_LABELS,
   ROLE_LABELS,
 } from "@/lib/constants";
@@ -88,7 +87,7 @@ export default async function MyGroupPage() {
     <div className="mx-auto max-w-6xl">
       <PageHeader
         title={`Çalışma Grubum · ${user.groupCode}`}
-        description={GROUP_LABELS[user.groupCode].description}
+        description={user.groupDescription ?? undefined}
         breadcrumbs={[{ label: "Çalışma Grubum" }]}
         actions={
           <Button asChild variant="secondary">

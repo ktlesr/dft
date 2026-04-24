@@ -1,4 +1,4 @@
-import type { GroupCode, Role } from "@prisma/client";
+import type { Role } from "@prisma/client";
 
 export type SessionUser = {
   id: string;
@@ -8,7 +8,7 @@ export type SessionUser = {
   status: "PENDING_APPROVAL" | "ACTIVE" | "SUSPENDED" | "REJECTED";
   roles: Role[];
   groupId: string | null;
-  groupCode: GroupCode | null;
+  groupCode: string | null;
 };
 
 export const hasRole = (user: Pick<SessionUser, "roles">, ...roles: Role[]) =>

@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/app/empty-state";
+import { FilterSelect } from "@/components/app/filter-select";
 import { requireAdmin } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { formatDateTime } from "@/lib/utils";
@@ -79,22 +80,18 @@ export default async function AuditLogPage({ searchParams }: { searchParams: Sea
       <AdminPanelNav />
 
       <form action="/yonetim/loglar" className="mb-4 flex flex-wrap gap-2">
-        <select
-          name="action"
-          defaultValue={filterAction ?? ""}
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          aria-label="Eylem filtresi"
-        >
-          <option value="">Tüm eylemler</option>
-          {(Object.keys(ACTION_LABELS) as AuditAction[]).map((k) => (
-            <option key={k} value={k}>
-              {ACTION_LABELS[k]}
-            </option>
-          ))}
-        </select>
-        <Button type="submit" variant="secondary">
-          Filtrele
-        </Button>
+        <FilterSelect
+          param="action"
+          value={filterAction}
+          options={(Object.keys(ACTION_LABELS) as AuditAction[]).map((k) => ({
+            value: k,
+            label: ACTION_LABELS[k],
+          }))}
+          placeholder="Tüm eylemler"
+          allLabel="Tüm eylemler"
+          ariaLabel="Eylem filtresi"
+          className="min-w-[220px]"
+        />
         {action || actor || target ? (
           <Button asChild variant="ghost">
             <Link href="/yonetim/loglar">Temizle</Link>

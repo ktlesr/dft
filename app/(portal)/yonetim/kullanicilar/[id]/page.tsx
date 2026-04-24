@@ -10,11 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { requireAdmin } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
-import {
-  GROUP_LABELS,
-  ROLE_LABELS,
-  USER_STATUS_LABELS,
-} from "@/lib/constants";
+import { ROLE_LABELS, USER_STATUS_LABELS } from "@/lib/constants";
 import { formatDateTime, initials } from "@/lib/utils";
 import {
   addRole,
@@ -24,15 +20,15 @@ import {
   removeRole,
   suspendUser,
 } from "@/features/admin/user-actions";
+import { GroupSelect } from "@/features/admin/group-select";
 import { AdminPanelNav } from "@/components/app/admin-nav";
-import type { GroupCode, Role } from "@prisma/client";
+import type { Role } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 type Params = Promise<{ id: string }>;
 type SearchParams = Promise<{ olusturuldu?: string }>;
 
 const ALL_ROLES: Role[] = ["USER", "MODERATOR", "RAPPORTEUR", "ADMIN"];
-const GROUP_CODES: GroupCode[] = ["UAK", "E2SC", "DFSF", "PGD", "PA"];
 
 export default async function AdminUserDetail({
   params,
@@ -283,18 +279,7 @@ export default async function AdminUserDetail({
             <CardContent>
               <form action={changeUserGroup} className="space-y-2">
                 <input type="hidden" name="userId" value={user.id} />
-                <select
-                  name="groupCode"
-                  defaultValue={user.group?.code ?? ""}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                  <option value="">— Grup atanmamış —</option>
-                  {GROUP_CODES.map((c) => (
-                    <option key={c} value={c}>
-                      {c} · {GROUP_LABELS[c].description}
-                    </option>
-                  ))}
-                </select>
+                <GroupSelect name="groupCode" defaultCode={user.group?.code ?? null} />
                 <Button type="submit" variant="brand" className="w-full">
                   Grubu güncelle
                 </Button>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/app/empty-state";
+import { FilterSelect } from "@/components/app/filter-select";
 import { requireActiveUser } from "@/lib/current-user";
 import { listBoardPosts } from "@/features/board/queries";
 import { NewBoardPostDialog } from "@/features/board/new-post-dialog";
@@ -73,19 +74,14 @@ export default async function GroupBoardPage({ searchParams }: { searchParams: S
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input name="q" defaultValue={q ?? ""} placeholder="Grup paylaşımlarında ara…" className="pl-9" />
         </div>
-        <select
-          name="tur"
-          defaultValue={kind ?? ""}
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          aria-label="Tür filtresi"
-        >
-          <option value="">Tüm türler</option>
-          {Object.entries(BOARD_KIND_LABELS).map(([k, label]) => (
-            <option key={k} value={k}>
-              {label}
-            </option>
-          ))}
-        </select>
+        <FilterSelect
+          param="tur"
+          value={kind}
+          options={Object.entries(BOARD_KIND_LABELS).map(([v, label]) => ({ value: v, label }))}
+          placeholder="Tüm türler"
+          allLabel="Tüm türler"
+          ariaLabel="Tür filtresi"
+        />
         <Button type="submit" variant="secondary">
           Ara
         </Button>

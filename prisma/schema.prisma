@@ -195,6 +195,9 @@ model Profile {
   bio         String?
   expertise   String[] @default([])
   themePref   String?  // "light" | "dark" | "system"
+  // Faz 6: üye profil CV'si (ayrı storage anahtarı; User.image fotoğraf için).
+  cvStorageKey String?
+  cvOriginalName String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -360,6 +363,9 @@ model BoardPost {
   kind        BoardPostKind
   title       String
   body        String          @db.Text
+  // Faz 6: genel panoda editörün "TR33 Bölgesi Açısından Değerlendirme"
+  // metni için ayrı alan. Grup panosunda boş bırakılır.
+  assessment  String?         @db.Text
   tags        String[]        @default([])
   externalUrl String?
   pinned      Boolean         @default(false)
@@ -435,7 +441,9 @@ model GroupReport {
   periodStart DateTime?
   periodEnd   DateTime?
   summary     String?    @db.Text
-  body        String     @db.Text
+  // Faz 6: Rapor formu sadeleştirildi; body artık opsiyonel. Eski kayıtlar
+  // dolu gelir; yeni kayıtlar sadece summary + attachment ile oluşturulur.
+  body        String?    @db.Text
   outputs     String?    @db.Text
   authorId    String
   author      User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
@@ -511,6 +519,8 @@ model SuccessfulProjectRecord {
   role            String?
   kind            String?
   resultDocument  String?
+  // Faz 6: proje konsorsiyumu — ortak kuruluş ve paydaş listesi.
+  consortium      String?      @db.Text
   summary         String?      @db.Text
   attachments     Attachment[]
   createdAt       DateTime     @default(now())
@@ -552,6 +562,10 @@ model EventRecord {
   location    String?
   role        String?
   topic       String?
+  // Faz 6 yeni alanlar
+  organizer   String?
+  format      String?      // "ONLINE" | "FIZIKI"
+  externalUrl String?
   summary     String?      @db.Text
   notes       String?      @db.Text
   attachments Attachment[]

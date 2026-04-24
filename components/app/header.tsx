@@ -22,11 +22,12 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Sidebar } from "@/components/app/sidebar";
 import { SignOutMenuItem } from "@/components/app/sign-out-menu-item";
 import { ROLE_LABELS } from "@/lib/constants";
-import { initials } from "@/lib/utils";
+import { avatarUrl, initials } from "@/lib/utils";
 import type { Role, GroupCode } from "@prisma/client";
 
 type HeaderProps = {
   user: {
+    id: string;
     name: string | null;
     email: string;
     image: string | null;
@@ -86,7 +87,9 @@ export function Header({ user, unreadNotifications = 0 }: HeaderProps) {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-10 gap-2 px-2">
               <Avatar className="h-8 w-8">
-                {user.image ? <AvatarImage src={user.image} alt={user.name ?? user.email} /> : null}
+                {user.image ? (
+                  <AvatarImage src={avatarUrl(user.id, user.image)} alt={user.name ?? user.email} />
+                ) : null}
                 <AvatarFallback>{initials(user.name, user.email)}</AvatarFallback>
               </Avatar>
               <span className="hidden text-left sm:block">

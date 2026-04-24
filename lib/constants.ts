@@ -40,20 +40,37 @@ export const USER_STATUS_LABELS = {
   REJECTED: "Reddedildi",
 } as const;
 
+/**
+ * Pano türü etiketleri. Enum değerleri schema'da aynı kalır — sadece
+ * görünen etiketler Faz 6 sadeleştirmesiyle güncellendi. `SUGGESTION` ve
+ * `DISCUSSION` yeni paylaşımlarda seçilemez (aşağıdaki scope listelerine
+ * bakın) ama eski kayıtlar için legacy etiket olarak tutuluyor.
+ */
 export const BOARD_KIND_LABELS = {
-  NEWS: "Haber",
-  ANNOUNCEMENT: "Duyuru",
-  SUGGESTION: "Öneri",
+  NEWS: "Haber/Etkinlik",
+  ANNOUNCEMENT: "Çağrı/Hibe Duyurusu",
+  RESOURCE: "Doküman Paylaşımı",
   IDEA: "Fikir",
-  RESOURCE: "Kaynak",
+  SUGGESTION: "Öneri",
   DISCUSSION: "Tartışma",
+} as const;
+
+/**
+ * Her pano kapsamında yeni paylaşım formunda ve filtrede gösterilecek
+ * türler. Yeni kayıtlar için izinli olan enum değerleri bu listededir.
+ * Detay/listelemede tüm enum değerleri (legacy dahil) görüntülenmeye
+ * devam eder.
+ */
+export const BOARD_KIND_BY_SCOPE = {
+  GENERAL: ["NEWS", "ANNOUNCEMENT", "RESOURCE"] as const,
+  GROUP: ["NEWS", "ANNOUNCEMENT", "IDEA"] as const,
 } as const;
 
 export const REPORT_KIND_LABELS = {
   YOL_HARITASI: "Yol Haritası",
   IKI_AYLIK: "İki Aylık",
   KAPANIS: "Kapanış",
-  ANLIK_NOT: "Anlık Not",
+  ANLIK_NOT: "Diğer",
 } as const;
 
 export const DOCUMENT_CATEGORY_LABELS = {

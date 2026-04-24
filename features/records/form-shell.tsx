@@ -17,6 +17,7 @@ export function FormShell({
   cancelHref = "/kayit/yeni",
   submitLabel = "Kaydet",
   showAttachments = true,
+  attachmentsLabel = "Ek dosyalar",
 }: {
   state: RecordFormState;
   pending: boolean;
@@ -24,6 +25,7 @@ export function FormShell({
   cancelHref?: string;
   submitLabel?: string;
   showAttachments?: boolean;
+  attachmentsLabel?: string;
 }) {
   return (
     <Card>
@@ -39,7 +41,7 @@ export function FormShell({
 
         {showAttachments ? (
           <div className="space-y-1.5">
-            <p className="text-sm font-medium">Ek dosyalar</p>
+            <p className="text-sm font-medium">{attachmentsLabel}</p>
             <AttachmentInput disabled={pending} />
           </div>
         ) : null}

@@ -16,6 +16,7 @@ export default async function PortalLayout({ children }: { children: React.React
   });
 
   const headerUser = {
+    id: user.id,
     name: user.name,
     email: user.email,
     image: user.image,

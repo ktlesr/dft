@@ -22,7 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { AttachmentInput } from "@/features/shared/attachment-input";
 import { Field } from "@/features/shared/form-field";
-import { BOARD_KIND_LABELS } from "@/lib/constants";
+import { BOARD_KIND_LABELS, BOARD_KIND_BY_SCOPE } from "@/lib/constants";
 import { createBoardPost, type BoardFormState } from "./actions";
 
 const INITIAL: BoardFormState = { ok: true };
@@ -38,6 +38,8 @@ export function NewBoardPostDialog({
 }) {
   const [state, action, pending] = useActionState(createBoardPost, INITIAL);
   const [open, setOpen] = React.useState(false);
+  const allowedKinds = BOARD_KIND_BY_SCOPE[scope];
+  const defaultKind = allowedKinds[0];
 
   // Close dialog automatically after a successful submit (no errors, not pending).
   React.useEffect(() => {
@@ -53,7 +55,7 @@ export function NewBoardPostDialog({
           Yeni paylaşım
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {scope === "GENERAL" ? "Genel panoya paylaşım" : "Grup panosuna paylaşım"}
@@ -77,32 +79,55 @@ export function NewBoardPostDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <Field name="kind" label="Tür" required error={state.errors?.kind}>
-              <Select name="kind" defaultValue="NEWS">
+              <Select name="kind" defaultValue={defaultKind}>
                 <SelectTrigger id="kind">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(BOARD_KIND_LABELS).map(([k, label]) => (
+                  {allowedKinds.map((k) => (
                     <SelectItem key={k} value={k}>
-                      {label}
+                      {BOARD_KIND_LABELS[k]}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </Field>
 
-            <Field name="externalUrl" label="Bağlantı (opsiyonel)" error={state.errors?.externalUrl}>
-              <Input id="externalUrl" name="externalUrl" type="url" placeholder="https://…" />
-            </Field>
+            {scope === "GENERAL" ? (
+              <Field name="publishedAt" label="Paylaşım tarihi" hint="Boş bırakırsanız bugün kaydedilir." error={state.errors?.publishedAt}>
+                <Input id="publishedAt" name="publishedAt" type="date" />
+              </Field>
+            ) : (
+              <Field name="externalUrl" label="Bağlantı (opsiyonel)" error={state.errors?.externalUrl}>
+                <Input id="externalUrl" name="externalUrl" type="url" placeholder="https://…" />
+              </Field>
+            )}
           </div>
 
-          <Field name="title" label="Başlık" required error={state.errors?.title}>
+          <Field name="title" label="Paylaşım ismi" required error={state.errors?.title}>
             <Input id="title" name="title" required maxLength={200} />
           </Field>
 
-          <Field name="body" label="İçerik" required error={state.errors?.body}>
+          {scope === "GENERAL" ? (
+            <Field name="externalUrl" label="İlgili bağlantı (opsiyonel)" error={state.errors?.externalUrl}>
+              <Input id="externalUrl" name="externalUrl" type="url" placeholder="https://…" />
+            </Field>
+          ) : null}
+
+          <Field name="body" label="Paylaşımın içeriği" required error={state.errors?.body}>
             <Textarea id="body" name="body" rows={5} required maxLength={10_000} />
           </Field>
+
+          {scope === "GENERAL" ? (
+            <Field
+              name="assessment"
+              label="Paylaşımın TR33 Bölgesi açısından değerlendirmesi"
+              hint="Opsiyonel. Yayınlandıktan sonra tüm üyelere gösterilir."
+              error={state.errors?.assessment}
+            >
+              <Textarea id="assessment" name="assessment" rows={4} maxLength={10_000} />
+            </Field>
+          ) : null}
 
           <Field name="tags" label="Etiketler" hint="Virgülle ayırın. En fazla 12." error={state.errors?.tags}>
             <Input id="tags" name="tags" placeholder="örn. program, pilot, yayın" />

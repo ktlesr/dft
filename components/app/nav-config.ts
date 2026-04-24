@@ -7,7 +7,6 @@ import {
   FolderOpen,
   User,
   CalendarDays,
-  ClipboardList,
   FileSpreadsheet,
   Settings2,
   type LucideIcon,
@@ -50,12 +49,6 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Toplantı Bildirimi Ekle",
         icon: CalendarDays,
         roles: ["MODERATOR", "ADMIN"],
-      },
-      {
-        href: "/tutanak/yeni",
-        label: "Toplantı Tutanağı Ekle",
-        icon: ClipboardList,
-        roles: ["RAPPORTEUR", "ADMIN"],
       },
       {
         href: "/rapor/yeni",

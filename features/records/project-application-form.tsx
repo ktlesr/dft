@@ -6,10 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Field } from "@/features/shared/form-field";
-import {
-  PROJECT_APPLICATION_KIND_LABELS,
-  PROJECT_APPLICATION_STATUS_LABELS,
-} from "@/lib/constants";
+import { PROJECT_APPLICATION_KIND_LABELS } from "@/lib/constants";
 import { createProjectApplication, type RecordFormState } from "./actions";
 import { FormShell } from "./form-shell";
 
@@ -35,21 +32,6 @@ export function ProjectApplicationForm() {
 
           <Field name="applicationDate" label="Başvuru tarihi" error={state.errors?.applicationDate}>
             <Input id="applicationDate" name="applicationDate" type="date" />
-          </Field>
-
-          <Field name="status" label="Durum" required error={state.errors?.status}>
-            <Select name="status" defaultValue="PLANLANIYOR">
-              <SelectTrigger id="status">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(PROJECT_APPLICATION_STATUS_LABELS).map(([k, label]) => (
-                  <SelectItem key={k} value={k}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </Field>
 
           <Field name="budget" label="Toplam bütçe" hint="Sayısal değer (₺)" error={state.errors?.budget}>
@@ -79,7 +61,7 @@ export function ProjectApplicationForm() {
             </Select>
           </Field>
 
-          <Field name="notes" label="Notlar" error={state.errors?.notes} className="md:col-span-2">
+          <Field name="notes" label="Proje Özeti" error={state.errors?.notes} className="md:col-span-2">
             <Textarea id="notes" name="notes" maxLength={5000} rows={4} />
           </Field>
         </div>

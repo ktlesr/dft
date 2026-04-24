@@ -67,21 +67,13 @@ export function ReportForm({ defaultKind = "YOL_HARITASI" }: { defaultKind?: key
               <Input id="periodEnd" name="periodEnd" type="date" defaultValue={pd.periodEnd} />
             </Field>
 
-            <Field name="summary" label="Kısa özet" error={state.errors?.summary} className="md:col-span-2">
-              <Textarea id="summary" name="summary" rows={3} maxLength={3000} />
-            </Field>
-
-            <Field name="body" label="Rapor metni" required error={state.errors?.body} className="md:col-span-2">
-              <Textarea id="body" name="body" rows={12} required maxLength={50_000} />
-            </Field>
-
-            <Field name="outputs" label="Çıktılar / öneriler" hint="Kapanış ve Yol Haritası raporlarında kullanılabilir." error={state.errors?.outputs} className="md:col-span-2">
-              <Textarea id="outputs" name="outputs" rows={4} maxLength={10_000} />
+            <Field name="summary" label="Özet" error={state.errors?.summary} className="md:col-span-2">
+              <Textarea id="summary" name="summary" rows={4} maxLength={3000} />
             </Field>
           </div>
 
           <div>
-            <p className="mb-1.5 text-sm font-medium">Ek dosyalar</p>
+            <p className="mb-1.5 text-sm font-medium">Rapor Ekle</p>
             <AttachmentInput disabled={pending} />
           </div>
 

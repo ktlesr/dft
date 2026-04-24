@@ -83,11 +83,15 @@ export default async function ReportDetailPage({ params }: { params: Params }) {
             </>
           ) : null}
 
-          <Separator />
-          <section>
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Rapor metni</p>
-            <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed">{report.body}</p>
-          </section>
+          {report.body ? (
+            <>
+              <Separator />
+              <section>
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Rapor metni</p>
+                <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed">{report.body}</p>
+              </section>
+            </>
+          ) : null}
 
           {report.outputs ? (
             <>

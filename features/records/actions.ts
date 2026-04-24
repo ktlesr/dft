@@ -101,13 +101,14 @@ export async function createProjectApplication(
     applicationDate: fd.get("applicationDate"),
     budget: fd.get("budget"),
     requestedSupport: fd.get("requestedSupport"),
-    status: fd.get("status"),
     kind: fd.get("kind"),
     partnerMemberIds: fd.getAll("partnerMemberIds").map(String),
     notes: fd.get("notes"),
   });
   if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
 
+  // `status` is no longer asked in the UI — let the DB default (PLANLANIYOR)
+  // apply. Admins or future edit flows can still change it.
   const row = await prisma.projectApplicationRecord.create({
     data: {
       ownerId: user.id,
@@ -117,7 +118,6 @@ export async function createProjectApplication(
       applicationDate: parsed.data.applicationDate ?? null,
       budget: decimalOrUndef(parsed.data.budget),
       requestedSupport: decimalOrUndef(parsed.data.requestedSupport),
-      status: parsed.data.status,
       kind: parsed.data.kind,
       partnerMemberIds: parsed.data.partnerMemberIds,
       notes: parsed.data.notes ?? null,
@@ -161,7 +161,7 @@ export async function createSuccessfulProject(
     supportAmount: fd.get("supportAmount"),
     role: fd.get("role"),
     kind: fd.get("kind"),
-    resultDocument: fd.get("resultDocument"),
+    consortium: fd.get("consortium"),
     summary: fd.get("summary"),
   });
   if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
@@ -178,7 +178,7 @@ export async function createSuccessfulProject(
       supportAmount: decimalOrUndef(parsed.data.supportAmount),
       role: parsed.data.role ?? null,
       kind: parsed.data.kind ?? null,
-      resultDocument: parsed.data.resultDocument ?? null,
+      consortium: parsed.data.consortium ?? null,
       summary: parsed.data.summary ?? null,
     },
   });
@@ -271,7 +271,9 @@ export async function createEventRecord(
     date: fd.get("date"),
     location: fd.get("location"),
     role: fd.get("role"),
-    topic: fd.get("topic"),
+    organizer: fd.get("organizer"),
+    format: fd.get("format"),
+    externalUrl: fd.get("externalUrl"),
     summary: fd.get("summary"),
     notes: fd.get("notes"),
   });
@@ -285,7 +287,9 @@ export async function createEventRecord(
       date: parsed.data.date,
       location: parsed.data.location ?? null,
       role: parsed.data.role ?? null,
-      topic: parsed.data.topic ?? null,
+      organizer: parsed.data.organizer ?? null,
+      format: parsed.data.format ?? null,
+      externalUrl: parsed.data.externalUrl ?? null,
       summary: parsed.data.summary ?? null,
       notes: parsed.data.notes ?? null,
     },
@@ -431,9 +435,7 @@ export async function createContentRecord(
     kind: fd.get("kind"),
     date: fd.get("date"),
     summary: fd.get("summary"),
-    mainDocument: fd.get("mainDocument"),
     tags: fd.get("tags"),
-    notes: fd.get("notes"),
   });
   if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
 
@@ -444,9 +446,7 @@ export async function createContentRecord(
       kind: parsed.data.kind ?? null,
       date: parsed.data.date,
       summary: parsed.data.summary ?? null,
-      mainDocument: parsed.data.mainDocument ?? null,
       tags: parsed.data.tags,
-      notes: parsed.data.notes ?? null,
     },
   });
 

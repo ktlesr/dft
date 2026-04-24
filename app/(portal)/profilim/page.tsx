@@ -6,9 +6,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { requireActiveUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { GROUP_LABELS, ROLE_LABELS, USER_STATUS_LABELS } from "@/lib/constants";
-import { formatDateTime } from "@/lib/utils";
+import { formatDateTime, initials } from "@/lib/utils";
 import { ProfileForm } from "@/features/profile/profile-form";
 import { PasswordChangeForm } from "@/features/profile/password-form";
+import { ProfilePhotoUploader, CvUploader } from "@/features/profile/media-forms";
 
 export const metadata = { title: "Profilim" };
 export const dynamic = "force-dynamic";
@@ -90,7 +91,29 @@ export default async function ProfilePage() {
           <TabsTrigger value="guvenlik">Güvenlik</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="bilgiler">
+        <TabsContent value="bilgiler" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Fotoğraf ve CV</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <ProfilePhotoUploader
+                currentPhotoUrl={userRow?.image ? `/api/profil/foto/${user.id}?v=${encodeURIComponent(userRow.image)}` : null}
+                fallback={initials(userRow?.name ?? null, user.email)}
+              />
+              <Separator />
+              <div>
+                <h4 className="mb-2 text-sm font-medium">Özgeçmiş (CV)</h4>
+                <CvUploader
+                  targetUserId={user.id}
+                  hasCv={!!userRow?.profile?.cvStorageKey}
+                  cvOriginalName={userRow?.profile?.cvOriginalName ?? null}
+                  viewerIsSelf
+                />
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardContent className="p-6">
               <ProfileForm defaults={defaults} />

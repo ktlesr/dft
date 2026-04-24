@@ -11,16 +11,16 @@ import { Separator } from "@/components/ui/separator";
 import { requireAdmin } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { ROLE_LABELS, USER_STATUS_LABELS } from "@/lib/constants";
-import { formatDateTime, initials } from "@/lib/utils";
+import { avatarUrl, formatDateTime, initials } from "@/lib/utils";
 import {
   addRole,
   approveUser,
-  changeUserGroup,
   rejectUser,
   removeRole,
   suspendUser,
 } from "@/features/admin/user-actions";
-import { GroupSelect } from "@/features/admin/group-select";
+import { UserGroupForm } from "@/features/admin/user-group-form";
+import { ProfilePhotoUploader, CvUploader } from "@/features/profile/media-forms";
 import { AdminPanelNav } from "@/components/app/admin-nav";
 import type { Role } from "@prisma/client";
 
@@ -104,7 +104,9 @@ export default async function AdminUserDetail({
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
               <Avatar className="h-14 w-14">
-                {user.image ? <AvatarImage src={user.image} alt={user.name ?? user.email} /> : null}
+                {user.image ? (
+                  <AvatarImage src={avatarUrl(user.id, user.image)} alt={user.name ?? user.email} />
+                ) : null}
                 <AvatarFallback className="text-lg">{initials(user.name, user.email)}</AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
@@ -277,13 +279,34 @@ export default async function AdminUserDetail({
               <CardTitle className="text-base">Çalışma grubu</CardTitle>
             </CardHeader>
             <CardContent>
-              <form action={changeUserGroup} className="space-y-2">
-                <input type="hidden" name="userId" value={user.id} />
-                <GroupSelect name="groupCode" defaultCode={user.group?.code ?? null} />
-                <Button type="submit" variant="brand" className="w-full">
-                  Grubu güncelle
-                </Button>
-              </form>
+              <UserGroupForm userId={user.id} defaultCode={user.group?.code ?? null} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Fotoğraf</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ProfilePhotoUploader
+                targetUserId={user.id}
+                currentPhotoUrl={user.image ? `/api/profil/foto/${user.id}?v=${encodeURIComponent(user.image)}` : null}
+                fallback={initials(user.name, user.email)}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Özgeçmiş (CV)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CvUploader
+                targetUserId={user.id}
+                hasCv={!!user.profile?.cvStorageKey}
+                cvOriginalName={user.profile?.cvOriginalName ?? null}
+                viewerIsSelf
+              />
             </CardContent>
           </Card>
         </div>

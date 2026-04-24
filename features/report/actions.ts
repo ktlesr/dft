@@ -45,11 +45,12 @@ export async function createReport(
     periodStart: fd.get("periodStart"),
     periodEnd: fd.get("periodEnd"),
     summary: fd.get("summary"),
-    body: fd.get("body"),
-    outputs: fd.get("outputs"),
   });
   if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
 
+  // body/outputs are no longer collected from the form — the rapor flow
+  // was simplified to "summary + attachments" only. body is nullable in
+  // the DB (Faz B migration), so we simply omit it.
   const row = await prisma.groupReport.create({
     data: {
       groupId: user.groupId,
@@ -58,8 +59,8 @@ export async function createReport(
       periodStart: parsed.data.periodStart ?? null,
       periodEnd: parsed.data.periodEnd ?? null,
       summary: parsed.data.summary ?? null,
-      body: parsed.data.body,
-      outputs: parsed.data.outputs ?? null,
+      body: null,
+      outputs: null,
       authorId: user.id,
     },
   });

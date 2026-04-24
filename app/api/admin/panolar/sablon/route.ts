@@ -2,8 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { getCurrentUser } from "@/lib/current-user";
 import { isAdmin } from "@/lib/rbac";
-import { BOARD_KIND_LABELS } from "@/lib/constants";
-import { boardKinds } from "@/features/board/schemas";
+import { BOARD_KIND_LABELS, BOARD_KIND_BY_SCOPE } from "@/lib/constants";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,21 +10,20 @@ export const dynamic = "force-dynamic";
 /**
  * GET /api/admin/panolar/sablon
  *
- * Returns an .xlsx template for bulk general-board imports.
+ * Bulk general-board import template. Columns mirror the human-facing
+ * layout the DFT team already uses in their internal planning sheet
+ * (see Faz 6 notes):
  *
- * Columns mirror `BoardPost` (general-scope subset):
- *   kind           BoardPostKind enum — dropdown-guarded cell
- *   title          required string
- *   body           required string (long text)
- *   tags           optional, comma-separated (max 12)
- *   externalUrl    optional http(s) URL
- *   pinned         optional boolean (TRUE/FALSE)
+ *   No                                               // display only — ignored on import
+ *   Paylaşım İsmi                                    // title         (required)
+ *   Paylaşım Tarihi                                  // publishedAt   (optional)
+ *   Paylaşım Türü                                    // kind          (required, dropdown)
+ *   İlgili Bağlantı                                  // externalUrl   (optional)
+ *   Paylaşımın İçeriği                               // body          (required)
+ *   Paylaşımın TR33 Bölgesi Açısından Değerlendirmesi // assessment   (optional, long text)
  *
- * Two sheets:
- *   "Paylasimlar"  data entry sheet with a sample row
- *   "Aciklama"     human-readable column guide + enum list
- *
- * Admin-only. Generated on the fly — no caching.
+ * Tür dropdown values are the user-facing labels; the import action
+ * reverses them into BoardPostKind enums.
  */
 export async function GET(_req: NextRequest) {
   const user = await getCurrentUser();
@@ -43,18 +41,24 @@ export async function GET(_req: NextRequest) {
     views: [{ state: "frozen", ySplit: 1 }],
   });
   ws.columns = [
-    { header: "kind", key: "kind", width: 16 },
-    { header: "title", key: "title", width: 40 },
-    { header: "body", key: "body", width: 60 },
-    { header: "tags", key: "tags", width: 28 },
-    { header: "externalUrl", key: "externalUrl", width: 40 },
-    { header: "pinned", key: "pinned", width: 10 },
+    { header: "No", key: "no", width: 6 },
+    { header: "Paylaşım İsmi", key: "title", width: 36 },
+    { header: "Paylaşım Tarihi", key: "publishedAt", width: 16 },
+    { header: "Paylaşım Türü", key: "kind", width: 22 },
+    { header: "İlgili Bağlantı", key: "externalUrl", width: 36 },
+    { header: "Paylaşımın İçeriği", key: "body", width: 60 },
+    {
+      header: "Paylaşımın TR33 Bölgesi Açısından Değerlendirmesi",
+      key: "assessment",
+      width: 60,
+    },
   ];
 
-  // Header styling + comment
+  // Header styling
   const header = ws.getRow(1);
   header.font = { bold: true };
-  header.alignment = { vertical: "middle" };
+  header.alignment = { vertical: "middle", wrapText: true };
+  header.height = 36;
   header.eachCell((cell) => {
     cell.fill = {
       type: "pattern",
@@ -64,101 +68,89 @@ export async function GET(_req: NextRequest) {
     cell.border = {
       top: { style: "thin", color: { argb: "FFCBD5E1" } },
       bottom: { style: "thin", color: { argb: "FFCBD5E1" } },
+      left: { style: "thin", color: { argb: "FFCBD5E1" } },
+      right: { style: "thin", color: { argb: "FFCBD5E1" } },
     };
   });
 
-  // Sample row to prevent guessing
+  // Sample row (user can overwrite / delete)
   ws.addRow({
-    kind: "NEWS",
-    title: "Örnek başlık",
-    body: "Bu örnek satır; silip kendi kayıtlarınızı girebilirsiniz.",
-    tags: "örnek, şablon",
+    no: 1,
+    title: "Örnek paylaşım başlığı",
+    publishedAt: new Date(),
+    kind: BOARD_KIND_LABELS.NEWS, // "Haber/Etkinlik"
     externalUrl: "",
-    pinned: "FALSE",
+    body: "Bu örnek satırı silip kendi kayıtlarınızı girebilirsiniz.",
+    assessment: "İsteğe bağlı — paylaşımın TR33 bölgesi için değerlendirmesi.",
   });
+  ws.getCell("C2").numFmt = "dd.mm.yyyy";
 
-  // Data validations applied to rows 2..1001 (template cap: MAX_BULK_IMPORT_ROWS).
-  const kindsList = `"${boardKinds.join(",")}"`;
-  const boolList = `"TRUE,FALSE"`;
+  // Data validations (rows 2..1001)
+  const kindLabels = BOARD_KIND_BY_SCOPE.GENERAL.map((k) => BOARD_KIND_LABELS[k]);
+  const kindsList = `"${kindLabels.join(",")}"`;
   const lastRow = 1001;
 
   for (let r = 2; r <= lastRow; r++) {
-    ws.getCell(`A${r}`).dataValidation = {
+    ws.getCell(`C${r}`).numFmt = "dd.mm.yyyy";
+    ws.getCell(`D${r}`).dataValidation = {
       type: "list",
       allowBlank: true,
       formulae: [kindsList],
       showErrorMessage: true,
       errorTitle: "Geçersiz tür",
-      error: `İzinli değerler: ${boardKinds.join(", ")}`,
+      error: `İzinli değerler: ${kindLabels.join(", ")}`,
     };
-    ws.getCell(`F${r}`).dataValidation = {
-      type: "list",
-      allowBlank: true,
-      formulae: [boolList],
-    };
+  }
+
+  // Wrap body + assessment cells by default
+  for (let r = 2; r <= lastRow; r++) {
+    ws.getCell(`F${r}`).alignment = { wrapText: true, vertical: "top" };
+    ws.getCell(`G${r}`).alignment = { wrapText: true, vertical: "top" };
   }
 
   // ── Aciklama (guide) sheet ─────────────────────────────────────
   const guide = wb.addWorksheet("Aciklama");
   guide.columns = [
-    { header: "Sütun", key: "col", width: 18 },
+    { header: "Sütun", key: "col", width: 32 },
     { header: "Zorunlu mu?", key: "req", width: 14 },
     { header: "Açıklama", key: "desc", width: 80 },
   ];
   guide.getRow(1).font = { bold: true };
 
   guide.addRows([
+    { col: "No", req: "Hayır", desc: "Sadece görünüm amaçlıdır; içe aktarmada kullanılmaz." },
+    { col: "Paylaşım İsmi", req: "Evet", desc: "Başlık. 2–200 karakter." },
     {
-      col: "kind",
-      req: "Evet",
-      desc: `Paylaşım türü. İzinli değerler: ${Object.entries(BOARD_KIND_LABELS)
-        .map(([k, v]) => `${k} (${v})`)
-        .join(", ")}`,
-    },
-    {
-      col: "title",
-      req: "Evet",
-      desc: "Başlık. 2–200 karakter.",
-    },
-    {
-      col: "body",
-      req: "Evet",
-      desc: "İçerik metni. 2–10.000 karakter. Satır sonu için hücre içinde ALT+Enter kullanabilirsiniz.",
-    },
-    {
-      col: "tags",
+      col: "Paylaşım Tarihi",
       req: "Hayır",
-      desc: "Etiketler. Virgülle ayırın. En fazla 12 etiket.",
+      desc: "Tarih hücresi (dd.mm.yyyy). Boş bırakılırsa içe aktarma anındaki tarih kullanılır.",
     },
     {
-      col: "externalUrl",
-      req: "Hayır",
-      desc: "Varsa, tam URL (http:// veya https:// ile başlamalı).",
+      col: "Paylaşım Türü",
+      req: "Evet",
+      desc: `Açılır listeden seçin. İzinli değerler: ${kindLabels.join(", ")}`,
     },
     {
-      col: "pinned",
+      col: "İlgili Bağlantı",
       req: "Hayır",
-      desc: "Üste sabitlensin mi? TRUE ya da FALSE. Boş bırakılırsa FALSE.",
+      desc: "Tam URL (http:// veya https:// ile başlamalı).",
+    },
+    {
+      col: "Paylaşımın İçeriği",
+      req: "Evet",
+      desc: "İçerik metni. 2–10.000 karakter. Hücre içinde satır için ALT+Enter.",
+    },
+    {
+      col: "Paylaşımın TR33 Bölgesi Açısından Değerlendirmesi",
+      req: "Hayır",
+      desc: "Editör notu / değerlendirme. En fazla 10.000 karakter.",
     },
     {},
-    {
-      col: "NOT",
-      req: "",
-      desc: "Tüm satırlar önce doğrulanır. Herhangi bir satırda hata varsa hiçbir kayıt oluşturulmaz.",
-    },
-    {
-      col: "SINIR",
-      req: "",
-      desc: "En fazla 1.000 satır, en fazla 5 MB dosya boyutu.",
-    },
-    {
-      col: "KAPSAM",
-      req: "",
-      desc: "Bu şablon yalnızca Genel Pano içindir (tüm DFT üyelerine açık paylaşımlar).",
-    },
+    { col: "NOT", req: "", desc: "Tüm satırlar önce doğrulanır. Bir hata varsa hiç kayıt eklenmez." },
+    { col: "SINIR", req: "", desc: "En fazla 1.000 satır, en fazla 5 MB dosya boyutu." },
+    { col: "KAPSAM", req: "", desc: "Bu şablon yalnızca Genel Pano paylaşımları içindir." },
   ]);
 
-  // Freeze header + subtle row banding
   guide.views = [{ state: "frozen", ySplit: 1 }];
   for (let r = 2; r <= guide.rowCount; r++) {
     if (r % 2 === 0) {

@@ -4,11 +4,21 @@ import { useActionState } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Field } from "@/features/shared/form-field";
 import { createContentRecord, type RecordFormState } from "./actions";
 import { FormShell } from "./form-shell";
 
 const INITIAL: RecordFormState = { ok: true };
+
+// Stored verbatim in `ContentRecord.kind` (String) — no enum migration.
+const CONTENT_KINDS = ["Rapor", "Makale", "Sunum", "Bilgi Notu", "Kitap"] as const;
 
 export function ContentForm() {
   const [state, action, pending] = useActionState(createContentRecord, INITIAL);
@@ -21,27 +31,30 @@ export function ContentForm() {
             <Input id="title" name="title" required maxLength={200} />
           </Field>
 
-          <Field name="kind" label="İçerik türü" error={state.errors?.kind}>
-            <Input id="kind" name="kind" maxLength={120} placeholder="Rapor / Not / Sunum / Makale …" />
+          <Field name="kind" label="Döküman / İçerik türü" required error={state.errors?.kind}>
+            <Select name="kind" defaultValue="Rapor">
+              <SelectTrigger id="kind">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CONTENT_KINDS.map((k) => (
+                  <SelectItem key={k} value={k}>
+                    {k}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
           <Field name="date" label="Tarih" required error={state.errors?.date}>
             <Input id="date" name="date" type="date" required />
-          </Field>
-
-          <Field name="mainDocument" label="Esas belge" error={state.errors?.mainDocument} className="md:col-span-2">
-            <Input id="mainDocument" name="mainDocument" maxLength={200} placeholder="Belge adı veya bağlantı" />
           </Field>
 
           <Field name="tags" label="Etiketler" hint="Virgülle ayırın. En fazla 20." error={state.errors?.tags} className="md:col-span-2">
             <Input id="tags" name="tags" placeholder="örn. yönetişim, veri, pilot" />
           </Field>
 
-          <Field name="summary" label="Kısa açıklama" error={state.errors?.summary} className="md:col-span-2">
+          <Field name="summary" label="Açıklama" error={state.errors?.summary} className="md:col-span-2">
             <Textarea id="summary" name="summary" rows={4} maxLength={3000} />
-          </Field>
-
-          <Field name="notes" label="Notlar" error={state.errors?.notes} className="md:col-span-2">
-            <Textarea id="notes" name="notes" rows={3} maxLength={2000} />
           </Field>
         </div>
       </FormShell>

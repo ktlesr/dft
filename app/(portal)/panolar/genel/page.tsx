@@ -11,7 +11,7 @@ import { listBoardPosts } from "@/features/board/queries";
 import { NewBoardPostDialog } from "@/features/board/new-post-dialog";
 import { PostCard } from "@/features/board/post-card";
 import { isAdmin } from "@/lib/rbac";
-import { BOARD_KIND_LABELS } from "@/lib/constants";
+import { BOARD_KIND_LABELS, BOARD_KIND_BY_SCOPE } from "@/lib/constants";
 import type { BoardPostKind } from "@prisma/client";
 
 export const metadata = { title: "Genel Pano" };
@@ -39,7 +39,7 @@ export default async function GeneralBoardPage({ searchParams }: { searchParams:
     <div className="mx-auto max-w-4xl">
       <PageHeader
         title="Genel Pano"
-        description="Tüm DFT üyelerine açık paylaşımlar: haberler, duyurular, öneriler, fikirler, kaynaklar."
+        description="Tüm DFT üyelerine açık paylaşımlar: haber/etkinlik, çağrı/hibe duyuruları, doküman paylaşımları."
         breadcrumbs={[{ label: "Panolar", href: "/panolar" }, { label: "Genel" }]}
         actions={
           <>
@@ -64,7 +64,7 @@ export default async function GeneralBoardPage({ searchParams }: { searchParams:
         <FilterSelect
           param="tur"
           value={kind}
-          options={Object.entries(BOARD_KIND_LABELS).map(([v, label]) => ({ value: v, label }))}
+          options={BOARD_KIND_BY_SCOPE.GENERAL.map((v) => ({ value: v, label: BOARD_KIND_LABELS[v] }))}
           placeholder="Tüm türler"
           allLabel="Tüm türler"
           ariaLabel="Tür filtresi"
@@ -99,6 +99,7 @@ export default async function GeneralBoardPage({ searchParams }: { searchParams:
                 kind: p.kind,
                 title: p.title,
                 body: p.body,
+                assessment: p.assessment,
                 tags: p.tags,
                 externalUrl: p.externalUrl,
                 pinned: p.pinned,

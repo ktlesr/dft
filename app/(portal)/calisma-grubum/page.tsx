@@ -16,7 +16,7 @@ import {
   REPORT_KIND_LABELS,
   ROLE_LABELS,
 } from "@/lib/constants";
-import { formatDate, formatDateTime, initials } from "@/lib/utils";
+import { avatarUrl, formatDate, formatDateTime, initials } from "@/lib/utils";
 
 export const metadata = { title: "Çalışma Grubum" };
 export const dynamic = "force-dynamic";
@@ -290,7 +290,9 @@ export default async function MyGroupPage() {
               {members.map((m) => (
                 <div key={m.id} className="flex items-center gap-3 rounded-md border p-3">
                   <Avatar className="h-9 w-9">
-                    {m.image ? <AvatarImage src={m.image} alt={m.name ?? m.email} /> : null}
+                    {m.image ? (
+                      <AvatarImage src={avatarUrl(m.id, m.image)} alt={m.name ?? m.email} />
+                    ) : null}
                     <AvatarFallback>{initials(m.name, m.email)}</AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1">

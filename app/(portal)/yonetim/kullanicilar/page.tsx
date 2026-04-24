@@ -15,7 +15,7 @@ import {
   ROLE_LABELS,
   USER_STATUS_LABELS,
 } from "@/lib/constants";
-import { formatDate, initials } from "@/lib/utils";
+import { avatarUrl, formatDate, initials } from "@/lib/utils";
 import { AdminPanelNav } from "@/components/app/admin-nav";
 import { approveUser, rejectUser } from "@/features/admin/user-actions";
 import type { UserStatus } from "@prisma/client";
@@ -125,7 +125,9 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
-                            {u.image ? <AvatarImage src={u.image} alt={u.name ?? u.email} /> : null}
+                            {u.image ? (
+                              <AvatarImage src={avatarUrl(u.id, u.image)} alt={u.name ?? u.email} />
+                            ) : null}
                             <AvatarFallback>{initials(u.name, u.email)}</AvatarFallback>
                           </Avatar>
                           <div className="min-w-0">

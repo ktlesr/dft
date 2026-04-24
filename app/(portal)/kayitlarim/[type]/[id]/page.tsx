@@ -15,7 +15,6 @@ import { softDeleteRecord } from "@/features/records/actions";
 import { RECORD_LABELS, isRecordType, type RecordTypeSlug } from "@/features/records/types";
 import {
   PROJECT_APPLICATION_KIND_LABELS,
-  PROJECT_APPLICATION_STATUS_LABELS,
   PROJECT_IDEA_STAGE_LABELS,
 } from "@/lib/constants";
 
@@ -156,11 +155,10 @@ function describe(
           { label: "Program / fon", value: r.program },
           { label: "Çağrı adı", value: r.callName },
           { label: "Başvuru tarihi", value: formatDate(r.applicationDate) },
-          { label: "Durum", value: <Badge variant="secondary">{PROJECT_APPLICATION_STATUS_LABELS[r.status]}</Badge> },
           { label: "Başvuru türü", value: PROJECT_APPLICATION_KIND_LABELS[r.kind] },
           { label: "Bütçe", value: r.budget?.toString() ?? null },
           { label: "Talep edilen destek", value: r.requestedSupport?.toString() ?? null },
-          { label: "Notlar", value: r.notes },
+          { label: "Proje Özeti", value: r.notes },
         ],
       };
     }
@@ -177,8 +175,8 @@ function describe(
           { label: "Destek tutarı", value: r.supportAmount?.toString() ?? null },
           { label: "Rol", value: r.role },
           { label: "Tür", value: r.kind },
-          { label: "Sonuç belgesi", value: r.resultDocument },
-          { label: "Özet", value: r.summary },
+          { label: "Proje konsorsiyumu", value: r.consortium },
+          { label: "Proje Özeti", value: r.summary },
         ],
       };
     }
@@ -206,11 +204,20 @@ function describe(
       return {
         title: r.name,
         fields: [
+          { label: "Organizatör", value: r.organizer },
           { label: "Tür", value: r.kind },
+          { label: "Şekli", value: r.format === "ONLINE" ? "Online" : r.format === "FIZIKI" ? "Fiziki" : null },
           { label: "Tarih", value: formatDate(r.date) },
           { label: "Yer", value: r.location },
-          { label: "Rolünüz", value: r.role },
-          { label: "İlgili konu", value: r.topic },
+          { label: "Etkinlikteki göreviniz", value: r.role },
+          {
+            label: "Etkinlik bağlantısı",
+            value: r.externalUrl ? (
+              <a href={r.externalUrl} target="_blank" rel="noopener noreferrer" className="break-all text-primary underline-offset-4 hover:underline">
+                {r.externalUrl}
+              </a>
+            ) : null,
+          },
           { label: "Özet", value: r.summary },
           { label: "Notlar", value: r.notes },
         ],
@@ -255,9 +262,8 @@ function describe(
       return {
         title: r.title,
         fields: [
-          { label: "Tür", value: r.kind },
+          { label: "Döküman / İçerik türü", value: r.kind },
           { label: "Tarih", value: formatDate(r.date) },
-          { label: "Esas belge", value: r.mainDocument },
           {
             label: "Etiketler",
             value:
@@ -271,8 +277,7 @@ function describe(
                 </div>
               ),
           },
-          { label: "Özet", value: r.summary },
-          { label: "Notlar", value: r.notes },
+          { label: "Açıklama", value: r.summary },
         ],
       };
     }

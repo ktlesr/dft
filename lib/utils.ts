@@ -39,3 +39,18 @@ export function truncate(s: string, n: number) {
   if (!s) return "";
   return s.length > n ? s.slice(0, n - 1) + "…" : s;
 }
+
+/**
+ * Resolve `User.image` to a URL renderable by `<img>` / `<AvatarImage>`.
+ * Modern (Faz 6+) uploads store the value as `storage:<key>`, which
+ * points to the private `/api/profil/foto/{userId}` endpoint. Legacy
+ * Google-OAuth images were absolute URLs — left unchanged.
+ */
+export function avatarUrl(userId: string, image: string | null | undefined): string | undefined {
+  if (!image) return undefined;
+  if (image.startsWith("storage:")) {
+    // Cache-bust on the stored key so a new upload invalidates the browser cache.
+    return `/api/profil/foto/${userId}?v=${encodeURIComponent(image.slice("storage:".length))}`;
+  }
+  return image;
+}

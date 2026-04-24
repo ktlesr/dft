@@ -4,9 +4,11 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { audit } from "@/lib/audit";
-import { requireActiveUser } from "@/lib/current-user";
+import { requireActiveUser, requireAdmin } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, verifyPassword } from "@/lib/password";
+import { storage } from "@/lib/storage";
+import { isAdmin } from "@/lib/rbac";
 
 export type ProfileFormState = {
   ok: boolean;
@@ -173,3 +175,204 @@ export async function changePassword(
   revalidatePath("/profilim");
   return { ok: true, message: "Şifreniz güncellendi." };
 }
+
+/* ══════════════════════════════════════════════════════════════════
+ * Profile photo + CV upload
+ * ══════════════════════════════════════════════════════════════════*/
+
+const ALLOWED_PHOTO_MIMES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const ALLOWED_CV_MIMES = new Set([
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+]);
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024; // 5 MB
+const MAX_CV_BYTES = 10 * 1024 * 1024; // 10 MB
+
+/**
+ * Resolve the target user for an upload. Self-uploads are always allowed;
+ * uploading to another user requires ADMIN. Returns the resolved user id.
+ */
+async function resolveUploadTarget(fd: FormData): Promise<string> {
+  const current = await requireActiveUser();
+  const raw = fd.get("userId");
+  const requested = typeof raw === "string" && raw.length > 0 ? raw : null;
+  if (!requested || requested === current.id) return current.id;
+  if (!isAdmin(current)) {
+    throw new Error("Yalnızca yöneticiler başka kullanıcıya yükleme yapabilir.");
+  }
+  return requested;
+}
+
+export async function uploadProfilePhoto(
+  _prev: ProfileFormState,
+  fd: FormData,
+): Promise<ProfileFormState> {
+  let targetUserId: string;
+  try {
+    targetUserId = await resolveUploadTarget(fd);
+  } catch (e) {
+    return { ok: false, message: (e as Error).message };
+  }
+
+  const file = fd.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { ok: false, message: "Lütfen bir görüntü dosyası seçin." };
+  }
+  if (file.size > MAX_PHOTO_BYTES) {
+    return { ok: false, message: "Dosya çok büyük (en fazla 5 MB)." };
+  }
+  if (!ALLOWED_PHOTO_MIMES.has(file.type)) {
+    return { ok: false, message: "Yalnızca JPEG, PNG veya WebP kabul edilir." };
+  }
+
+  // Magic-byte check — protect against declared-PNG but real-script uploads.
+  const head = new Uint8Array(await file.slice(0, 4096).arrayBuffer());
+  const { fileTypeFromBuffer } = await import("file-type");
+  const detected = await fileTypeFromBuffer(head);
+  if (!detected || !ALLOWED_PHOTO_MIMES.has(detected.mime)) {
+    return { ok: false, message: "Dosya içeriği geçersiz." };
+  }
+
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const stored = await storage.put({
+    bytes,
+    mimeType: detected.mime,
+    originalName: file.name,
+  });
+
+  // Remove previous photo if any (best-effort cleanup).
+  const prev = await prisma.user.findUnique({
+    where: { id: targetUserId },
+    select: { image: true },
+  });
+  const prevKey = prev?.image?.startsWith("storage:") ? prev.image.slice("storage:".length) : null;
+
+  await prisma.user.update({
+    where: { id: targetUserId },
+    data: { image: `storage:${stored.storageKey}` },
+  });
+  if (prevKey) {
+    await storage.remove(prevKey).catch(() => undefined);
+  }
+
+  await audit({
+    action: "SETTINGS_CHANGED",
+    targetType: "User",
+    targetId: targetUserId,
+    metadata: { change: "photo" },
+  });
+
+  revalidatePath("/profilim");
+  revalidatePath(`/yonetim/kullanicilar/${targetUserId}`);
+  return { ok: true, message: "Profil fotoğrafı güncellendi." };
+}
+
+export async function uploadProfileCv(
+  _prev: ProfileFormState,
+  fd: FormData,
+): Promise<ProfileFormState> {
+  let targetUserId: string;
+  try {
+    targetUserId = await resolveUploadTarget(fd);
+  } catch (e) {
+    return { ok: false, message: (e as Error).message };
+  }
+
+  const file = fd.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { ok: false, message: "Lütfen bir CV dosyası seçin." };
+  }
+  if (file.size > MAX_CV_BYTES) {
+    return { ok: false, message: "Dosya çok büyük (en fazla 10 MB)." };
+  }
+  if (!ALLOWED_CV_MIMES.has(file.type)) {
+    return { ok: false, message: "Yalnızca PDF veya Word kabul edilir." };
+  }
+
+  // Magic-byte: accept pdf + ms-word container (ooxml → application/zip).
+  const head = new Uint8Array(await file.slice(0, 4096).arrayBuffer());
+  const { fileTypeFromBuffer } = await import("file-type");
+  const detected = await fileTypeFromBuffer(head);
+  if (!detected) {
+    return { ok: false, message: "Dosya içeriği tespit edilemedi." };
+  }
+  const detectedOk =
+    detected.mime === "application/pdf" ||
+    detected.mime === "application/zip" ||
+    detected.mime === "application/x-cfb";
+  if (!detectedOk) {
+    return { ok: false, message: "Dosya içeriği geçersiz." };
+  }
+
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const stored = await storage.put({
+    bytes,
+    mimeType: file.type,
+    originalName: file.name,
+  });
+
+  const prev = await prisma.profile.findUnique({
+    where: { userId: targetUserId },
+    select: { cvStorageKey: true },
+  });
+  const prevKey = prev?.cvStorageKey ?? null;
+
+  await prisma.profile.upsert({
+    where: { userId: targetUserId },
+    create: {
+      userId: targetUserId,
+      cvStorageKey: stored.storageKey,
+      cvOriginalName: stored.originalName,
+    },
+    update: {
+      cvStorageKey: stored.storageKey,
+      cvOriginalName: stored.originalName,
+    },
+  });
+  if (prevKey) {
+    await storage.remove(prevKey).catch(() => undefined);
+  }
+
+  await audit({
+    action: "SETTINGS_CHANGED",
+    targetType: "User",
+    targetId: targetUserId,
+    metadata: { change: "cv" },
+  });
+
+  revalidatePath("/profilim");
+  revalidatePath(`/yonetim/kullanicilar/${targetUserId}`);
+  return { ok: true, message: "CV yüklendi." };
+}
+
+export async function removeProfileCv(targetUserId?: string): Promise<void> {
+  const current = await requireActiveUser();
+  const target = targetUserId && targetUserId !== current.id ? targetUserId : current.id;
+  if (target !== current.id && !isAdmin(current)) {
+    throw new Error("Yetkisiz.");
+  }
+  const profile = await prisma.profile.findUnique({
+    where: { userId: target },
+    select: { cvStorageKey: true },
+  });
+  if (profile?.cvStorageKey) {
+    await storage.remove(profile.cvStorageKey).catch(() => undefined);
+  }
+  await prisma.profile.update({
+    where: { userId: target },
+    data: { cvStorageKey: null, cvOriginalName: null },
+  });
+  await audit({
+    action: "SETTINGS_CHANGED",
+    targetType: "User",
+    targetId: target,
+    metadata: { change: "cv_removed" },
+  });
+  revalidatePath("/profilim");
+  revalidatePath(`/yonetim/kullanicilar/${target}`);
+}
+
+// Keep this exported symbol alive even if unused in this file — it's used
+// by the upload handlers above.
+void requireAdmin;

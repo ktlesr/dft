@@ -71,16 +71,10 @@ export const projectApplicationSchema = z.object({
   applicationDate: optionalDate,
   budget: optionalDecimal,
   requestedSupport: optionalDecimal,
-  status: z.enum([
-    "PLANLANIYOR",
-    "BASVURULDU",
-    "DEGERLENDIRMEDE",
-    "KABUL",
-    "RED",
-    "GERI_CEKILDI",
-  ]),
   kind: z.enum(["BIREYSEL", "DFT_ILE_BIRLIKTE"]),
   partnerMemberIds: memberIdsArray,
+  // Field label in UI is "Proje Özeti" but the DB column stays `notes`
+  // to avoid a breaking schema rename.
   notes: longText(5000),
 });
 export type ProjectApplicationInput = z.infer<typeof projectApplicationSchema>;
@@ -97,7 +91,10 @@ export const successfulProjectSchema = z.object({
   supportAmount: optionalDecimal,
   role: optionalString(120),
   kind: optionalString(120),
-  resultDocument: optionalString(200),
+  // resultDocument deprecated in UI (Faz 6 sadeleştirmesi) — kept as
+  // column in DB for legacy rows; form no longer collects it.
+  // Faz 6 yeni alan: konsorsiyum — ortak kurumlar ve paydaşlar.
+  consortium: longText(3000),
   summary: longText(3000),
 });
 export type SuccessfulProjectInput = z.infer<typeof successfulProjectSchema>;
@@ -119,13 +116,33 @@ export type ProjectIdeaInput = z.infer<typeof projectIdeaSchema>;
 
 /* ────────── 4) Etkinlik ────────── */
 
+const optionalHttpsUrl = z
+  .string()
+  .trim()
+  .max(2048)
+  .optional()
+  .transform((v) => (v && v !== "" ? v : undefined))
+  .refine(
+    (v) =>
+      v === undefined ||
+      /^https?:\/\/[\w\-._~:/?#[\]@!$&'()*+,;=%]+$/i.test(v),
+    "Geçerli bir URL girin (http:// veya https://).",
+  );
+
 export const eventSchema = z.object({
   name: trimmed(2, 200),
   kind: optionalString(120),
   date: requiredDate,
   location: optionalString(200),
   role: optionalString(120),
-  topic: optionalString(200),
+  // Faz 6 yeni alanları
+  organizer: optionalString(200),
+  format: z
+    .enum(["ONLINE", "FIZIKI"])
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+  externalUrl: optionalHttpsUrl,
+  // `topic` was dropped from the form in Faz 6; column stays for legacy.
   summary: longText(3000),
   notes: longText(2000),
 });
@@ -166,9 +183,10 @@ export const contentSchema = z.object({
   title: trimmed(2, 200),
   kind: optionalString(120),
   date: requiredDate,
+  // UI label: "Açıklama" (was "Kısa açıklama"). DB column stays `summary`.
   summary: longText(3000),
-  mainDocument: optionalString(200),
+  // `mainDocument` and `notes` are deprecated in the form (Faz 6
+  // sadeleştirmesi); legacy rows keep the columns but no new writes.
   tags: tagsArray,
-  notes: longText(2000),
 });
 export type ContentInput = z.infer<typeof contentSchema>;

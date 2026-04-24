@@ -7,28 +7,32 @@ import { audit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
-import { MAX_BULK_IMPORT_BYTES, MAX_BULK_IMPORT_ROWS } from "@/lib/constants";
-import { boardKinds } from "./schemas";
+import {
+  BOARD_KIND_BY_SCOPE,
+  BOARD_KIND_LABELS,
+  MAX_BULK_IMPORT_BYTES,
+  MAX_BULK_IMPORT_ROWS,
+} from "@/lib/constants";
 
 /**
  * Bulk Excel import for the general board. Admin-only, all-or-nothing.
  *
+ * Column layout follows the Faz 6 template — human-friendly Turkish
+ * headers. The importer normalises header names (diacritic-insensitive,
+ * lowercased) so light edits in the template (ör. başlıkları kalınlaştırmak)
+ * won't break parsing.
+ *
  * Security posture:
- *   - `requireAdmin()` gate (role check after session);
+ *   - `requireAdmin()` gate;
  *   - per-user + per-IP rate limit (5 imports / 60 min);
  *   - 5 MB body cap, 1 000 row cap;
- *   - magic-byte MIME sniff (xlsx is a zip container so the detector
- *     reports `application/zip` — declared Excel MIME is accepted as a
- *     known-equivalent);
- *   - strict Zod schema per row (enum kind, trimmed/length-checked
- *     strings, optional URL, tag list cap, boolean pinned);
- *   - ALL rows validated before a single INSERT; validation failure ⇒
- *     zero writes, detailed row-level error report returned;
- *   - single `createMany` in a transaction for atomicity.
+ *   - magic-byte MIME sniff;
+ *   - strict Zod schema per row (enum, trim/length, optional URL, date);
+ *   - ALL rows validated before a single INSERT; any failure ⇒ zero writes.
  */
 
 export type BulkImportError = {
-  row: number;          // 1-based spreadsheet row number (incl. header)
+  row: number;
   column?: string;
   message: string;
 };
@@ -40,61 +44,104 @@ export type BulkImportState = {
   errors?: BulkImportError[];
 };
 
-// Accept both the declared xlsx MIME and the raw zip signature (xlsx is a
-// zip-wrapped OOXML package — `file-type` reports the container, not the
-// logical Office MIME).
 const ACCEPTED_UPLOAD_MIMES = new Set<string>([
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   "application/zip",
 ]);
 
-// Zod schema for a single row parsed from the spreadsheet. All fields are
-// normalised before validation so type-coercion quirks of `exceljs` (which
-// returns numbers/booleans when the cell is numeric/boolean) can't break
-// validation.
-const optionalTrimmed = (max: number) =>
-  z
-    .string()
-    .trim()
-    .max(max)
-    .optional()
-    .transform((v) => (v && v.length > 0 ? v : undefined));
+// ── Turkish header → canonical key normalisation ────────────────
+// A minimal Turkish-aware collapse: lowercase, strip diacritics, remove
+// non-word characters. Keeps header matching tolerant to typos like
+// "paylaşımın i̇çeriği" vs "paylasimin icerigi".
+function tr(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/ş/g, "s")
+    .replace(/ı/g, "i")
+    .replace(/İ/g, "i")
+    .replace(/ç/g, "c")
+    .replace(/ğ/g, "g")
+    .replace(/ö/g, "o")
+    .replace(/ü/g, "u")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
 
-const KIND_MESSAGE = `Geçersiz tür. İzinli: ${boardKinds.join(", ")}`;
+// Maps a normalised header to our canonical field key.
+const HEADER_MAP: Record<string, "no" | "title" | "publishedAt" | "kind" | "externalUrl" | "body" | "assessment"> = {
+  "no": "no",
+  "paylasim ismi": "title",
+  "paylasim tarihi": "publishedAt",
+  "paylasim turu": "kind",
+  "ilgili baglanti": "externalUrl",
+  "paylasimin icerigi": "body",
+  "paylasimin tr33 bolgesi acisindan degerlendirmesi": "assessment",
+  "tr33 degerlendirmesi": "assessment",
+  // English fallbacks (keep older template uploads working)
+  "title": "title",
+  "body": "body",
+  "kind": "kind",
+  "externalurl": "externalUrl",
+  "publishedat": "publishedAt",
+  "assessment": "assessment",
+};
+
+// Kind label (Turkish) → enum. Built from BOARD_KIND_BY_SCOPE.GENERAL so
+// adding a new public kind in one place keeps everything in sync.
+const KIND_LABEL_TO_ENUM: Record<string, (typeof BOARD_KIND_BY_SCOPE.GENERAL)[number]> = (() => {
+  const m: Record<string, (typeof BOARD_KIND_BY_SCOPE.GENERAL)[number]> = {};
+  for (const k of BOARD_KIND_BY_SCOPE.GENERAL) {
+    m[tr(BOARD_KIND_LABELS[k])] = k;
+    m[tr(k)] = k; // accept raw enum too
+  }
+  return m;
+})();
+
+// ── Per-row validation ──────────────────────────────────────────
 
 const rowSchema = z.object({
   kind: z
     .string()
-    .refine((v) => (boardKinds as readonly string[]).includes(v), KIND_MESSAGE)
-    .transform((v) => v as (typeof boardKinds)[number]),
+    .refine(
+      (v) => tr(v) in KIND_LABEL_TO_ENUM,
+      `Geçersiz tür. İzinli: ${BOARD_KIND_BY_SCOPE.GENERAL.map((k) => BOARD_KIND_LABELS[k]).join(", ")}`,
+    )
+    .transform((v) => KIND_LABEL_TO_ENUM[tr(v)]!),
   title: z.string().trim().min(2, "Başlık çok kısa.").max(200, "Başlık çok uzun."),
   body: z.string().trim().min(2, "İçerik çok kısa.").max(10_000, "İçerik çok uzun."),
-  tags: z
+  assessment: z
     .string()
+    .trim()
+    .max(10_000, "Değerlendirme çok uzun.")
     .optional()
-    .transform((v) =>
-      (v ?? "")
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean)
-        .slice(0, 12),
+    .transform((v) => (v && v.length > 0 ? v : undefined)),
+  externalUrl: z
+    .string()
+    .trim()
+    .max(2048)
+    .optional()
+    .transform((v) => (v && v.length > 0 ? v : undefined))
+    .refine(
+      (v) =>
+        v === undefined ||
+        /^https?:\/\/[\w\-._~:/?#[\]@!$&'()*+,;=%]+$/i.test(v),
+      "Geçerli bir URL girin (http:// veya https://).",
     ),
-  externalUrl: optionalTrimmed(2_048).refine(
-    (v) => v === undefined || /^https?:\/\/[\w\-._~:/?#[\]@!$&'()*+,;=%]+$/i.test(v),
-    "Geçerli bir URL girin (http:// veya https://).",
-  ),
-  pinned: z.boolean().optional().transform((v) => v === true),
+  publishedAt: z
+    .date()
+    .optional()
+    .refine((v) => v === undefined || !Number.isNaN(v.getTime()), "Geçersiz tarih."),
 });
 
 type RowInput = z.infer<typeof rowSchema>;
+
+// ── Cell coercers ───────────────────────────────────────────────
 
 function cellToString(value: unknown): string {
   if (value === null || value === undefined) return "";
   if (typeof value === "string") return value;
   if (typeof value === "number" || typeof value === "boolean") return String(value);
   if (value instanceof Date) return value.toISOString();
-  // exceljs returns { richText: [...] } for rich-text cells and
-  // { hyperlink, text } for hyperlinks. Collapse to plain text.
   if (typeof value === "object") {
     const v = value as { text?: unknown; result?: unknown; richText?: Array<{ text?: string }> };
     if (typeof v.text === "string") return v.text;
@@ -105,17 +152,30 @@ function cellToString(value: unknown): string {
   return "";
 }
 
-function cellToBool(value: unknown): boolean | undefined {
+function cellToDate(value: unknown): Date | undefined {
   if (value === null || value === undefined || value === "") return undefined;
-  if (typeof value === "boolean") return value;
-  if (typeof value === "number") return value !== 0;
+  if (value instanceof Date) return value;
+  if (typeof value === "number") {
+    // Excel serial date → JS Date. exceljs normally returns a Date; this
+    // branch covers hand-crafted files.
+    return new Date(Math.round((value - 25569) * 86400 * 1000));
+  }
   if (typeof value === "string") {
-    const s = value.trim().toLowerCase();
-    if (["true", "evet", "e", "1", "yes", "y"].includes(s)) return true;
-    if (["false", "hayır", "hayir", "h", "0", "no", "n"].includes(s)) return false;
+    const s = value.trim();
+    if (!s) return undefined;
+    // dd.mm.yyyy or dd/mm/yyyy
+    const tr = s.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+    if (tr) {
+      const [, d, m, y] = tr;
+      return new Date(Number(y), Number(m) - 1, Number(d));
+    }
+    const iso = new Date(s);
+    if (!Number.isNaN(iso.getTime())) return iso;
   }
   return undefined;
 }
+
+// ── Server action ───────────────────────────────────────────────
 
 export async function bulkImportBoardPosts(
   _prev: BulkImportState,
@@ -139,19 +199,13 @@ export async function bulkImportBoardPosts(
     return { ok: false, message: "Dosya çok büyük (en fazla 5 MB)." };
   }
 
-  // Phase 1: magic-byte sniff — reject non-xlsx early.
   const head = new Uint8Array(await file.slice(0, 4096).arrayBuffer());
   const { fileTypeFromBuffer } = await import("file-type");
   const detected = await fileTypeFromBuffer(head);
   if (!detected || !ACCEPTED_UPLOAD_MIMES.has(detected.mime)) {
-    return {
-      ok: false,
-      message: "Dosya türü geçersiz. Yalnızca .xlsx kabul edilir.",
-    };
+    return { ok: false, message: "Dosya türü geçersiz. Yalnızca .xlsx kabul edilir." };
   }
 
-  // Phase 2: parse. `exceljs` is dynamically imported so it stays off the
-  // client bundle and off the hot path of requests that don't import.
   const ExcelJS = (await import("exceljs")).default;
   const workbook = new ExcelJS.Workbook();
   try {
@@ -166,20 +220,27 @@ export async function bulkImportBoardPosts(
     return { ok: false, message: "Sayfa bulunamadı. Şablonu kullandığınızdan emin olun." };
   }
 
-  // Header is row 1. Normalise column name → column index.
+  // Build column index from normalised header names
   const headerRow = sheet.getRow(1);
-  const colIndex: Record<string, number> = {};
+  const colIndex: Partial<Record<keyof typeof HEADER_MAP | "title" | "publishedAt" | "kind" | "externalUrl" | "body" | "assessment" | "no", number>> = {};
   headerRow.eachCell((cell, col) => {
-    const name = cellToString(cell.value).trim().toLowerCase();
-    if (name) colIndex[name] = col;
+    const raw = cellToString(cell.value).trim();
+    const norm = tr(raw);
+    const key = HEADER_MAP[norm as keyof typeof HEADER_MAP];
+    if (key) colIndex[key] = col;
   });
 
-  const requiredCols = ["kind", "title", "body"];
+  const requiredCols: Array<keyof typeof colIndex> = ["title", "kind", "body"];
   const missing = requiredCols.filter((c) => !(c in colIndex));
   if (missing.length > 0) {
+    const labelFor: Record<string, string> = {
+      title: "Paylaşım İsmi",
+      kind: "Paylaşım Türü",
+      body: "Paylaşımın İçeriği",
+    };
     return {
       ok: false,
-      message: `Başlık satırında eksik sütun(lar): ${missing.join(", ")}. Şablonu kullanın.`,
+      message: `Başlık satırında eksik sütun(lar): ${missing.map((c) => labelFor[c] ?? c).join(", ")}. Şablonu kullanın.`,
     };
   }
 
@@ -187,23 +248,25 @@ export async function bulkImportBoardPosts(
   const validRows: RowInput[] = [];
   let dataRowCount = 0;
 
-  // rowNumber in exceljs is 1-based including header, so data rows start at 2.
   for (let r = 2; r <= sheet.rowCount; r++) {
     const row = sheet.getRow(r);
     if (!row || row.cellCount === 0) continue;
 
     const raw = {
-      kind: cellToString(row.getCell(colIndex.kind!).value).trim().toUpperCase(),
+      kind: cellToString(row.getCell(colIndex.kind!).value).trim(),
       title: cellToString(row.getCell(colIndex.title!).value).trim(),
       body: cellToString(row.getCell(colIndex.body!).value).trim(),
-      tags: colIndex.tags ? cellToString(row.getCell(colIndex.tags).value) : "",
-      externalUrl: colIndex.externalurl
-        ? cellToString(row.getCell(colIndex.externalurl).value).trim()
+      externalUrl: colIndex.externalUrl
+        ? cellToString(row.getCell(colIndex.externalUrl).value).trim()
         : "",
-      pinned: colIndex.pinned ? cellToBool(row.getCell(colIndex.pinned).value) : false,
+      assessment: colIndex.assessment
+        ? cellToString(row.getCell(colIndex.assessment).value).trim()
+        : "",
+      publishedAt: colIndex.publishedAt
+        ? cellToDate(row.getCell(colIndex.publishedAt).value)
+        : undefined,
     };
 
-    // Skip fully empty rows (common at the bottom of hand-edited sheets).
     if (!raw.kind && !raw.title && !raw.body) continue;
     dataRowCount += 1;
 
@@ -216,12 +279,17 @@ export async function bulkImportBoardPosts(
 
     const parsed = rowSchema.safeParse(raw);
     if (!parsed.success) {
+      const labelFor: Record<string, string> = {
+        kind: "Paylaşım Türü",
+        title: "Paylaşım İsmi",
+        body: "Paylaşımın İçeriği",
+        externalUrl: "İlgili Bağlantı",
+        publishedAt: "Paylaşım Tarihi",
+        assessment: "Değerlendirme",
+      };
       for (const issue of parsed.error.issues) {
-        errors.push({
-          row: r,
-          column: String(issue.path[0] ?? ""),
-          message: issue.message,
-        });
+        const k = String(issue.path[0] ?? "");
+        errors.push({ row: r, column: labelFor[k] ?? k, message: issue.message });
       }
       continue;
     }
@@ -235,26 +303,24 @@ export async function bulkImportBoardPosts(
     return {
       ok: false,
       message: `${errors.length} hata bulundu. Hiçbir kayıt oluşturulmadı.`,
-      errors: errors.slice(0, 200), // cap UI payload
+      errors: errors.slice(0, 200),
     };
   }
 
-  // Phase 3: atomic insert. `createMany` is a single SQL statement; wrapping
-  // in a transaction provides rollback on mid-flight failure (connection drop,
-  // unique-constraint race, etc.).
   const now = new Date();
   const data = validRows.map((v) => ({
     scope: "GENERAL" as const,
     kind: v.kind,
     title: v.title,
     body: v.body,
-    tags: v.tags,
+    assessment: v.assessment ?? null,
+    tags: [] as string[],
     externalUrl: v.externalUrl ?? null,
-    pinned: v.pinned,
+    pinned: false,
     status: "PUBLISHED" as const,
     authorId: user.id,
     groupId: null,
-    publishedAt: now,
+    publishedAt: v.publishedAt ?? now,
   }));
 
   const result = await prisma.$transaction(async (tx) => {
@@ -277,4 +343,3 @@ export async function bulkImportBoardPosts(
     created: result.count,
   };
 }
-

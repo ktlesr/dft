@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { BOARD_KIND_LABELS } from "@/lib/constants";
-import { formatDateTime, initials } from "@/lib/utils";
+import { avatarUrl, formatDateTime, initials } from "@/lib/utils";
 import { removeBoardPost, togglePin } from "./actions";
 
 type PostRow = {
@@ -15,6 +15,7 @@ type PostRow = {
   kind: keyof typeof BOARD_KIND_LABELS;
   title: string;
   body: string;
+  assessment?: string | null;
   tags: string[];
   externalUrl: string | null;
   pinned: boolean;
@@ -48,7 +49,12 @@ export function PostCard({ post, caps }: { post: PostRow; caps: Caps }) {
       <CardContent className="p-5">
         <div className="flex items-start gap-3">
           <Avatar className="h-9 w-9 shrink-0">
-            {post.author.image ? <AvatarImage src={post.author.image} alt={post.author.name ?? post.author.email} /> : null}
+            {post.author.image ? (
+              <AvatarImage
+                src={avatarUrl(post.author.id, post.author.image)}
+                alt={post.author.name ?? post.author.email}
+              />
+            ) : null}
             <AvatarFallback>{initials(post.author.name, post.author.email)}</AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
@@ -68,6 +74,15 @@ export function PostCard({ post, caps }: { post: PostRow; caps: Caps }) {
 
             <h3 className="mt-2 text-base font-semibold leading-snug">{post.title}</h3>
             <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{post.body}</p>
+
+            {post.assessment ? (
+              <div className="mt-3 rounded-md border border-primary/20 bg-primary/5 p-3">
+                <p className="text-[11px] font-medium uppercase tracking-wider text-primary">
+                  TR33 Bölgesi açısından değerlendirme
+                </p>
+                <p className="mt-1 whitespace-pre-wrap text-sm">{post.assessment}</p>
+              </div>
+            ) : null}
 
             {post.externalUrl ? (
               <a

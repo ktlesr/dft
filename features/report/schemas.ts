@@ -22,8 +22,6 @@ export const reportSchema = z
     periodStart: optionalDate,
     periodEnd: optionalDate,
     summary: optional(3000),
-    body: required(50_000),
-    outputs: optional(10_000),
   })
   .refine(
     (v) => !v.periodStart || !v.periodEnd || v.periodEnd.getTime() >= v.periodStart.getTime(),

@@ -15,7 +15,7 @@ export function SuccessfulProjectForm() {
 
   return (
     <form action={action}>
-      <FormShell state={state} pending={pending}>
+      <FormShell state={state} pending={pending} attachmentsLabel="Başarı Bildirim Belgesi Yükle">
         <div className="grid gap-4 md:grid-cols-2">
           <Field name="projectName" label="Proje adı" required error={state.errors?.projectName} className="md:col-span-2">
             <Input id="projectName" name="projectName" required maxLength={200} />
@@ -49,11 +49,11 @@ export function SuccessfulProjectForm() {
             <Input id="kind" name="kind" maxLength={120} placeholder="Ar-Ge / İşbirliği / TÜBİTAK 1001" />
           </Field>
 
-          <Field name="resultDocument" label="Sonuç belgesi" error={state.errors?.resultDocument} className="md:col-span-2">
-            <Input id="resultDocument" name="resultDocument" maxLength={200} placeholder="Belge numarası veya bağlantı" />
+          <Field name="consortium" label="Proje konsorsiyumu" hint="Ortak kurumlar / paydaşlar." error={state.errors?.consortium} className="md:col-span-2">
+            <Textarea id="consortium" name="consortium" rows={3} maxLength={3000} />
           </Field>
 
-          <Field name="summary" label="Kısa açıklama" error={state.errors?.summary} className="md:col-span-2">
+          <Field name="summary" label="Proje Özeti" error={state.errors?.summary} className="md:col-span-2">
             <Textarea id="summary" name="summary" rows={4} maxLength={3000} />
           </Field>
         </div>

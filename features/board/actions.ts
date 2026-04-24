@@ -10,6 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { isAdmin, isModerator } from "@/lib/rbac";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { UploadError, storeAttachments } from "@/lib/upload";
+import { BOARD_KIND_BY_SCOPE } from "@/lib/constants";
 import { boardPostSchema } from "./schemas";
 
 export type BoardFormState = {
@@ -56,6 +57,8 @@ export async function createBoardPost(
     kind: fd.get("kind"),
     title: fd.get("title"),
     body: fd.get("body"),
+    assessment: fd.get("assessment"),
+    publishedAt: fd.get("publishedAt"),
     externalUrl: fd.get("externalUrl"),
     tags: fd.get("tags"),
     pinned: fd.get("pinned"),
@@ -67,6 +70,14 @@ export async function createBoardPost(
     return { ok: false, message: "Çalışma grubunuz atanmadığı için grup panosuna paylaşım yapamazsınız." };
   }
 
+  // Enforce the per-scope kind allow-list (Faz 6 sadeleştirmesi) — a
+  // forged client could otherwise still submit legacy kinds like
+  // SUGGESTION/DISCUSSION.
+  const allowedKinds = BOARD_KIND_BY_SCOPE[parsed.data.scope] as readonly string[];
+  if (!allowedKinds.includes(parsed.data.kind)) {
+    return { ok: false, errors: { kind: ["Bu pano için geçersiz tür."] } };
+  }
+
   const pinned = parsed.data.pinned && canPinIn(parsed.data.scope, user);
 
   const row = await prisma.boardPost.create({
@@ -75,12 +86,21 @@ export async function createBoardPost(
       kind: parsed.data.kind,
       title: parsed.data.title,
       body: parsed.data.body,
+      // assessment only makes sense on the general board — ignored for
+      // group scope even if a crafted client sends it.
+      assessment:
+        parsed.data.scope === "GENERAL" ? parsed.data.assessment ?? null : null,
       tags: parsed.data.tags,
       externalUrl: parsed.data.externalUrl ?? null,
       pinned,
       status: "PUBLISHED",
       authorId: user.id,
       groupId: parsed.data.scope === "GROUP" ? user.groupId : null,
+      // Honour a user-provided publish date on the general board; group
+      // posts always publish with the default `now()`.
+      ...(parsed.data.scope === "GENERAL" && parsed.data.publishedAt
+        ? { publishedAt: parsed.data.publishedAt }
+        : {}),
     },
   });
 

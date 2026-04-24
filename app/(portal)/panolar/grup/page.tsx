@@ -12,7 +12,7 @@ import { listBoardPosts } from "@/features/board/queries";
 import { NewBoardPostDialog } from "@/features/board/new-post-dialog";
 import { PostCard } from "@/features/board/post-card";
 import { isAdmin, isModerator } from "@/lib/rbac";
-import { BOARD_KIND_LABELS, GROUP_LABELS } from "@/lib/constants";
+import { BOARD_KIND_LABELS, BOARD_KIND_BY_SCOPE, GROUP_LABELS } from "@/lib/constants";
 import type { BoardPostKind } from "@prisma/client";
 
 export const metadata = { title: "Grup Panosu" };
@@ -77,7 +77,7 @@ export default async function GroupBoardPage({ searchParams }: { searchParams: S
         <FilterSelect
           param="tur"
           value={kind}
-          options={Object.entries(BOARD_KIND_LABELS).map(([v, label]) => ({ value: v, label }))}
+          options={BOARD_KIND_BY_SCOPE.GROUP.map((v) => ({ value: v, label: BOARD_KIND_LABELS[v] }))}
           placeholder="Tüm türler"
           allLabel="Tüm türler"
           ariaLabel="Tür filtresi"

@@ -186,7 +186,7 @@ function Stat({ label, value }: { label: string; value: number }) {
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-2">
-      <span className="w-24 shrink-0 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+      <span className="min-w-[112px] shrink-0 whitespace-nowrap pr-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
         {label}
       </span>
       <div className="min-w-0 flex-1">{children}</div>

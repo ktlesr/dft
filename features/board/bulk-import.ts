@@ -183,11 +183,17 @@ export async function bulkImportBoardPosts(
 ): Promise<BulkImportState> {
   const user = await requireAdmin();
   const ip = await getClientIp();
-  const rl = await rateLimit(`board:bulk:${user.id}:${ip}`, 5, 60 * 60_000);
+  // Bulk import is admin-only (requireAdmin above). The rate limit here
+  // guards against a compromised admin cookie or a runaway retry loop,
+  // not regular usage — so we allow a generous quota that accommodates
+  // trial/error cycles when an Excel has validation errors (each failed
+  // attempt also burns a token).
+  const rl = await rateLimit(`board:bulk:${user.id}:${ip}`, 60, 60 * 60_000);
   if (!rl.allowed) {
+    const minutes = Math.ceil(rl.retryAfterSeconds / 60);
     return {
       ok: false,
-      message: `Çok fazla toplu içe aktarma. ${rl.retryAfterSeconds} saniye sonra tekrar deneyin.`,
+      message: `Çok fazla toplu içe aktarma. Yaklaşık ${minutes} dakika sonra tekrar deneyin.`,
     };
   }
 

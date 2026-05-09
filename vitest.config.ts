@@ -5,6 +5,9 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "."),
+      // The `server-only` marker package throws at import time outside
+      // Next's RSC bundler. Vitest runs in plain node, so stub it.
+      "server-only": path.resolve(__dirname, "tests/stubs/server-only.ts"),
     },
   },
   test: {

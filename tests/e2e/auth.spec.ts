@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./_helpers";
 
 /**
  * Happy-path auth smoke:
@@ -46,6 +46,8 @@ test("bad credentials stay on /giris and surface an error", async ({ page }) => 
   await page.getByRole("button", { name: /^giriş yap$/i }).click();
 
   // React Server Action path keeps the user on /giris; an alert appears.
+  // Use a text query — Next emits a hidden `__next-route-announcer__` div
+  // with role="alert" that would otherwise collide under strict mode.
   await expect(page).toHaveURL(/\/giris/);
-  await expect(page.getByRole("alert")).toContainText(/e-posta veya şifre hatalı/i);
+  await expect(page.getByText(/e-posta veya şifre hatalı/i)).toBeVisible();
 });

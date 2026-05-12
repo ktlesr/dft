@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Field } from "@/features/shared/form-field";
+import { TagInput } from "@/features/shared/tag-input";
 import { CONTENT_KIND_LABELS } from "@/lib/constants";
 import { createContentRecord, type RecordFormState } from "./actions";
 import { FormShell } from "./form-shell";
@@ -47,8 +48,8 @@ export function ContentForm() {
             <Input id="externalUrl" name="externalUrl" type="url" placeholder="https://…" />
           </Field>
 
-          <Field name="tags" label="Etiketler" hint="Virgülle ayırın. En fazla 20." error={state.errors?.tags} className="md:col-span-2">
-            <Input id="tags" name="tags" placeholder="örn. yönetişim, veri, pilot" />
+          <Field name="tags" label="Etiketler" hint="Virgül veya Enter ile ekleyin. En fazla 20." error={state.errors?.tags} className="md:col-span-2">
+            <TagInput name="tags" placeholder="örn. yönetişim, veri, pilot" />
           </Field>
 
           <Field name="summary" label="Açıklama" error={state.errors?.summary} className="md:col-span-2">

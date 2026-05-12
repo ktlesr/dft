@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Field } from "@/features/shared/form-field";
+import { TagInput } from "@/features/shared/tag-input";
 import { STAKEHOLDER_KIND_LABELS } from "@/lib/constants";
 import { createStakeholder, type RecordFormState } from "./actions";
 import { FormShell } from "./form-shell";
@@ -64,8 +65,8 @@ export function StakeholderForm() {
             <Input id="country" name="country" maxLength={120} />
           </Field>
 
-          <Field name="tags" label="Etiketler" hint="Virgülle ayırın. En fazla 20." error={state.errors?.tags} className="md:col-span-2">
-            <Input id="tags" name="tags" placeholder="örn. ar-ge, dijital tarım" />
+          <Field name="tags" label="Etiketler" hint="Virgül veya Enter ile ekleyin. En fazla 20." error={state.errors?.tags} className="md:col-span-2">
+            <TagInput name="tags" placeholder="örn. ar-ge, dijital tarım" />
           </Field>
 
           <Field name="description" label="Açıklama" error={state.errors?.description} className="md:col-span-2">

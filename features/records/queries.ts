@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import type { RecordTypeSlug } from "./types";
 
 /**
- * Minimal row shape shared across the 7 record types for the unified
+ * Minimal row shape shared across the record types for the unified
  * "Kayıtlarım" table. Each query projects to these fields so the table
  * can render without per-type branches.
  */
@@ -21,7 +21,7 @@ export type UnifiedRecordRow = {
 const ACTIVE = { deletedAt: null };
 
 export async function countsByType(ownerId: string): Promise<Record<RecordTypeSlug, number>> {
-  const [a, b, c, d, e, f, g] = await Promise.all([
+  const [a, b, c, d, e, f, g, h] = await Promise.all([
     prisma.projectApplicationRecord.count({ where: { ownerId, ...ACTIVE } }),
     prisma.successfulProjectRecord.count({ where: { ownerId, ...ACTIVE } }),
     prisma.projectIdeaRecord.count({ where: { ownerId, ...ACTIVE } }),
@@ -29,6 +29,7 @@ export async function countsByType(ownerId: string): Promise<Record<RecordTypeSl
     prisma.disseminationRecord.count({ where: { ownerId, ...ACTIVE } }),
     prisma.trainingPresentationRecord.count({ where: { ownerId, ...ACTIVE } }),
     prisma.contentRecord.count({ where: { ownerId, ...ACTIVE } }),
+    prisma.stakeholderRecord.count({ where: { ownerId, ...ACTIVE } }),
   ]);
   return {
     "proje-basvurusu": a,
@@ -38,6 +39,7 @@ export async function countsByType(ownerId: string): Promise<Record<RecordTypeSl
     "bilgi-cogaltimi": e,
     "egitim-sunum": f,
     "dokuman-icerik": g,
+    paydas: h,
   };
 }
 
@@ -63,7 +65,8 @@ export async function listMyRecords(
       id: r.id,
       type: "proje-basvurusu" as const,
       title: r.projectName,
-      subtitle: r.program ?? r.callName ?? null,
+      // Yeni `programName` boşsa legacy `program` veya `callName`.
+      subtitle: r.programName ?? r.program ?? r.callName ?? null,
       status: r.status,
       date: r.applicationDate,
       updatedAt: r.updatedAt,
@@ -84,9 +87,10 @@ export async function listMyRecords(
       id: r.id,
       type: "basarili-proje" as const,
       title: r.projectName,
-      subtitle: r.program ?? r.callName ?? null,
+      subtitle: r.programName ?? r.program ?? r.callName ?? null,
       status: null,
-      date: r.resultDate ?? r.applicationDate,
+      // Yeni `acceptanceDate` öncelikli; geriye dönük `resultDate`.
+      date: r.acceptanceDate ?? r.resultDate ?? r.applicationDate,
       updatedAt: r.updatedAt,
     }));
 
@@ -105,7 +109,9 @@ export async function listMyRecords(
       id: r.id,
       type: "proje-fikri" as const,
       title: r.title,
-      subtitle: r.potentialProgram ?? r.callTopic ?? null,
+      subtitle: r.potentialProgram ?? r.grantProvider ?? null,
+      // Aşama Faz 8'de formdan kaldırıldı ama legacy kayıtlarda dolu —
+      // yine de listede göstermeyi tercih ediyoruz.
       status: r.stage,
       date: r.targetDate,
       updatedAt: r.updatedAt,
@@ -126,7 +132,7 @@ export async function listMyRecords(
       id: r.id,
       type: "etkinlik" as const,
       title: r.name,
-      subtitle: r.location ?? r.kind ?? null,
+      subtitle: r.organizer ?? r.kind ?? null,
       status: r.role,
       date: r.date,
       updatedAt: r.updatedAt,
@@ -195,6 +201,27 @@ export async function listMyRecords(
       updatedAt: r.updatedAt,
     }));
 
+  const stakeholder = async (): Promise<UnifiedRecordRow[]> =>
+    (
+      await prisma.stakeholderRecord.findMany({
+        where: {
+          ownerId,
+          ...ACTIVE,
+          ...(q ? { fullName: { contains: q, mode: "insensitive" } } : {}),
+        },
+        orderBy: { updatedAt: "desc" },
+        take,
+      })
+    ).map((r) => ({
+      id: r.id,
+      type: "paydas" as const,
+      title: r.fullName,
+      subtitle: r.organization ?? r.positionTitle ?? null,
+      status: r.kind, // YERLI / YABANCI
+      date: null,
+      updatedAt: r.updatedAt,
+    }));
+
   const picks: Record<RecordTypeSlug, () => Promise<UnifiedRecordRow[]>> = {
     "proje-basvurusu": projectApp,
     "basarili-proje": successProject,
@@ -203,6 +230,7 @@ export async function listMyRecords(
     "bilgi-cogaltimi": dissemination,
     "egitim-sunum": training,
     "dokuman-icerik": content,
+    paydas: stakeholder,
   };
 
   if (opts.type) return picks[opts.type]();

@@ -5,6 +5,7 @@ import {
   Lightbulb,
   CalendarCheck,
   FileStack,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 
@@ -26,10 +27,10 @@ type RecordGroup = {
 };
 
 /**
- * Faz 6 sadeleştirmesi: 7 kayıt tipinden 5'i görünür kalır, iki kategori
- * altında gruplanır. `/kayit/bilgi-cogaltimi` ve `/kayit/egitim-sunum`
- * rotaları mevcut ve çalışmaya devam eder (legacy kayıtların detay
- * sayfaları kırılmasın diye) — sadece bu ızgaradan erişilmez.
+ * Faz 8: 6 aktif kayıt tipi 3 mantıksal grupta. Legacy
+ * `/kayit/bilgi-cogaltimi` ve `/kayit/egitim-sunum` rotaları mevcut ve
+ * çalışmaya devam eder (eski kayıtların detay sayfaları kırılmasın
+ * diye) — bu grid'den erişilmez.
  */
 const GROUPS: RecordGroup[] = [
   {
@@ -37,38 +38,49 @@ const GROUPS: RecordGroup[] = [
     tiles: [
       {
         href: "/kayit/proje-fikri",
-        title: "Fikir",
-        description: "Henüz başvuru aşamasında olmayan çalışmalar ve ortak arayışı.",
+        title: "Proje Fikri",
+        description: "Herhangi bir çağrıya sunulmamış proje fikirleri.",
         icon: Lightbulb,
       },
       {
         href: "/kayit/proje-basvurusu",
         title: "Proje Başvurusu",
-        description: "Program/fon, çağrı, bütçe, başvuru tarihi ve ortak bilgileri.",
+        description: "Başvurusu yapılmış ancak henüz sonuçlanmamış projeler.",
         icon: Briefcase,
       },
       {
         href: "/kayit/basarili-proje",
         title: "Başarılı Proje",
-        description: "Kabul edilmiş / tamamlanmış projeleriniz.",
+        description: "Destek almaya hak kazanmış projeler.",
         icon: Trophy,
       },
     ],
   },
   {
-    title: "Bilgi Çoğaltımı Kaydı",
+    title: "Bilgi & İçerik",
     tiles: [
       {
         href: "/kayit/etkinlik",
         title: "Etkinlik",
-        description: "Katıldığınız veya düzenlediğiniz etkinlikler.",
+        description: "Düzenlediğiniz veya katıldığınız toplantı, çalıştay, ağ kurma etkinlikleri.",
         icon: CalendarCheck,
       },
       {
         href: "/kayit/dokuman-icerik",
-        title: "Doküman / İçerik",
-        description: "Ürettiğiniz içerik, rapor ve dokümanlar.",
+        title: "Dijital İçerik",
+        description: "Rapor, makale, strateji belgesi, eğitim videosu vb.",
         icon: FileStack,
+      },
+    ],
+  },
+  {
+    title: "Ağ",
+    tiles: [
+      {
+        href: "/kayit/paydas",
+        title: "Paydaş",
+        description: "Ulusal / uluslararası paydaş kayıtları.",
+        icon: Users,
       },
     ],
   },

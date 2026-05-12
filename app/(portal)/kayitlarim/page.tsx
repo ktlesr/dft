@@ -9,11 +9,18 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/app/empty-state";
 import { requireActiveUser } from "@/lib/current-user";
 import { countsByType, listMyRecords } from "@/features/records/queries";
-import { RECORD_LABELS, RECORD_ORDER, isRecordType, type RecordTypeSlug } from "@/features/records/types";
+import {
+  ACTIVE_RECORD_TYPES,
+  RECORD_LABELS,
+  RECORD_ORDER,
+  isRecordType,
+  type RecordTypeSlug,
+} from "@/features/records/types";
 import { formatDate } from "@/lib/utils";
 import {
   PROJECT_APPLICATION_STATUS_LABELS,
   PROJECT_IDEA_STAGE_LABELS,
+  STAKEHOLDER_KIND_LABELS,
 } from "@/lib/constants";
 
 export const metadata = { title: "Kayıtlarım" };
@@ -50,9 +57,14 @@ export default async function MyRecordsPage({ searchParams }: { searchParams: Se
 
       <div className="mb-5 flex flex-wrap items-center gap-2">
         <TypePill href={mkHref(null, q)} active={activeType === null} label="Tümü" count={total} />
-        {RECORD_ORDER.map((t) => (
-          <TypePill key={t} href={mkHref(t, q)} active={activeType === t} label={RECORD_LABELS[t]} count={counts[t]} />
-        ))}
+        {RECORD_ORDER
+          // Aktif tiplerin tümünü göster; legacy tiplerden yalnızca kayıt varsa.
+          .filter((t) =>
+            (ACTIVE_RECORD_TYPES as readonly RecordTypeSlug[]).includes(t) || counts[t] > 0,
+          )
+          .map((t) => (
+            <TypePill key={t} href={mkHref(t, q)} active={activeType === t} label={RECORD_LABELS[t]} count={counts[t]} />
+          ))}
       </div>
 
       <form className="mb-4 flex gap-2" action="/kayitlarim">
@@ -177,6 +189,10 @@ function humanStatus(type: RecordTypeSlug, raw: string): string {
   if (type === "proje-fikri") {
     const key = raw as keyof typeof PROJECT_IDEA_STAGE_LABELS;
     return PROJECT_IDEA_STAGE_LABELS[key] ?? raw;
+  }
+  if (type === "paydas") {
+    const key = raw as keyof typeof STAKEHOLDER_KIND_LABELS;
+    return STAKEHOLDER_KIND_LABELS[key] ?? raw;
   }
   return raw;
 }

@@ -12,79 +12,72 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Field } from "@/features/shared/form-field";
+import {
+  EVENT_FORMAT_LABELS,
+  EVENT_KIND_LABELS,
+  EVENT_ROLE_LABELS,
+} from "@/lib/constants";
 import { createEventRecord, type RecordFormState } from "./actions";
 import { FormShell } from "./form-shell";
 
 const INITIAL: RecordFormState = { ok: true };
-
-// Stored verbatim in `EventRecord.kind` / `EventRecord.role` (both String).
-const EVENT_KINDS = ["Toplantı", "Çalıştay", "Panel", "Konferans"] as const;
-const EVENT_ROLES = ["Moderatör", "Panelist"] as const;
-const EVENT_FORMATS: { value: "ONLINE" | "FIZIKI"; label: string }[] = [
-  { value: "FIZIKI", label: "Fiziki" },
-  { value: "ONLINE", label: "Online" },
-];
 
 export function EventForm() {
   const [state, action, pending] = useActionState(createEventRecord, INITIAL);
 
   return (
     <form action={action}>
-      <FormShell state={state} pending={pending} attachmentsLabel="Görsel / ek dosya yükle">
+      <FormShell state={state} pending={pending} attachmentsLabel="Etkinlikle ilgili haber, görsel vb. içerikleri yükleyin">
         <div className="grid gap-4 md:grid-cols-2">
           <Field name="name" label="Etkinlik adı" required error={state.errors?.name} className="md:col-span-2">
             <Input id="name" name="name" required maxLength={200} />
           </Field>
 
-          <Field name="organizer" label="Etkinliği kim organize ediyor" error={state.errors?.organizer} className="md:col-span-2">
-            <Input id="organizer" name="organizer" maxLength={200} placeholder="Kurum / kuruluş / ekip" />
+          <Field name="organizer" label="Etkinliği düzenleyen kuruluş" error={state.errors?.organizer}>
+            <Input id="organizer" name="organizer" maxLength={200} />
+          </Field>
+          <Field name="date" label="Etkinlik tarihi" required error={state.errors?.date}>
+            <Input id="date" name="date" type="date" required />
           </Field>
 
           <Field name="kind" label="Etkinlik türü" required error={state.errors?.kind}>
-            <Select name="kind" defaultValue="Toplantı">
+            <Select name="kind" defaultValue="AG_KURMA">
               <SelectTrigger id="kind">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {EVENT_KINDS.map((k) => (
+                {Object.entries(EVENT_KIND_LABELS).map(([k, label]) => (
                   <SelectItem key={k} value={k}>
-                    {k}
+                    {label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </Field>
-          <Field name="format" label="Etkinlik şekli" required error={state.errors?.format}>
+          <Field name="format" label="Etkinlik yöntemi" required error={state.errors?.format}>
             <Select name="format" defaultValue="FIZIKI">
               <SelectTrigger id="format">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {EVENT_FORMATS.map((f) => (
-                  <SelectItem key={f.value} value={f.value}>
-                    {f.label}
+                {Object.entries(EVENT_FORMAT_LABELS).map(([k, label]) => (
+                  <SelectItem key={k} value={k}>
+                    {label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </Field>
 
-          <Field name="date" label="Tarih" required error={state.errors?.date}>
-            <Input id="date" name="date" type="date" required />
-          </Field>
-          <Field name="location" label="Yer" error={state.errors?.location}>
-            <Input id="location" name="location" maxLength={200} />
-          </Field>
-
-          <Field name="role" label="Etkinlikteki göreviniz" error={state.errors?.role}>
-            <Select name="role" defaultValue="Moderatör">
+          <Field name="role" label="Etkinlikteki rolünüz" required error={state.errors?.role}>
+            <Select name="role" defaultValue="KATILIMCI">
               <SelectTrigger id="role">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {EVENT_ROLES.map((r) => (
-                  <SelectItem key={r} value={r}>
-                    {r}
+                {Object.entries(EVENT_ROLE_LABELS).map(([k, label]) => (
+                  <SelectItem key={k} value={k}>
+                    {label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -95,7 +88,7 @@ export function EventForm() {
           </Field>
 
           <Field name="summary" label="Etkinlik açıklaması" error={state.errors?.summary} className="md:col-span-2">
-            <Textarea id="summary" name="summary" rows={5} maxLength={3000} />
+            <Textarea id="summary" name="summary" rows={5} maxLength={5000} />
           </Field>
         </div>
       </FormShell>

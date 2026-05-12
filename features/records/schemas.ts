@@ -62,60 +62,6 @@ const memberIdsArray = z
   .optional()
   .transform((v) => v ?? []);
 
-/* ────────── 1) Proje Başvurusu ────────── */
-
-export const projectApplicationSchema = z.object({
-  projectName: trimmed(2, 200),
-  program: optionalString(150),
-  callName: optionalString(200),
-  applicationDate: optionalDate,
-  budget: optionalDecimal,
-  requestedSupport: optionalDecimal,
-  kind: z.enum(["BIREYSEL", "DFT_ILE_BIRLIKTE"]),
-  partnerMemberIds: memberIdsArray,
-  // Field label in UI is "Proje Özeti" but the DB column stays `notes`
-  // to avoid a breaking schema rename.
-  notes: longText(5000),
-});
-export type ProjectApplicationInput = z.infer<typeof projectApplicationSchema>;
-
-/* ────────── 2) Başarılı Proje ────────── */
-
-export const successfulProjectSchema = z.object({
-  projectName: trimmed(2, 200),
-  program: optionalString(150),
-  callName: optionalString(200),
-  applicationDate: optionalDate,
-  resultDate: optionalDate,
-  totalBudget: optionalDecimal,
-  supportAmount: optionalDecimal,
-  role: optionalString(120),
-  kind: optionalString(120),
-  // resultDocument deprecated in UI (Faz 6 sadeleştirmesi) — kept as
-  // column in DB for legacy rows; form no longer collects it.
-  // Faz 6 yeni alan: konsorsiyum — ortak kurumlar ve paydaşlar.
-  consortium: longText(3000),
-  summary: longText(3000),
-});
-export type SuccessfulProjectInput = z.infer<typeof successfulProjectSchema>;
-
-/* ────────── 3) Proje Fikri / Hazırlık ────────── */
-
-export const projectIdeaSchema = z.object({
-  title: trimmed(2, 200),
-  potentialProgram: optionalString(150),
-  callTopic: optionalString(200),
-  stage: z.enum(["FIKIR", "ON_ARASTIRMA", "HAZIRLIK", "ORTAK_ARAYISI", "BASVURUYA_HAZIR"]),
-  potentialPartners: optionalString(500),
-  summary: longText(3000),
-  nextStep: optionalString(500),
-  targetDate: optionalDate,
-  notes: longText(3000),
-});
-export type ProjectIdeaInput = z.infer<typeof projectIdeaSchema>;
-
-/* ────────── 4) Etkinlik ────────── */
-
 const optionalHttpsUrl = z
   .string()
   .trim()
@@ -129,26 +75,130 @@ const optionalHttpsUrl = z
     "Geçerli bir URL girin (http:// veya https://).",
   );
 
+const optionalEmail = z
+  .string()
+  .trim()
+  .max(254)
+  .optional()
+  .transform((v) => (v && v !== "" ? v.toLowerCase() : undefined))
+  .refine(
+    (v) => v === undefined || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
+    "Geçerli bir e-posta girin.",
+  );
+
+/* ────────── Fon Türü (kademeli) ────────── */
+
+// Üst kategoriler — yeni başvuru / başarı formlarında zorunlu.
+export const FUND_CATEGORIES = ["ULUSAL", "AB", "DIGER_ULUSLARARASI"] as const;
+export type FundCategory = (typeof FUND_CATEGORIES)[number];
+
+const optionalFundCategory = z
+  .enum(FUND_CATEGORIES)
+  .optional()
+  .or(z.literal("").transform(() => undefined));
+
+// `memberFunction` — "DFT üyesinin fonksiyonu" yeni 3 seçenekli set.
+export const MEMBER_FUNCTIONS = ["BIREYSEL", "DFT_ILE_BIRLIKTE", "DANISMANLIK"] as const;
+export type MemberFunction = (typeof MEMBER_FUNCTIONS)[number];
+
+const memberFunctionRequired = z.enum(MEMBER_FUNCTIONS);
+
+// İlgili kurum/kuruluşun projedeki rolü.
+export const APPLICANT_ROLES = ["BASVURAN", "ORTAK", "ISTIRAKCI"] as const;
+export type ApplicantRole = (typeof APPLICANT_ROLES)[number];
+
+const optionalApplicantRole = z
+  .enum(APPLICANT_ROLES)
+  .optional()
+  .or(z.literal("").transform(() => undefined));
+
+/* ════════════ 1) Proje Başvurusu (Faz 8) ════════════ */
+
+export const projectApplicationSchema = z.object({
+  projectName: trimmed(2, 200),
+  fundCategory: optionalFundCategory,
+  fundSubType: optionalString(150),
+  grantProvider: optionalString(200),
+  programName: optionalString(200),
+  applicantOrg: optionalString(200),
+  applicantRole: optionalApplicantRole,
+  budget: optionalDecimal,
+  requestedSupport: optionalDecimal,
+  applicationDate: optionalDate,
+  memberFunction: memberFunctionRequired,
+  partnerMemberIds: memberIdsArray,
+  // Field label in UI is "Proje Özeti" but the DB column stays `notes`
+  // to avoid a breaking schema rename.
+  notes: longText(5000),
+});
+export type ProjectApplicationInput = z.infer<typeof projectApplicationSchema>;
+
+/* ════════════ 2) Başarılı Proje (Faz 8) ════════════ */
+
+export const successfulProjectSchema = z.object({
+  projectName: trimmed(2, 200),
+  fundCategory: optionalFundCategory,
+  fundSubType: optionalString(150),
+  grantProvider: optionalString(200),
+  programName: optionalString(200),
+  applicantOrg: optionalString(200),
+  applicantRole: optionalApplicantRole,
+  totalBudget: optionalDecimal,
+  supportAmount: optionalDecimal,
+  applicationDate: optionalDate,
+  acceptanceDate: optionalDate,
+  memberFunction: memberFunctionRequired,
+  summary: longText(5000),
+});
+export type SuccessfulProjectInput = z.infer<typeof successfulProjectSchema>;
+
+/* ════════════ 3) Proje Fikri (Faz 8) ════════════ */
+
+export const projectIdeaSchema = z.object({
+  title: trimmed(2, 200),
+  grantProvider: optionalString(200),
+  potentialProgram: optionalString(150),
+  budget: optionalDecimal,
+  summary: longText(5000),
+});
+export type ProjectIdeaInput = z.infer<typeof projectIdeaSchema>;
+
+/* ════════════ 4) Etkinlik (Faz 8) ════════════ */
+
+// Yeni etkinlik türleri.
+export const EVENT_KINDS = [
+  "AG_KURMA",          // Ağ Kurma / Eşleştirme
+  "BILGILENDIRME",     // Bilgilendirme / Eğitim
+  "CALISTAY",          // Çalıştay / Ortak Üretim
+  "DIGER",             // Diğer (Konferans, Panel, vb.)
+] as const;
+export type EventKindCode = (typeof EVENT_KINDS)[number];
+
+export const EVENT_FORMATS = ["FIZIKI", "ONLINE", "HIBRIT"] as const;
+export type EventFormatCode = (typeof EVENT_FORMATS)[number];
+
+export const EVENT_ROLES = [
+  "ORGANIZATOR",
+  "MODERATOR",
+  "EGITMEN",
+  "PANELIST",     // Panelist / Konuşmacı
+  "KATILIMCI",
+] as const;
+export type EventRoleCode = (typeof EVENT_ROLES)[number];
+
 export const eventSchema = z.object({
   name: trimmed(2, 200),
-  kind: optionalString(120),
-  date: requiredDate,
-  location: optionalString(200),
-  role: optionalString(120),
-  // Faz 6 yeni alanları
   organizer: optionalString(200),
-  format: z
-    .enum(["ONLINE", "FIZIKI"])
-    .optional()
-    .or(z.literal("").transform(() => undefined)),
+  date: requiredDate,
+  kind: z.enum(EVENT_KINDS),
+  format: z.enum(EVENT_FORMATS),
+  role: z.enum(EVENT_ROLES),
   externalUrl: optionalHttpsUrl,
-  // `topic` + `notes` dropped from the form in Faz 6; columns stay for
-  // legacy rows. UI label for `summary` is "Etkinlik açıklaması".
-  summary: longText(3000),
+  summary: longText(5000),
 });
 export type EventInput = z.infer<typeof eventSchema>;
 
-/* ────────── 5) Bilgi Çoğaltımı ────────── */
+/* ════════════ 5) Bilgi Çoğaltımı (legacy — Faz 6'da sadeleştirildi) ════════════ */
 
 export const disseminationSchema = z.object({
   title: trimmed(2, 200),
@@ -163,7 +213,7 @@ export const disseminationSchema = z.object({
 });
 export type DisseminationInput = z.infer<typeof disseminationSchema>;
 
-/* ────────── 6) Eğitim / Sunum ────────── */
+/* ════════════ 6) Eğitim / Sunum (legacy) ════════════ */
 
 export const trainingSchema = z.object({
   title: trimmed(2, 200),
@@ -177,16 +227,43 @@ export const trainingSchema = z.object({
 });
 export type TrainingInput = z.infer<typeof trainingSchema>;
 
-/* ────────── 7) Doküman / İçerik ────────── */
+/* ════════════ 7) Dijital İçerik (Faz 8) ════════════ */
+
+// Yeni Tür listesi: Bilgi Notu / Kitap / Makale / Rapor / Sunum / Video.
+export const CONTENT_KINDS = [
+  "BILGI_NOTU",
+  "KITAP",
+  "MAKALE",
+  "RAPOR",
+  "SUNUM",
+  "VIDEO",
+] as const;
+export type ContentKindCode = (typeof CONTENT_KINDS)[number];
 
 export const contentSchema = z.object({
   title: trimmed(2, 200),
-  kind: optionalString(120),
-  date: requiredDate,
-  // UI label: "Açıklama" (was "Kısa açıklama"). DB column stays `summary`.
-  summary: longText(3000),
-  // `mainDocument` and `notes` are deprecated in the form (Faz 6
-  // sadeleştirmesi); legacy rows keep the columns but no new writes.
+  kind: z.enum(CONTENT_KINDS),
+  externalUrl: optionalHttpsUrl,
   tags: tagsArray,
+  summary: longText(5000),
 });
 export type ContentInput = z.infer<typeof contentSchema>;
+
+/* ════════════ 8) Paydaş (Faz 8 — yeni) ════════════ */
+
+export const STAKEHOLDER_KINDS = ["YERLI", "YABANCI"] as const;
+export type StakeholderKindCode = (typeof STAKEHOLDER_KINDS)[number];
+
+export const stakeholderSchema = z.object({
+  fullName: trimmed(2, 200),
+  positionTitle: optionalString(200),
+  kind: z.enum(STAKEHOLDER_KINDS),
+  organization: optionalString(200),
+  linkedinUrl: optionalHttpsUrl,
+  email: optionalEmail,
+  city: optionalString(120),
+  country: optionalString(120),
+  tags: tagsArray,
+  description: longText(5000),
+});
+export type StakeholderInput = z.infer<typeof stakeholderSchema>;

@@ -110,6 +110,107 @@ export const PROJECT_IDEA_STAGE_LABELS = {
   BASVURUYA_HAZIR: "Başvuruya Hazır",
 } as const;
 
+/* ──────────────────────────────────────────────────────────────
+ * Faz 8 — Proje Başvurusu / Başarılı Proje yeni alan etiketleri
+ * ────────────────────────────────────────────────────────────── */
+
+export const FUND_CATEGORY_LABELS = {
+  ULUSAL: "Ulusal Fon",
+  AB: "AB Fonu",
+  DIGER_ULUSLARARASI: "Diğer Uluslararası Fon",
+} as const;
+
+/**
+ * Üst kategoriye göre alt fon tipleri. Yeni form alt tipi her zaman
+ * değiştirilebilir bir text alanı olarak da kabul eder; bu liste yalnızca
+ * öneri / dropdown içeriği üretir.
+ */
+export const FUND_SUBTYPES_BY_CATEGORY = {
+  ULUSAL: [
+    "Bakanlıklar",
+    "Kalkınma Ajansı",
+    "KOSGEB",
+    "TKDK",
+    "TÜBİTAK",
+    "Diğer",
+  ],
+  AB: [
+    "Dijital Avrupa",
+    "Erasmus+",
+    "Kademeli Çağrılar (Cascade)",
+    "Ufuk Avrupa",
+    "Diğer",
+  ],
+  DIGER_ULUSLARARASI: [
+    "Büyükelçilik",
+    "EBRD",
+    "Dünya Bankası",
+    "UNDP",
+    "UNESCO",
+    "Vakıflar",
+    "Diğer",
+  ],
+} as const;
+
+export const APPLICANT_ROLE_LABELS = {
+  BASVURAN: "Başvuru Sahibi / Koordinatör / Lider",
+  ORTAK: "Ortak",
+  ISTIRAKCI: "İştirakçi",
+} as const;
+
+export const MEMBER_FUNCTION_LABELS = {
+  BIREYSEL: "Bireysel Proje Başvurusu",
+  DFT_ILE_BIRLIKTE: "DFT ile Birlikte Proje Başvurusu",
+  DANISMANLIK: "Proje Danışmanlığı / Rehberliği Sağlama",
+} as const;
+
+/* ──────────────────────────────────────────────────────────────
+ * Faz 8 — Etkinlik
+ * ────────────────────────────────────────────────────────────── */
+
+export const EVENT_KIND_LABELS = {
+  AG_KURMA: "Ağ Kurma / Eşleştirme",
+  BILGILENDIRME: "Bilgilendirme / Eğitim",
+  CALISTAY: "Çalıştay / Ortak Üretim",
+  DIGER: "Diğer (Konferans, Panel, vb.)",
+} as const;
+
+export const EVENT_FORMAT_LABELS = {
+  FIZIKI: "Fiziki",
+  ONLINE: "Çevrimiçi",
+  HIBRIT: "Hibrit",
+} as const;
+
+export const EVENT_ROLE_LABELS = {
+  ORGANIZATOR: "Organizatör",
+  MODERATOR: "Moderatör",
+  EGITMEN: "Eğitmen",
+  PANELIST: "Panelist / Konuşmacı",
+  KATILIMCI: "Katılımcı",
+} as const;
+
+/* ──────────────────────────────────────────────────────────────
+ * Faz 8 — Dijital İçerik
+ * ────────────────────────────────────────────────────────────── */
+
+export const CONTENT_KIND_LABELS = {
+  BILGI_NOTU: "Bilgi Notu",
+  KITAP: "Kitap",
+  MAKALE: "Makale",
+  RAPOR: "Rapor",
+  SUNUM: "Sunum",
+  VIDEO: "Video",
+} as const;
+
+/* ──────────────────────────────────────────────────────────────
+ * Faz 8 — Paydaş
+ * ────────────────────────────────────────────────────────────── */
+
+export const STAKEHOLDER_KIND_LABELS = {
+  YERLI: "Yerli",
+  YABANCI: "Yabancı",
+} as const;
+
 export const ALLOWED_UPLOAD_MIME = new Set<string>([
   "application/pdf",
   "application/msword",

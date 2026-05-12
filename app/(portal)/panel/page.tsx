@@ -11,6 +11,7 @@ import {
   PlusCircle,
   Presentation,
   Trophy,
+  Users,
 } from "lucide-react";
 
 import { PageHeader } from "@/components/app/page-header";
@@ -33,7 +34,7 @@ export default async function DashboardPage() {
     cntProjectApps,
     cntSuccess,
     cntEvents,
-    cntDissemination,
+    cntStakeholders,
     generalPosts,
     groupPosts,
     upcomingMeetings,
@@ -42,7 +43,7 @@ export default async function DashboardPage() {
     prisma.projectApplicationRecord.count({ where: { ownerId: user.id, deletedAt: null } }),
     prisma.successfulProjectRecord.count({ where: { ownerId: user.id, deletedAt: null } }),
     prisma.eventRecord.count({ where: { ownerId: user.id, deletedAt: null } }),
-    prisma.disseminationRecord.count({ where: { ownerId: user.id, deletedAt: null } }),
+    prisma.stakeholderRecord.count({ where: { ownerId: user.id, deletedAt: null } }),
     prisma.boardPost.findMany({
       where: { scope: "GENERAL", status: "PUBLISHED", deletedAt: null },
       orderBy: [{ pinned: "desc" }, { publishedAt: "desc" }],
@@ -99,10 +100,10 @@ export default async function DashboardPage() {
       href: "/kayitlarim?tur=etkinlik",
     },
     {
-      label: "Bilgi Çoğaltımı Kayıtlarım",
-      value: cntDissemination,
-      icon: Megaphone,
-      href: "/kayitlarim?tur=bilgi-cogaltimi",
+      label: "Paydaş Kayıtlarım",
+      value: cntStakeholders,
+      icon: Users,
+      href: "/kayitlarim?tur=paydas",
     },
   ];
 

@@ -154,7 +154,7 @@ Gösterilecek içerikler:
 - Proje Başvurularım
 - Başarılı Projelerim
 - Etkinlik Kayıtlarım
-- Bilgi Çoğaltımı Kayıtlarım
+- Paydaş Kayıtlarım
 
 ## 3.2 Panolar
 İki ayrı pano bulunmalıdır:
@@ -186,15 +186,14 @@ Varsayılan yaklaşım:
 ## 3.3 Yeni Kayıt Ekle
 Bu alan, portalın en sık kullanılan alanıdır.
 Kart tabanlı seçim ekranı ile aşağıdaki kayıt tiplerine gidilmelidir:
-- Yeni Proje Başvurusu
-- Başarılı Proje Kaydı
-- Proje Fikri / Hazırlık
-- Etkinlik Kaydı
-- Bilgi Çoğaltımı Kaydı
-- Eğitim / Sunum Kaydı
-- Doküman / İçerik Kaydı
+- Proje Fikri
+- Proje Başvurusu
+- Başarılı Proje
+- Etkinlik
+- Dijital İçerik
+- Paydaş
 
-> Not: Kaynak dokümanda detaylı alan tablolarında altı kayıt tipi ayrıntılandırılırken, örnek seçim ekranında yedi kayıt tipi gösterilmektedir. Bu nedenle **Proje Fikri / Hazırlık** modülünü de ilk sürüme dahil et ve alanlarını ürün mantığına uygun şekilde tanımla.
+> Not (Faz 8): Form etiketleri sadeleştirildi — "Yeni Proje Başvurusu" / "Başarılı Proje Kaydı" / "Etkinlik Kaydı" / "Doküman / İçerik Kaydı" gibi "Kaydı" / "Yeni" ek sözcükleri kaldırıldı. **Bilgi Çoğaltımı Kaydı** ve **Eğitim / Sunum Kaydı** ise yeni kayıt grid'inden çıkarıldı; legacy rotalar ve detay sayfaları geriye dönük uyumluluk için çalışır durumda kalır.
 
 ## 3.4 Kayıtlarım
 Kullanıcının kendi kayıtlarını listeleyen ekran.
@@ -318,95 +317,78 @@ Alt modüller:
 # 4) Form ve veri modeli beklentileri
 
 ## 4.1 Bireysel kayıt modülleri
-Aşağıdaki modülleri ayrı ayrı ve güçlü tiplerle tasarla:
+Aşağıdaki modülleri ayrı ayrı ve güçlü tiplerle tasarla. Faz 8'de tüm modüller MODIFICATIONS.md'deki sade alan setine indirilmiştir; eski kolonlar legacy veri için DB'de korunur, yeni form sadece bu alanları yazar.
 
-### Yeni Proje Başvurusu
+### Proje Fikri
+Açıklama: Herhangi bir çağrıya sunulmamış proje fikirleri.
 Alanlar:
-- proje adı
-- program / fon
-- çağrı adı
+- proje başlığı
+- ilgili / potansiyel hibe sağlayıcısı
+- ilgili / potansiyel program
+- proje bütçesi
+- proje özeti
+- dosya yükle
+
+### Proje Başvurusu
+Açıklama: Başvurusu yapılmış ancak henüz sonuçlanmamış projeler.
+Alanlar:
+- proje başlığı
+- fon türü (kademeli seçim: Ulusal Fon / AB Fonu / Diğer Uluslararası Fon → ilgili alt fon tipleri)
+- hibe sağlayıcısı
+- program adı
+- ilgili kurum / kuruluş
+- ilgili kurum / kuruluşun projedeki rolü (Başvuru Sahibi/Koordinatör/Lider | Ortak | İştirakçi)
+- proje bütçesi
+- destek miktarı
 - başvuru tarihi
-- bütçe
-- talep edilen destek
-- başvuru durumu
-- başvuru türü (`BIREYSEL` / `DFT_ILE_BIRLIKTE`)
-- birlikte çalışılan DFT üyeleri (çoklu seçim)
-- dosya / ekler
-- notlar
+- DFT üyesinin fonksiyonu (Bireysel | DFT ile Birlikte | Proje Danışmanlığı/Rehberliği)
+- proje özeti
+- dosya yükle
 
-### Başarılı Proje Kaydı
-Alanlar:
-- proje adı
-- program / fon
-- çağrı adı
-- başvuru tarihi
-- sonuç tarihi
-- toplam bütçe
-- destek tutarı
-- rol
-- tür
-- sonuç belgesi
-- kısa açıklama
+### Başarılı Proje
+Açıklama: Destek almaya hak kazanmış projeler.
+Alanlar: **Proje Başvurusu** ile aynı set + **Proje Kabul Tarihi**. `proje türü` alanı kaldırıldı.
 
-### Proje Fikri / Hazırlık
-Alanlar:
-- fikir / hazırlık başlığı
-- ilgili program veya potansiyel fon
-- çağrı / konu başlığı
-- fikir aşaması
-- potansiyel ortaklar
-- kısa açıklama
-- sonraki adım
-- hedef tarih
-- ek dosya
-- notlar
-
-### Etkinlik Kaydı
+### Etkinlik
+Açıklama: Düzenlediğiniz veya yer aldığınız toplantı, çalıştay, ağ kurma etkinlikleri.
 Alanlar:
 - etkinlik adı
-- etkinlik türü
-- tarih
-- yer
-- rol
-- ilgili konu / program
-- kısa özet
-- belge / görsel
-- notlar
+- etkinliği düzenleyen kuruluş
+- etkinlik tarihi
+- etkinlik türü (Ağ Kurma/Eşleştirme | Bilgilendirme/Eğitim | Çalıştay/Ortak Üretim | Diğer)
+- etkinlik yöntemi (Fiziki | Çevrimiçi | Hibrit)
+- etkinlikteki rol (Organizatör | Moderatör | Eğitmen | Panelist/Konuşmacı | Katılımcı)
+- etkinlik bağlantısı (opsiyonel)
+- etkinlik açıklaması
+- dosya yükle
 
-### Bilgi Çoğaltımı Kaydı
-Alanlar:
-- faaliyet başlığı
-- tarih
-- yer / kurum
-- tür
-- hedef kitle
-- katılımcı sayısı
-- ilgili program / konu
-- kısa açıklama
-- dosya / görsel
-- notlar
-
-### Eğitim / Sunum Kaydı
+### Dijital İçerik
+Açıklama: DFT çalışmaları kapsamında faydalı dijital içerikler (rapor, makale, strateji belgesi, eğitim videosu vb.).
 Alanlar:
 - başlık
-- tarih
-- yer
-- hedef kitle
-- katılımcı sayısı
-- rol
-- içerik özeti
-- sunum dosyası
-- notlar
-
-### Doküman / İçerik Kaydı
-Alanlar:
-- içerik başlığı
-- içerik türü
-- tarih
-- kısa açıklama
-- esas belge
+- tür (Bilgi Notu | Kitap | Makale | Rapor | Sunum | Video)
+- bağlantı (opsiyonel)
 - etiketler
-- notlar
+- açıklama
+- dosya yükle (video dışındaki içerikler için)
+
+### Paydaş (Faz 8 — yeni)
+Açıklama: DFT'nin ağ oluşturma çalışmaları kapsamında faydalı olabilecek ulusal / uluslararası paydaşlar.
+Alanlar:
+- adı soyadı
+- ünvan
+- paydaş türü (Yerli | Yabancı)
+- kuruluş
+- LinkedIn adresi
+- e-posta adresi
+- şehir
+- ülke
+- etiketler
+- açıklama
+
+### Legacy (yeni form sunulmaz)
+- **Bilgi Çoğaltımı Kaydı** — `DisseminationRecord`. Eski kayıtların detay sayfaları çalışmaya devam eder; yeni kayıt grid'inde gösterilmez.
+- **Eğitim / Sunum Kaydı** — `TrainingPresentationRecord`. Aynı şekilde legacy.
 
 ## 4.2 Ortak veri yaklaşımı
 Mümkün olan her yerde ortak alanları standardize et:
@@ -441,9 +423,10 @@ Prisma şemasını güçlü ve sade tut. Aşağıdaki çekirdek varlıkları olu
 - `SuccessfulProjectRecord`
 - `ProjectIdeaRecord`
 - `EventRecord`
-- `DisseminationRecord`
-- `TrainingPresentationRecord`
-- `ContentRecord`
+- `DisseminationRecord` (legacy)
+- `TrainingPresentationRecord` (legacy)
+- `ContentRecord` (UI etiketi: "Dijital İçerik")
+- `StakeholderRecord` (Faz 8 — Paydaş)
 - `Notification` (minimal olabilir)
 - `AuditLog`
 
@@ -663,13 +646,14 @@ Aşağıdaki route yapısını üret ve gerektiğinde daha iyi alt route’lara 
 - `/panolar/genel`
 - `/panolar/grup`
 - `/kayit/yeni`
+- `/kayit/proje-fikri`
 - `/kayit/proje-basvurusu`
 - `/kayit/basarili-proje`
-- `/kayit/proje-fikri`
 - `/kayit/etkinlik`
-- `/kayit/bilgi-cogaltimi`
-- `/kayit/egitim-sunum`
-- `/kayit/dokuman-icerik`
+- `/kayit/dokuman-icerik`  *(UI etiketi: "Dijital İçerik")*
+- `/kayit/paydas`  *(Faz 8)*
+- `/kayit/bilgi-cogaltimi`  *(legacy — detay rotası için tutulur)*
+- `/kayit/egitim-sunum`  *(legacy — detay rotası için tutulur)*
 - `/kayitlarim`
 - `/kayitlarim/[type]/[id]`
 - `/calisma-grubum`

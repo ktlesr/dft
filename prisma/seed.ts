@@ -155,7 +155,7 @@ async function main() {
           scope: "GENERAL",
           kind: "RESOURCE",
           title: "Yeni çağrı: Ufuk Avrupa 2026",
-          body: "Ufuk Avrupa 2026 çağrıları yayımlandı. Portal üzerinde 'Proje Fikri / Hazırlık' kaydı oluşturarak ön çalışmanızı başlatabilirsiniz.",
+          body: "Ufuk Avrupa 2026 çağrıları yayımlandı. Portal üzerinde 'Proje Fikri' kaydı oluşturarak ön çalışmanızı başlatabilirsiniz.",
           tags: ["horizon", "cagri"],
           externalUrl: "https://ec.europa.eu/horizon",
           authorId: admin.id,

@@ -80,6 +80,9 @@ describe("URL fields — javascript:/data:/scheme bypass attempts", () => {
     const r = eventSchema.safeParse({
       name: "Etkinlik",
       date: "2026-06-15",
+      kind: "CALISTAY",
+      format: "FIZIKI",
+      role: "KATILIMCI",
       externalUrl: bad,
     });
     expect(r.success).toBe(false);
@@ -252,11 +255,11 @@ describe("enum tampering rejected", () => {
     ).toBe(false);
   });
 
-  it("project application kind enum is closed", () => {
+  it("project application memberFunction enum is closed", () => {
     expect(
       projectApplicationSchema.safeParse({
         projectName: "Proje X",
-        kind: "DESTRUCTIVE",
+        memberFunction: "DESTRUCTIVE",
         partnerMemberIds: [],
       }).success,
     ).toBe(false);
@@ -283,7 +286,7 @@ describe("decimal field — overflow / odd notations", () => {
       projectApplicationSchema.safeParse({
         projectName: "Proje X",
         budget: bad,
-        kind: "BIREYSEL",
+        memberFunction: "BIREYSEL",
         partnerMemberIds: [],
       }).success,
     ).toBe(false);
@@ -296,7 +299,7 @@ describe("decimal field — overflow / odd notations", () => {
     const r = projectApplicationSchema.safeParse({
       projectName: "Proje X",
       budget: "-100",
-      kind: "BIREYSEL",
+      memberFunction: "BIREYSEL",
       partnerMemberIds: [],
     });
     expect(r.success).toBe(true);
@@ -320,6 +323,9 @@ describe("date inputs — strict-but-permissive boundary", () => {
       eventSchema.safeParse({
         name: "ok",
         date: "",
+        kind: "CALISTAY",
+        format: "FIZIKI",
+        role: "KATILIMCI",
       }).success,
     ).toBe(false);
   });

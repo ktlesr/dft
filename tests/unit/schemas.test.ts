@@ -214,8 +214,7 @@ describe("record schemas", () => {
     const r = projectApplicationSchema.parse({
       projectName: "Proje X",
       budget: "150000",
-      status: "PLANLANIYOR",
-      kind: "BIREYSEL",
+      memberFunction: "BIREYSEL",
       partnerMemberIds: [],
     });
     expect(r.budget).toBe("150000");
@@ -226,8 +225,7 @@ describe("record schemas", () => {
     const r = projectApplicationSchema.parse({
       projectName: "Proje X",
       budget: "150000,50",
-      status: "PLANLANIYOR",
-      kind: "BIREYSEL",
+      memberFunction: "BIREYSEL",
       partnerMemberIds: [],
     });
     expect(r.budget).toBe("150000.50");
@@ -237,8 +235,7 @@ describe("record schemas", () => {
     const r = projectApplicationSchema.safeParse({
       projectName: "Proje X",
       budget: "çok para",
-      status: "PLANLANIYOR",
-      kind: "BIREYSEL",
+      memberFunction: "BIREYSEL",
       partnerMemberIds: [],
     });
     expect(r.success).toBe(false);
@@ -249,15 +246,29 @@ describe("record schemas", () => {
       eventSchema.safeParse({
         name: "Çalıştay",
         date: "",
+        kind: "CALISTAY",
+        format: "FIZIKI",
+        role: "KATILIMCI",
       }).success,
     ).toBe(false);
   });
 
-  it("projectIdeaSchema defaults stage when valid", () => {
+  it("eventSchema rejects unknown event kind", () => {
+    expect(
+      eventSchema.safeParse({
+        name: "Çalıştay",
+        date: "2026-06-15",
+        kind: "INVALID_KIND",
+        format: "FIZIKI",
+        role: "KATILIMCI",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("projectIdeaSchema accepts a minimal payload", () => {
     const r = projectIdeaSchema.parse({
       title: "Bir fikir",
-      stage: "FIKIR",
     });
-    expect(r.stage).toBe("FIKIR");
+    expect(r.title).toBe("Bir fikir");
   });
 });

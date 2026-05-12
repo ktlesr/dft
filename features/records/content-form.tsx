@@ -12,41 +12,39 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Field } from "@/features/shared/form-field";
+import { CONTENT_KIND_LABELS } from "@/lib/constants";
 import { createContentRecord, type RecordFormState } from "./actions";
 import { FormShell } from "./form-shell";
 
 const INITIAL: RecordFormState = { ok: true };
-
-// Stored verbatim in `ContentRecord.kind` (String) — no enum migration.
-const CONTENT_KINDS = ["Rapor", "Makale", "Sunum", "Bilgi Notu", "Kitap"] as const;
 
 export function ContentForm() {
   const [state, action, pending] = useActionState(createContentRecord, INITIAL);
 
   return (
     <form action={action}>
-      <FormShell state={state} pending={pending}>
+      <FormShell state={state} pending={pending} attachmentsLabel="İlgili dijital içeriği yükleyin (video dışındakiler için).">
         <div className="grid gap-4 md:grid-cols-2">
-          <Field name="title" label="İçerik başlığı" required error={state.errors?.title} className="md:col-span-2">
+          <Field name="title" label="Başlık" required error={state.errors?.title} className="md:col-span-2">
             <Input id="title" name="title" required maxLength={200} />
           </Field>
 
-          <Field name="kind" label="Döküman / İçerik türü" required error={state.errors?.kind}>
-            <Select name="kind" defaultValue="Rapor">
+          <Field name="kind" label="Tür" required error={state.errors?.kind}>
+            <Select name="kind" defaultValue="RAPOR">
               <SelectTrigger id="kind">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {CONTENT_KINDS.map((k) => (
+                {Object.entries(CONTENT_KIND_LABELS).map(([k, label]) => (
                   <SelectItem key={k} value={k}>
-                    {k}
+                    {label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </Field>
-          <Field name="date" label="Tarih" required error={state.errors?.date}>
-            <Input id="date" name="date" type="date" required />
+          <Field name="externalUrl" label="Bağlantı (opsiyonel)" error={state.errors?.externalUrl}>
+            <Input id="externalUrl" name="externalUrl" type="url" placeholder="https://…" />
           </Field>
 
           <Field name="tags" label="Etiketler" hint="Virgülle ayırın. En fazla 20." error={state.errors?.tags} className="md:col-span-2">
@@ -54,7 +52,7 @@ export function ContentForm() {
           </Field>
 
           <Field name="summary" label="Açıklama" error={state.errors?.summary} className="md:col-span-2">
-            <Textarea id="summary" name="summary" rows={4} maxLength={3000} />
+            <Textarea id="summary" name="summary" rows={5} maxLength={5000} />
           </Field>
         </div>
       </FormShell>

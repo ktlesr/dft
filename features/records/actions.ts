@@ -18,6 +18,7 @@ import {
   eventSchema,
   projectApplicationSchema,
   projectIdeaSchema,
+  stakeholderSchema,
   successfulProjectSchema,
   trainingSchema,
 } from "./schemas";
@@ -67,6 +68,17 @@ function decimalOrUndef(v: unknown): Prisma.Decimal | undefined {
   }
 }
 
+/**
+ * Faz 8: yeni `memberFunction` (3 seçenek) ile legacy `kind` enum
+ * (2 seçenek) arasındaki köprü. Yeni form `memberFunction` yazar; legacy
+ * `kind` kolonu eski rollere geriye dönük uyumluluk için doldurulur.
+ */
+function legacyKindForMemberFunction(
+  fn: "BIREYSEL" | "DFT_ILE_BIRLIKTE" | "DANISMANLIK",
+): "BIREYSEL" | "DFT_ILE_BIRLIKTE" {
+  return fn === "DFT_ILE_BIRLIKTE" ? "DFT_ILE_BIRLIKTE" : "BIREYSEL";
+}
+
 /* ────────── owner-only helpers used by update/delete ────────── */
 
 async function mustOwnOr403<T extends { ownerId: string; deletedAt: Date | null } | null>(
@@ -86,7 +98,7 @@ async function mustOwnOr403<T extends { ownerId: string; deletedAt: Date | null 
 }
 
 /* ══════════════════════════════════════════════════════════════════
- * 1) Proje Başvurusu
+ * 1) Proje Başvurusu (Faz 8)
  * ══════════════════════════════════════════════════════════════════*/
 
 export async function createProjectApplication(
@@ -96,29 +108,40 @@ export async function createProjectApplication(
   const user = await requireActiveUser();
   const parsed = projectApplicationSchema.safeParse({
     projectName: fd.get("projectName"),
-    program: fd.get("program"),
-    callName: fd.get("callName"),
-    applicationDate: fd.get("applicationDate"),
+    fundCategory: fd.get("fundCategory"),
+    fundSubType: fd.get("fundSubType"),
+    grantProvider: fd.get("grantProvider"),
+    programName: fd.get("programName"),
+    applicantOrg: fd.get("applicantOrg"),
+    applicantRole: fd.get("applicantRole"),
     budget: fd.get("budget"),
     requestedSupport: fd.get("requestedSupport"),
-    kind: fd.get("kind"),
+    applicationDate: fd.get("applicationDate"),
+    memberFunction: fd.get("memberFunction"),
     partnerMemberIds: fd.getAll("partnerMemberIds").map(String),
     notes: fd.get("notes"),
   });
   if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
 
-  // `status` is no longer asked in the UI — let the DB default (PLANLANIYOR)
-  // apply. Admins or future edit flows can still change it.
   const row = await prisma.projectApplicationRecord.create({
     data: {
       ownerId: user.id,
       projectName: parsed.data.projectName,
-      program: parsed.data.program ?? null,
-      callName: parsed.data.callName ?? null,
-      applicationDate: parsed.data.applicationDate ?? null,
+      // Legacy köprüleri — eski sorgular kırılmasın diye doldurulur.
+      program: parsed.data.programName ?? null,
+      callName: null,
+      kind: legacyKindForMemberFunction(parsed.data.memberFunction),
+      // Yeni Faz 8 alanları
+      fundCategory: parsed.data.fundCategory ?? null,
+      fundSubType: parsed.data.fundSubType ?? null,
+      grantProvider: parsed.data.grantProvider ?? null,
+      programName: parsed.data.programName ?? null,
+      applicantOrg: parsed.data.applicantOrg ?? null,
+      applicantRole: parsed.data.applicantRole ?? null,
+      memberFunction: parsed.data.memberFunction,
       budget: decimalOrUndef(parsed.data.budget),
       requestedSupport: decimalOrUndef(parsed.data.requestedSupport),
-      kind: parsed.data.kind,
+      applicationDate: parsed.data.applicationDate ?? null,
       partnerMemberIds: parsed.data.partnerMemberIds,
       notes: parsed.data.notes ?? null,
     },
@@ -143,7 +166,7 @@ export async function createProjectApplication(
 }
 
 /* ══════════════════════════════════════════════════════════════════
- * 2) Başarılı Proje
+ * 2) Başarılı Proje (Faz 8)
  * ══════════════════════════════════════════════════════════════════*/
 
 export async function createSuccessfulProject(
@@ -153,15 +176,17 @@ export async function createSuccessfulProject(
   const user = await requireActiveUser();
   const parsed = successfulProjectSchema.safeParse({
     projectName: fd.get("projectName"),
-    program: fd.get("program"),
-    callName: fd.get("callName"),
-    applicationDate: fd.get("applicationDate"),
-    resultDate: fd.get("resultDate"),
+    fundCategory: fd.get("fundCategory"),
+    fundSubType: fd.get("fundSubType"),
+    grantProvider: fd.get("grantProvider"),
+    programName: fd.get("programName"),
+    applicantOrg: fd.get("applicantOrg"),
+    applicantRole: fd.get("applicantRole"),
     totalBudget: fd.get("totalBudget"),
     supportAmount: fd.get("supportAmount"),
-    role: fd.get("role"),
-    kind: fd.get("kind"),
-    consortium: fd.get("consortium"),
+    applicationDate: fd.get("applicationDate"),
+    acceptanceDate: fd.get("acceptanceDate"),
+    memberFunction: fd.get("memberFunction"),
     summary: fd.get("summary"),
   });
   if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
@@ -170,15 +195,25 @@ export async function createSuccessfulProject(
     data: {
       ownerId: user.id,
       projectName: parsed.data.projectName,
-      program: parsed.data.program ?? null,
-      callName: parsed.data.callName ?? null,
-      applicationDate: parsed.data.applicationDate ?? null,
-      resultDate: parsed.data.resultDate ?? null,
+      // Legacy köprüler
+      program: parsed.data.programName ?? null,
+      role: null,
+      kind: null,
+      // Yeni Faz 8 alanları
+      fundCategory: parsed.data.fundCategory ?? null,
+      fundSubType: parsed.data.fundSubType ?? null,
+      grantProvider: parsed.data.grantProvider ?? null,
+      programName: parsed.data.programName ?? null,
+      applicantOrg: parsed.data.applicantOrg ?? null,
+      applicantRole: parsed.data.applicantRole ?? null,
+      memberFunction: parsed.data.memberFunction,
       totalBudget: decimalOrUndef(parsed.data.totalBudget),
       supportAmount: decimalOrUndef(parsed.data.supportAmount),
-      role: parsed.data.role ?? null,
-      kind: parsed.data.kind ?? null,
-      consortium: parsed.data.consortium ?? null,
+      applicationDate: parsed.data.applicationDate ?? null,
+      // resultDate eski sütun. `acceptanceDate` (Proje Kabul Tarihi) ana yeni
+      // alandır; legacy sütun olarak `resultDate`'ı da aynı değerle dolduruyoruz.
+      resultDate: parsed.data.acceptanceDate ?? null,
+      acceptanceDate: parsed.data.acceptanceDate ?? null,
       summary: parsed.data.summary ?? null,
     },
   });
@@ -202,7 +237,7 @@ export async function createSuccessfulProject(
 }
 
 /* ══════════════════════════════════════════════════════════════════
- * 3) Proje Fikri / Hazırlık
+ * 3) Proje Fikri (Faz 8)
  * ══════════════════════════════════════════════════════════════════*/
 
 export async function createProjectIdea(
@@ -212,14 +247,10 @@ export async function createProjectIdea(
   const user = await requireActiveUser();
   const parsed = projectIdeaSchema.safeParse({
     title: fd.get("title"),
+    grantProvider: fd.get("grantProvider"),
     potentialProgram: fd.get("potentialProgram"),
-    callTopic: fd.get("callTopic"),
-    stage: fd.get("stage"),
-    potentialPartners: fd.get("potentialPartners"),
+    budget: fd.get("budget"),
     summary: fd.get("summary"),
-    nextStep: fd.get("nextStep"),
-    targetDate: fd.get("targetDate"),
-    notes: fd.get("notes"),
   });
   if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
 
@@ -227,14 +258,11 @@ export async function createProjectIdea(
     data: {
       ownerId: user.id,
       title: parsed.data.title,
+      grantProvider: parsed.data.grantProvider ?? null,
       potentialProgram: parsed.data.potentialProgram ?? null,
-      callTopic: parsed.data.callTopic ?? null,
-      stage: parsed.data.stage,
-      potentialPartners: parsed.data.potentialPartners ?? null,
+      budget: decimalOrUndef(parsed.data.budget),
       summary: parsed.data.summary ?? null,
-      nextStep: parsed.data.nextStep ?? null,
-      targetDate: parsed.data.targetDate ?? null,
-      notes: parsed.data.notes ?? null,
+      // stage NOT NULL (default FIKIR). Yeni form aşama sormaz.
     },
   });
 
@@ -257,7 +285,7 @@ export async function createProjectIdea(
 }
 
 /* ══════════════════════════════════════════════════════════════════
- * 4) Etkinlik
+ * 4) Etkinlik (Faz 8)
  * ══════════════════════════════════════════════════════════════════*/
 
 export async function createEventRecord(
@@ -267,12 +295,11 @@ export async function createEventRecord(
   const user = await requireActiveUser();
   const parsed = eventSchema.safeParse({
     name: fd.get("name"),
-    kind: fd.get("kind"),
-    date: fd.get("date"),
-    location: fd.get("location"),
-    role: fd.get("role"),
     organizer: fd.get("organizer"),
+    date: fd.get("date"),
+    kind: fd.get("kind"),
     format: fd.get("format"),
+    role: fd.get("role"),
     externalUrl: fd.get("externalUrl"),
     summary: fd.get("summary"),
   });
@@ -282,14 +309,15 @@ export async function createEventRecord(
     data: {
       ownerId: user.id,
       name: parsed.data.name,
-      kind: parsed.data.kind ?? null,
-      date: parsed.data.date,
-      location: parsed.data.location ?? null,
-      role: parsed.data.role ?? null,
       organizer: parsed.data.organizer ?? null,
-      format: parsed.data.format ?? null,
+      date: parsed.data.date,
+      // `kind`, `format`, `role` enum kodlarını string olarak saklarız.
+      kind: parsed.data.kind,
+      format: parsed.data.format,
+      role: parsed.data.role,
       externalUrl: parsed.data.externalUrl ?? null,
       summary: parsed.data.summary ?? null,
+      location: null,
       notes: null,
     },
   });
@@ -313,7 +341,7 @@ export async function createEventRecord(
 }
 
 /* ══════════════════════════════════════════════════════════════════
- * 5) Bilgi Çoğaltımı
+ * 5) Bilgi Çoğaltımı (legacy — yeni form sunmuyor)
  * ══════════════════════════════════════════════════════════════════*/
 
 export async function createDissemination(
@@ -368,7 +396,7 @@ export async function createDissemination(
 }
 
 /* ══════════════════════════════════════════════════════════════════
- * 6) Eğitim / Sunum
+ * 6) Eğitim / Sunum (legacy)
  * ══════════════════════════════════════════════════════════════════*/
 
 export async function createTraining(
@@ -421,7 +449,7 @@ export async function createTraining(
 }
 
 /* ══════════════════════════════════════════════════════════════════
- * 7) Doküman / İçerik
+ * 7) Dijital İçerik (Faz 8)
  * ══════════════════════════════════════════════════════════════════*/
 
 export async function createContentRecord(
@@ -432,9 +460,9 @@ export async function createContentRecord(
   const parsed = contentSchema.safeParse({
     title: fd.get("title"),
     kind: fd.get("kind"),
-    date: fd.get("date"),
-    summary: fd.get("summary"),
+    externalUrl: fd.get("externalUrl"),
     tags: fd.get("tags"),
+    summary: fd.get("summary"),
   });
   if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
 
@@ -442,10 +470,12 @@ export async function createContentRecord(
     data: {
       ownerId: user.id,
       title: parsed.data.title,
-      kind: parsed.data.kind ?? null,
-      date: parsed.data.date,
-      summary: parsed.data.summary ?? null,
+      kind: parsed.data.kind,
+      // `date` NOT NULL — yeni form sormaz; oluşturma zamanını koyarız.
+      date: new Date(),
+      externalUrl: parsed.data.externalUrl ?? null,
       tags: parsed.data.tags,
+      summary: parsed.data.summary ?? null,
     },
   });
 
@@ -465,6 +495,63 @@ export async function createContentRecord(
   revalidatePath("/kayitlarim");
   revalidatePath("/panel");
   redirect(`/kayitlarim/dokuman-icerik/${row.id}`);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+ * 8) Paydaş (Faz 8 — yeni)
+ * ══════════════════════════════════════════════════════════════════*/
+
+export async function createStakeholder(
+  _prev: RecordFormState,
+  fd: FormData,
+): Promise<RecordFormState> {
+  const user = await requireActiveUser();
+  const parsed = stakeholderSchema.safeParse({
+    fullName: fd.get("fullName"),
+    positionTitle: fd.get("positionTitle"),
+    kind: fd.get("kind"),
+    organization: fd.get("organization"),
+    linkedinUrl: fd.get("linkedinUrl"),
+    email: fd.get("email"),
+    city: fd.get("city"),
+    country: fd.get("country"),
+    tags: fd.get("tags"),
+    description: fd.get("description"),
+  });
+  if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
+
+  const row = await prisma.stakeholderRecord.create({
+    data: {
+      ownerId: user.id,
+      fullName: parsed.data.fullName,
+      positionTitle: parsed.data.positionTitle ?? null,
+      kind: parsed.data.kind,
+      organization: parsed.data.organization ?? null,
+      linkedinUrl: parsed.data.linkedinUrl ?? null,
+      email: parsed.data.email ?? null,
+      city: parsed.data.city ?? null,
+      country: parsed.data.country ?? null,
+      tags: parsed.data.tags,
+      description: parsed.data.description ?? null,
+    },
+  });
+
+  try {
+    await storeAttachments({
+      files: filesFromFormData(fd),
+      uploadedById: user.id,
+      owner: { stakeholderId: row.id },
+    });
+  } catch (e) {
+    await prisma.stakeholderRecord.delete({ where: { id: row.id } });
+    if (e instanceof UploadError) return { ok: false, message: uploadMessage(e) };
+    throw e;
+  }
+
+  await audit({ action: "RECORD_CREATED", actorId: user.id, targetType: "StakeholderRecord", targetId: row.id });
+  revalidatePath("/kayitlarim");
+  revalidatePath("/panel");
+  redirect(`/kayitlarim/paydas/${row.id}`);
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -526,6 +613,13 @@ export async function softDeleteRecord(type: string, id: string): Promise<void> 
       await prisma.contentRecord.update({ where: { id }, data: { deletedAt: now } });
       return { ownerId: row.ownerId };
     },
+    paydas: async () => {
+      const row = await prisma.stakeholderRecord.findUnique({ where: { id } });
+      if (!row || row.deletedAt) redirect("/kayitlarim?hata=bulunamadi");
+      await mustOwnOr403(row, user.id, user.roles);
+      await prisma.stakeholderRecord.update({ where: { id }, data: { deletedAt: now } });
+      return { ownerId: row.ownerId };
+    },
   };
 
   const res = await actions[type]();
@@ -544,3 +638,4 @@ export async function softDeleteRecord(type: string, id: string): Promise<void> 
 // Silence unused — we intentionally keep sendMail imported for future use
 // (e.g. notifying admins of new applications in a later phase).
 void sendMail;
+void OK;

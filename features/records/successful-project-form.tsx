@@ -4,9 +4,18 @@ import { useActionState } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Field } from "@/features/shared/form-field";
+import { APPLICANT_ROLE_LABELS, MEMBER_FUNCTION_LABELS } from "@/lib/constants";
 import { createSuccessfulProject, type RecordFormState } from "./actions";
 import { FormShell } from "./form-shell";
+import { FundTypeFields } from "./fund-select";
 
 const INITIAL: RecordFormState = { ok: true };
 
@@ -15,46 +24,76 @@ export function SuccessfulProjectForm() {
 
   return (
     <form action={action}>
-      <FormShell state={state} pending={pending} attachmentsLabel="Başarı Bildirim Belgesi Yükle">
+      <FormShell state={state} pending={pending} attachmentsLabel="Proje kabul belgesi / ek dosyalar">
         <div className="grid gap-4 md:grid-cols-2">
-          <Field name="projectName" label="Proje adı" required error={state.errors?.projectName} className="md:col-span-2">
+          <Field name="projectName" label="Proje başlığı" required error={state.errors?.projectName} className="md:col-span-2">
             <Input id="projectName" name="projectName" required maxLength={200} />
           </Field>
 
-          <Field name="program" label="Program / fon" error={state.errors?.program}>
-            <Input id="program" name="program" maxLength={150} />
+          <FundTypeFields errors={state.errors} />
+
+          <Field name="grantProvider" label="Hibe sağlayıcısı" hint="Kurumun tam adı ve varsa kısaltması." error={state.errors?.grantProvider}>
+            <Input id="grantProvider" name="grantProvider" maxLength={200} />
           </Field>
-          <Field name="callName" label="Çağrı adı" error={state.errors?.callName}>
-            <Input id="callName" name="callName" maxLength={200} />
+          <Field name="programName" label="Program adı" hint="Programın tam adı ve varsa kısaltması." error={state.errors?.programName}>
+            <Input id="programName" name="programName" maxLength={200} />
+          </Field>
+
+          <Field name="applicantOrg" label="İlgili kurum / kuruluş" error={state.errors?.applicantOrg}>
+            <Input id="applicantOrg" name="applicantOrg" maxLength={200} />
+          </Field>
+          <Field name="applicantRole" label="İlgili kurumun projedeki rolü" error={state.errors?.applicantRole}>
+            <Select name="applicantRole">
+              <SelectTrigger id="applicantRole">
+                <SelectValue placeholder="Seçiniz" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(APPLICANT_ROLE_LABELS).map(([k, label]) => (
+                  <SelectItem key={k} value={k}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+
+          <Field name="totalBudget" label="Proje bütçesi" hint="Sayısal değer (₺)" error={state.errors?.totalBudget}>
+            <Input id="totalBudget" name="totalBudget" inputMode="decimal" />
+          </Field>
+          <Field name="supportAmount" label="Destek miktarı" hint="Talep edilen destek (₺)" error={state.errors?.supportAmount}>
+            <Input id="supportAmount" name="supportAmount" inputMode="decimal" />
           </Field>
 
           <Field name="applicationDate" label="Başvuru tarihi" error={state.errors?.applicationDate}>
             <Input id="applicationDate" name="applicationDate" type="date" />
           </Field>
-          <Field name="resultDate" label="Sonuç tarihi" error={state.errors?.resultDate}>
-            <Input id="resultDate" name="resultDate" type="date" />
+          <Field name="acceptanceDate" label="Proje kabul tarihi" error={state.errors?.acceptanceDate}>
+            <Input id="acceptanceDate" name="acceptanceDate" type="date" />
           </Field>
 
-          <Field name="totalBudget" label="Toplam bütçe" hint="Sayısal değer (₺)" error={state.errors?.totalBudget}>
-            <Input id="totalBudget" name="totalBudget" inputMode="decimal" />
-          </Field>
-          <Field name="supportAmount" label="Destek tutarı" hint="Sayısal değer (₺)" error={state.errors?.supportAmount}>
-            <Input id="supportAmount" name="supportAmount" inputMode="decimal" />
-          </Field>
-
-          <Field name="role" label="Rolünüz" error={state.errors?.role}>
-            <Input id="role" name="role" maxLength={120} placeholder="Yürütücü / Araştırmacı / Danışman" />
-          </Field>
-          <Field name="kind" label="Proje türü" error={state.errors?.kind}>
-            <Input id="kind" name="kind" maxLength={120} placeholder="Ar-Ge / İşbirliği / TÜBİTAK 1001" />
-          </Field>
-
-          <Field name="consortium" label="Proje konsorsiyumu" hint="Ortak kurumlar / paydaşlar." error={state.errors?.consortium} className="md:col-span-2">
-            <Textarea id="consortium" name="consortium" rows={3} maxLength={3000} />
+          <Field name="memberFunction" label="DFT üyesinin fonksiyonu" required error={state.errors?.memberFunction} className="md:col-span-2">
+            <Select name="memberFunction" defaultValue="BIREYSEL">
+              <SelectTrigger id="memberFunction">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(MEMBER_FUNCTION_LABELS).map(([k, label]) => (
+                  <SelectItem key={k} value={k}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
 
-          <Field name="summary" label="Proje Özeti" error={state.errors?.summary} className="md:col-span-2">
-            <Textarea id="summary" name="summary" rows={4} maxLength={3000} />
+          <Field
+            name="summary"
+            label="Proje özeti"
+            hint="500 kelimeyi aşmayacak şekilde özet."
+            error={state.errors?.summary}
+            className="md:col-span-2"
+          >
+            <Textarea id="summary" name="summary" rows={5} maxLength={5000} />
           </Field>
         </div>
       </FormShell>

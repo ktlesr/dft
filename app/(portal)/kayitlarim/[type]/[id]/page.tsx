@@ -14,8 +14,16 @@ import { isAdmin } from "@/lib/rbac";
 import { softDeleteRecord } from "@/features/records/actions";
 import { RECORD_LABELS, isRecordType, type RecordTypeSlug } from "@/features/records/types";
 import {
+  APPLICANT_ROLE_LABELS,
+  CONTENT_KIND_LABELS,
+  EVENT_FORMAT_LABELS,
+  EVENT_KIND_LABELS,
+  EVENT_ROLE_LABELS,
+  FUND_CATEGORY_LABELS,
+  MEMBER_FUNCTION_LABELS,
   PROJECT_APPLICATION_KIND_LABELS,
   PROJECT_IDEA_STAGE_LABELS,
+  STAKEHOLDER_KIND_LABELS,
 } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
@@ -41,6 +49,8 @@ async function loadRecord(type: RecordTypeSlug, id: string) {
       return prisma.trainingPresentationRecord.findUnique({ where: { id }, include });
     case "dokuman-icerik":
       return prisma.contentRecord.findUnique({ where: { id }, include });
+    case "paydas":
+      return prisma.stakeholderRecord.findUnique({ where: { id }, include });
   }
 }
 
@@ -137,10 +147,37 @@ function isLong(v: React.ReactNode) {
   return typeof v === "string" && v.length > 80;
 }
 
+function externalLink(url: string | null) {
+  if (!url) return null;
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" className="break-all text-primary underline-offset-4 hover:underline">
+      {url}
+    </a>
+  );
+}
+
+function fundLabel(category: string | null, sub: string | null) {
+  if (!category && !sub) return null;
+  const catLabel = category
+    ? (FUND_CATEGORY_LABELS as Record<string, string>)[category] ?? category
+    : null;
+  if (catLabel && sub) return `${catLabel} · ${sub}`;
+  return catLabel ?? sub;
+}
+
+function applicantRoleLabel(code: string | null) {
+  if (!code) return null;
+  return (APPLICANT_ROLE_LABELS as Record<string, string>)[code] ?? code;
+}
+
+function memberFunctionLabel(code: string | null) {
+  if (!code) return null;
+  return (MEMBER_FUNCTION_LABELS as Record<string, string>)[code] ?? code;
+}
+
 /* ──────────────────────────────────────────────────────────────
- * Per-type field mapping. The `type` parameter already narrows the
- * row at the call site — we cast once via a small typed helper so
- * TS can reach individual fields without redundant guards.
+ * Per-type field mapping. Faz 8: yeni alanlar öncelikli; legacy
+ * sütunlar yalnızca yenisi boş ise gösterilir.
  * ────────────────────────────────────────────────────────────── */
 function describe(
   type: RecordTypeSlug,
@@ -152,13 +189,19 @@ function describe(
       return {
         title: r.projectName,
         fields: [
-          { label: "Program / fon", value: r.program },
-          { label: "Çağrı adı", value: r.callName },
+          { label: "Fon türü", value: fundLabel(r.fundCategory, r.fundSubType) },
+          { label: "Hibe sağlayıcısı", value: r.grantProvider },
+          { label: "Program adı", value: r.programName ?? r.program },
+          { label: "İlgili kurum / kuruluş", value: r.applicantOrg },
+          { label: "Kurumun rolü", value: applicantRoleLabel(r.applicantRole) },
+          { label: "Proje bütçesi", value: r.budget?.toString() ?? null },
+          { label: "Destek miktarı", value: r.requestedSupport?.toString() ?? null },
           { label: "Başvuru tarihi", value: formatDate(r.applicationDate) },
-          { label: "Başvuru türü", value: PROJECT_APPLICATION_KIND_LABELS[r.kind] },
-          { label: "Bütçe", value: r.budget?.toString() ?? null },
-          { label: "Talep edilen destek", value: r.requestedSupport?.toString() ?? null },
-          { label: "Proje Özeti", value: r.notes },
+          {
+            label: "DFT üyesinin fonksiyonu",
+            value: memberFunctionLabel(r.memberFunction) ?? PROJECT_APPLICATION_KIND_LABELS[r.kind],
+          },
+          { label: "Proje özeti", value: r.notes },
         ],
       };
     }
@@ -167,61 +210,60 @@ function describe(
       return {
         title: r.projectName,
         fields: [
-          { label: "Program / fon", value: r.program },
-          { label: "Çağrı adı", value: r.callName },
+          { label: "Fon türü", value: fundLabel(r.fundCategory, r.fundSubType) },
+          { label: "Hibe sağlayıcısı", value: r.grantProvider },
+          { label: "Program adı", value: r.programName ?? r.program },
+          { label: "İlgili kurum / kuruluş", value: r.applicantOrg },
+          { label: "Kurumun rolü", value: applicantRoleLabel(r.applicantRole) },
+          { label: "Proje bütçesi", value: r.totalBudget?.toString() ?? null },
+          { label: "Destek miktarı", value: r.supportAmount?.toString() ?? null },
           { label: "Başvuru tarihi", value: formatDate(r.applicationDate) },
-          { label: "Sonuç tarihi", value: formatDate(r.resultDate) },
-          { label: "Toplam bütçe", value: r.totalBudget?.toString() ?? null },
-          { label: "Destek tutarı", value: r.supportAmount?.toString() ?? null },
-          { label: "Rol", value: r.role },
-          { label: "Tür", value: r.kind },
-          { label: "Proje konsorsiyumu", value: r.consortium },
-          { label: "Proje Özeti", value: r.summary },
+          { label: "Proje kabul tarihi", value: formatDate(r.acceptanceDate ?? r.resultDate) },
+          { label: "DFT üyesinin fonksiyonu", value: memberFunctionLabel(r.memberFunction) },
+          { label: "Konsorsiyum (legacy)", value: r.consortium },
+          { label: "Proje özeti", value: r.summary },
         ],
       };
     }
     case "proje-fikri": {
       const r = row as Extract<typeof row, { stage: string }>;
+      const stageLegacy = r.stage && r.stage !== "FIKIR" ? (
+        <Badge variant="secondary">{PROJECT_IDEA_STAGE_LABELS[r.stage as keyof typeof PROJECT_IDEA_STAGE_LABELS] ?? r.stage}</Badge>
+      ) : null;
       return {
         title: r.title,
         fields: [
-          { label: "Potansiyel program", value: r.potentialProgram },
-          { label: "Çağrı / konu", value: r.callTopic },
-          {
-            label: "Aşama",
-            value: <Badge variant="secondary">{PROJECT_IDEA_STAGE_LABELS[r.stage as keyof typeof PROJECT_IDEA_STAGE_LABELS]}</Badge>,
-          },
-          { label: "Hedef tarih", value: formatDate(r.targetDate) },
-          { label: "Potansiyel ortaklar", value: r.potentialPartners },
-          { label: "Sonraki adım", value: r.nextStep },
-          { label: "Kısa açıklama", value: r.summary },
-          { label: "Notlar", value: r.notes },
-        ],
+          { label: "Hibe sağlayıcısı", value: r.grantProvider },
+          { label: "İlgili program", value: r.potentialProgram },
+          { label: "Proje bütçesi", value: r.budget?.toString() ?? null },
+          { label: "Proje özeti", value: r.summary },
+          // Legacy alanlar — yalnızca dolu ise.
+          { label: "Aşama (legacy)", value: stageLegacy },
+          { label: "Çağrı / konu (legacy)", value: r.callTopic },
+          { label: "Potansiyel ortaklar (legacy)", value: r.potentialPartners },
+          { label: "Sonraki adım (legacy)", value: r.nextStep },
+          { label: "Hedef tarih (legacy)", value: formatDate(r.targetDate) },
+          { label: "Notlar (legacy)", value: r.notes },
+        ].filter((f) => f.value !== null && f.value !== ""),
       };
     }
     case "etkinlik": {
       const r = row as Extract<typeof row, { name: string }>;
-      // Legacy rows may have content in both `summary` and `notes`; merge
-      // for display so old data isn't lost after the Faz 6 field merge.
       const description = [r.summary, r.notes].filter(Boolean).join("\n\n");
+      const kindLabel = r.kind ? (EVENT_KIND_LABELS as Record<string, string>)[r.kind] ?? r.kind : null;
+      const formatLabel = r.format ? (EVENT_FORMAT_LABELS as Record<string, string>)[r.format] ?? r.format : null;
+      const roleLabel = r.role ? (EVENT_ROLE_LABELS as Record<string, string>)[r.role] ?? r.role : null;
       return {
         title: r.name,
         fields: [
-          { label: "Organizatör", value: r.organizer },
-          { label: "Tür", value: r.kind },
-          { label: "Şekli", value: r.format === "ONLINE" ? "Online" : r.format === "FIZIKI" ? "Fiziki" : null },
+          { label: "Düzenleyen kuruluş", value: r.organizer },
           { label: "Tarih", value: formatDate(r.date) },
-          { label: "Yer", value: r.location },
-          { label: "Etkinlikteki göreviniz", value: r.role },
-          {
-            label: "Etkinlik bağlantısı",
-            value: r.externalUrl ? (
-              <a href={r.externalUrl} target="_blank" rel="noopener noreferrer" className="break-all text-primary underline-offset-4 hover:underline">
-                {r.externalUrl}
-              </a>
-            ) : null,
-          },
-          { label: "Etkinlik açıklaması", value: description || null },
+          { label: "Etkinlik türü", value: kindLabel },
+          { label: "Etkinlik yöntemi", value: formatLabel },
+          { label: "Rolünüz", value: roleLabel },
+          { label: "Etkinlik bağlantısı", value: externalLink(r.externalUrl) },
+          { label: "Yer (legacy)", value: r.location },
+          { label: "Açıklama", value: description || null },
         ],
       };
     }
@@ -242,7 +284,6 @@ function describe(
       };
     }
     case "egitim-sunum": {
-      // Disambiguate from DisseminationRecord by absence of `relatedTopic`.
       const r = row as Extract<typeof row, { audience: string | null; participantCount: number | null }> & {
         role: string | null;
       };
@@ -260,12 +301,14 @@ function describe(
       };
     }
     case "dokuman-icerik": {
-      const r = row as Extract<typeof row, { tags: string[] }>;
+      // Disambiguate from Stakeholder (also has `tags`) via `mainDocument`.
+      const r = row as Extract<typeof row, { mainDocument: string | null }>;
+      const kindLabel = r.kind ? (CONTENT_KIND_LABELS as Record<string, string>)[r.kind] ?? r.kind : null;
       return {
         title: r.title,
         fields: [
-          { label: "Döküman / İçerik türü", value: r.kind },
-          { label: "Tarih", value: formatDate(r.date) },
+          { label: "Tür", value: kindLabel },
+          { label: "Bağlantı", value: externalLink(r.externalUrl) },
           {
             label: "Etiketler",
             value:
@@ -280,6 +323,36 @@ function describe(
               ),
           },
           { label: "Açıklama", value: r.summary },
+        ],
+      };
+    }
+    case "paydas": {
+      const r = row as Extract<typeof row, { fullName: string }>;
+      const kindLabel = (STAKEHOLDER_KIND_LABELS as Record<string, string>)[r.kind] ?? r.kind;
+      return {
+        title: r.fullName,
+        fields: [
+          { label: "Ünvan", value: r.positionTitle },
+          { label: "Paydaş türü", value: kindLabel },
+          { label: "Kuruluş", value: r.organization },
+          { label: "LinkedIn", value: externalLink(r.linkedinUrl) },
+          { label: "E-posta", value: r.email },
+          { label: "Şehir", value: r.city },
+          { label: "Ülke", value: r.country },
+          {
+            label: "Etiketler",
+            value:
+              r.tags.length === 0 ? null : (
+                <div className="flex flex-wrap gap-1">
+                  {r.tags.map((t) => (
+                    <Badge key={t} variant="secondary">
+                      {t}
+                    </Badge>
+                  ))}
+                </div>
+              ),
+          },
+          { label: "Açıklama", value: r.description },
         ],
       };
     }

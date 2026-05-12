@@ -159,6 +159,7 @@ model User {
   disseminations  DisseminationRecord[]
   trainings       TrainingPresentationRecord[]
   contents        ContentRecord[]
+  stakeholders    StakeholderRecord[]
   auditLogs       AuditLog[]
   notifications   Notification[]
   approvedById    String?
@@ -340,6 +341,9 @@ model Attachment {
   contentId     String?
   content       ContentRecord? @relation(fields: [contentId], references: [id], onDelete: Cascade)
 
+  stakeholderId String?
+  stakeholder   StakeholderRecord? @relation(fields: [stakeholderId], references: [id], onDelete: Cascade)
+
   @@index([uploadedById])
   @@index([boardPostId])
   @@index([meetingId])
@@ -482,15 +486,27 @@ model ProjectApplicationRecord {
   ownerId         String
   owner           User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   projectName     String
+  // Legacy fields (Faz 6 öncesi). Yeni form bunları yazmaz — geriye dönük
+  // veri için tutuluyor. Detay ekranı `programName` boşsa `program`u gösterir.
   program         String?
   callName        String?
   applicationDate DateTime?
   budget          Decimal?                 @db.Decimal(18, 2)
   requestedSupport Decimal?                @db.Decimal(18, 2)
   status          ProjectApplicationStatus @default(PLANLANIYOR)
+  // Legacy enum (BIREYSEL / DFT_ILE_BIRLIKTE). Yeni formda `memberFunction`
+  // (Bireysel / DFT ile Birlikte / Danışmanlık) kullanılıyor.
   kind            ProjectApplicationKind   @default(BIREYSEL)
   partnerMemberIds String[]                @default([])
   notes           String?                  @db.Text
+  // Faz 8 yeni alanları
+  fundCategory    String?                  // ULUSAL | AB | DIGER_ULUSLARARASI
+  fundSubType     String?                  // örn. TÜBİTAK, Erasmus+, EBRD …
+  grantProvider   String?                  // Hibe sağlayıcısının tam adı / kısaltması
+  programName     String?                  // Programın tam adı (yeni)
+  applicantOrg    String?                  // İlgili kurum / kuruluş
+  applicantRole   String?                  // Başvuru Sahibi/Koordinatör/Lider | Ortak | İştirakçi
+  memberFunction  String?                  // BIREYSEL | DFT_ILE_BIRLIKTE | DANISMANLIK
   attachments     Attachment[]
   createdAt       DateTime                 @default(now())
   updatedAt       DateTime                 @updatedAt
@@ -505,6 +521,7 @@ model SuccessfulProjectRecord {
   ownerId         String
   owner           User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   projectName     String
+  // Legacy fields (Faz 6 öncesi) — yeni form bunları yazmaz.
   program         String?
   callName        String?
   applicationDate DateTime?
@@ -517,6 +534,15 @@ model SuccessfulProjectRecord {
   // Faz 6: proje konsorsiyumu — ortak kuruluş ve paydaş listesi.
   consortium      String?      @db.Text
   summary         String?      @db.Text
+  // Faz 8 yeni alanları (Proje Başvurusu ile aynı paralel set)
+  fundCategory    String?
+  fundSubType     String?
+  grantProvider   String?
+  programName     String?
+  applicantOrg    String?
+  applicantRole   String?
+  memberFunction  String?
+  acceptanceDate  DateTime?    // Proje Kabul Tarihi
   attachments     Attachment[]
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
@@ -530,11 +556,16 @@ model ProjectIdeaRecord {
   ownerId        String
   owner          User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   title          String
+  // Yeni form yalnızca: potentialProgram, grantProvider, budget, summary
+  // alanlarını yazar. Kalanlar legacy: stage/callTopic/potentialPartners/
+  // nextStep/targetDate/notes — eski kayıtlar için tutuluyor.
   potentialProgram String?
+  grantProvider  String?          // Faz 8: İlgili / potansiyel hibe sağlayıcısı
+  budget         Decimal?         @db.Decimal(18, 2) // Faz 8: tahmini bütçe
   callTopic      String?
   stage          ProjectIdeaStage @default(FIKIR)
   potentialPartners String?
-  summary        String?          @db.Text
+  summary        String?          @db.Text          // Faz 8: "Proje Özeti"
   nextStep       String?
   targetDate     DateTime?
   notes          String?          @db.Text
@@ -619,18 +650,56 @@ model ContentRecord {
   ownerId     String
   owner       User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   title       String
+  // Faz 8: yeni `kind` listesi: Bilgi Notu / Kitap / Makale / Rapor / Sunum / Video
   kind        String?
+  // `date` legacy — yeni form tarih sormuyor. Eski kayıtlarda doluydu;
+  // yeni satırlar için `createdAt` referans alınır. Sütun NOT NULL kalmaya
+  // devam eder; yeni form `new Date()` ile besler.
   date        DateTime
   summary     String?      @db.Text
   mainDocument String?
   tags        String[]     @default([])
   notes       String?      @db.Text
+  // Faz 8: dış bağlantı (örn. video / makale URL'si).
+  externalUrl String?
   attachments Attachment[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   deletedAt   DateTime?
 
   @@index([ownerId])
+}
+
+// ============================================================
+// STAKEHOLDERS (Faz 8 — Paydaş kaydı)
+// ============================================================
+
+enum StakeholderKind {
+  YERLI
+  YABANCI
+}
+
+model StakeholderRecord {
+  id           String           @id @default(cuid())
+  ownerId      String
+  owner        User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  fullName     String
+  positionTitle String?         // Ünvan
+  kind         StakeholderKind  @default(YERLI)
+  organization String?
+  linkedinUrl  String?
+  email        String?
+  city         String?
+  country      String?
+  tags         String[]         @default([])
+  description  String?          @db.Text
+  attachments  Attachment[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  deletedAt    DateTime?
+
+  @@index([ownerId])
+  @@index([kind])
 }
 
 // ============================================================

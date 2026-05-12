@@ -1,30 +1,48 @@
 /**
- * Central registry of the 7 record types used in URLs, tables and the
+ * Central registry of record types used in URLs, tables and the
  * dashboard. Keep slugs aligned with the route folders under
  * `app/(portal)/kayit/...` and `app/(portal)/kayitlarim/...`.
+ *
+ * Faz 8: "Paydaş" added; legacy "bilgi-cogaltimi" and "egitim-sunum"
+ * remain queryable (eski kayıtların detay sayfaları çalışmaya devam
+ * eder) ama yeni kayıt grid'inde gösterilmezler.
  */
 
 export const RECORD_TYPES = [
+  "proje-fikri",
   "proje-basvurusu",
   "basarili-proje",
-  "proje-fikri",
   "etkinlik",
+  "dokuman-icerik",
+  "paydas",
+  // Legacy — only used when surfacing existing rows.
   "bilgi-cogaltimi",
   "egitim-sunum",
-  "dokuman-icerik",
 ] as const;
 
 export type RecordTypeSlug = (typeof RECORD_TYPES)[number];
 
 export const RECORD_LABELS: Record<RecordTypeSlug, string> = {
+  "proje-fikri": "Proje Fikri",
   "proje-basvurusu": "Proje Başvurusu",
   "basarili-proje": "Başarılı Proje",
-  "proje-fikri": "Proje Fikri",
   etkinlik: "Etkinlik",
+  "dokuman-icerik": "Dijital İçerik",
+  paydas: "Paydaş",
   "bilgi-cogaltimi": "Bilgi Çoğaltımı",
   "egitim-sunum": "Eğitim / Sunum",
-  "dokuman-icerik": "Doküman / İçerik",
 };
+
+/** Bugün yeni kayıt eklenebilen tipler — UI listeleri/sayım kartları için. */
+export const ACTIVE_RECORD_TYPES = [
+  "proje-fikri",
+  "proje-basvurusu",
+  "basarili-proje",
+  "etkinlik",
+  "dokuman-icerik",
+  "paydas",
+] as const satisfies readonly RecordTypeSlug[];
+export type ActiveRecordTypeSlug = (typeof ACTIVE_RECORD_TYPES)[number];
 
 export const RECORD_ORDER: RecordTypeSlug[] = [...RECORD_TYPES];
 

@@ -57,7 +57,7 @@ const GROUPS: RecordGroup[] = [
     ],
   },
   {
-    title: "Bilgi & İçerik",
+    title: "Bilgi Çoğaltımı",
     tiles: [
       {
         href: "/kayit/etkinlik",
@@ -71,11 +71,6 @@ const GROUPS: RecordGroup[] = [
         description: "Rapor, makale, strateji belgesi, eğitim videosu vb.",
         icon: FileStack,
       },
-    ],
-  },
-  {
-    title: "Ağ",
-    tiles: [
       {
         href: "/kayit/paydas",
         title: "Paydaş",

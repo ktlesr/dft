@@ -1,11 +1,13 @@
 import Link from "next/link";
 import {
+  ArrowUpRight,
+  BarChart3,
   CalendarDays,
   FileText,
   Megaphone,
   MessageSquare,
   MessageSquarePlus,
-  Paperclip,
+  NotebookPen,
   Pin,
   Users,
 } from "lucide-react";
@@ -19,13 +21,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/app/empty-state";
 import { requireActiveUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
-import {
-  BOARD_KIND_LABELS,
-  REPORT_KIND_LABELS,
-  ROLE_LABELS,
-} from "@/lib/constants";
+import { REPORT_KIND_LABELS, ROLE_LABELS } from "@/lib/constants";
 import { avatarUrl, formatDate, formatDateTime, initials } from "@/lib/utils";
 import { listGroupDiscussions } from "@/features/forum/queries";
+import { listNotices } from "@/features/notice/queries";
 
 export const metadata = { title: "Çalışma Grubum" };
 export const dynamic = "force-dynamic";
@@ -49,45 +48,24 @@ export default async function MyGroupPage() {
     );
   }
 
-  const [group, members, posts, discussions, meetings, minutes, reports, docs] = await Promise.all([
+  const [group, members, notices, discussions, meetings, reports] = await Promise.all([
     prisma.group.findUnique({ where: { id: user.groupId } }),
     prisma.user.findMany({
       where: { groupId: user.groupId, status: "ACTIVE" },
       orderBy: { name: "asc" },
       include: { roles: { select: { role: true } } },
     }),
-    prisma.boardPost.findMany({
-      where: {
-        scope: "GROUP",
-        groupId: user.groupId,
-        deletedAt: null,
-        status: "PUBLISHED",
-      },
-      orderBy: [{ pinned: "desc" }, { publishedAt: "desc" }],
-      take: 6,
-    }),
+    listNotices({ scope: "GROUP", groupId: user.groupId, take: 20 }),
     listGroupDiscussions({ groupId: user.groupId, take: 50 }),
     prisma.meeting.findMany({
       where: { groupId: user.groupId, deletedAt: null },
       orderBy: { startAt: "desc" },
       take: 10,
     }),
-    prisma.meetingMinute.findMany({
-      where: { meeting: { groupId: user.groupId }, deletedAt: null },
-      orderBy: { date: "desc" },
-      take: 10,
-      include: { meeting: { select: { title: true } } },
-    }),
     prisma.groupReport.findMany({
       where: { groupId: user.groupId, deletedAt: null },
       orderBy: { createdAt: "desc" },
       take: 10,
-    }),
-    prisma.document.findMany({
-      where: { groupId: user.groupId, deletedAt: null },
-      orderBy: { createdAt: "desc" },
-      take: 10,
-      include: { attachments: { select: { id: true, originalName: true, size: true } } },
     }),
   ]);
 
@@ -114,11 +92,11 @@ export default async function MyGroupPage() {
         <TabsList>
           <TabsTrigger value="ozet">Özet</TabsTrigger>
           <TabsTrigger value="forum">Forum</TabsTrigger>
-          <TabsTrigger value="pano">Pano</TabsTrigger>
+          <TabsTrigger value="bildirimler">Bildirimler</TabsTrigger>
           <TabsTrigger value="toplantilar">Toplantılar</TabsTrigger>
-          <TabsTrigger value="tutanaklar">Tutanaklar</TabsTrigger>
           <TabsTrigger value="raporlar">Raporlar</TabsTrigger>
-          <TabsTrigger value="belgeler">Belgeler</TabsTrigger>
+          <TabsTrigger value="kpi">KPI</TabsTrigger>
+          <TabsTrigger value="notlar">Danışman / KS Notları</TabsTrigger>
           <TabsTrigger value="uyeler">Üyeler</TabsTrigger>
         </TabsList>
 
@@ -144,17 +122,17 @@ export default async function MyGroupPage() {
                 <CardTitle className="text-base">Son paylaşımlar</CardTitle>
               </CardHeader>
               <CardContent>
-                {posts.length === 0 ? (
-                  <EmptyState className="border-0 py-6" title="Paylaşım yok" icon={Megaphone} />
+                {discussions.length === 0 ? (
+                  <EmptyState className="border-0 py-6" title="Forum konusu yok" icon={MessageSquare} />
                 ) : (
                   <ul className="space-y-2">
-                    {posts.slice(0, 4).map((p) => (
-                      <li key={p.id} className="text-sm">
-                        <Link href="/panolar/grup" className="font-medium hover:text-primary">
-                          {p.title}
+                    {discussions.slice(0, 4).map((d) => (
+                      <li key={d.id} className="text-sm">
+                        <Link href={`/forum/${d.id}`} className="font-medium hover:text-primary">
+                          {d.title}
                         </Link>
                         <span className="ml-2 text-[11px] text-muted-foreground">
-                          {formatDateTime(p.publishedAt)}
+                          {formatDateTime(d.updatedAt)}
                         </span>
                       </li>
                     ))}
@@ -244,26 +222,44 @@ export default async function MyGroupPage() {
           )}
         </TabsContent>
 
-        <TabsContent value="pano">
-          {posts.length === 0 ? (
-            <EmptyState title="Grup panosunda paylaşım yok" icon={Megaphone} />
+        <TabsContent value="bildirimler">
+          <div className="mb-4 flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">
+              Yöneticilerin ve grup moderatörünün bu gruba yayımladığı bildirimler.
+            </p>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/duyurular?kanal=grup">
+                Tümü
+                <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </div>
+
+          {notices.length === 0 ? (
+            <EmptyState title="Grup bildirimi yok" icon={Megaphone} />
           ) : (
             <ul className="space-y-2">
-              {posts.map((p) => (
-                <li key={p.id} className="rounded-md border p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <Link href="/panolar/grup" className="font-medium hover:text-primary">
-                        {p.title}
-                      </Link>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {formatDateTime(p.publishedAt)}
-                      </p>
+              {notices.map((n) => {
+                const authorName = n.author.name?.trim() || n.author.email.split("@")[0];
+                return (
+                  <li key={n.id} className="rounded-md border p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {n.pinned ? (
+                            <Pin className="h-3 w-3 shrink-0 text-amber-600" aria-label="Sabit" />
+                          ) : null}
+                          <p className="font-medium">{n.title}</p>
+                        </div>
+                        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{n.body}</p>
+                        <p className="mt-1.5 text-[11px] text-muted-foreground">
+                          {authorName} · {formatDateTime(n.publishedAt)}
+                        </p>
+                      </div>
                     </div>
-                    <Badge variant="secondary">{BOARD_KIND_LABELS[p.kind]}</Badge>
-                  </div>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </TabsContent>
@@ -280,21 +276,6 @@ export default async function MyGroupPage() {
                   {m.location ? (
                     <p className="text-xs text-muted-foreground">📍 {m.location}</p>
                   ) : null}
-                </li>
-              ))}
-            </ul>
-          )}
-        </TabsContent>
-
-        <TabsContent value="tutanaklar">
-          {minutes.length === 0 ? (
-            <EmptyState title="Henüz tutanak yok" icon={FileText} />
-          ) : (
-            <ul className="space-y-2">
-              {minutes.map((m) => (
-                <li key={m.id} className="rounded-md border p-4">
-                  <p className="font-medium">{m.meeting?.title ?? "Tutanak"}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{formatDate(m.date)}</p>
                 </li>
               ))}
             </ul>
@@ -321,33 +302,20 @@ export default async function MyGroupPage() {
           )}
         </TabsContent>
 
-        <TabsContent value="belgeler">
-          {docs.length === 0 ? (
-            <EmptyState title="Grup belgesi yok" icon={FileText} />
-          ) : (
-            <ul className="space-y-2">
-              {docs.map((d) => (
-                <li key={d.id} className="rounded-md border p-4">
-                  <p className="font-medium">{d.title}</p>
-                  {d.description ? (
-                    <p className="mt-0.5 text-xs text-muted-foreground">{d.description}</p>
-                  ) : null}
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {d.attachments.map((a) => (
-                      <Link
-                        key={a.id}
-                        href={`/api/dosya/${a.id}`}
-                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                      >
-                        <Paperclip className="h-3.5 w-3.5" />
-                        {a.originalName}
-                      </Link>
-                    ))}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+        <TabsContent value="kpi">
+          <EmptyState
+            title="KPI modülü hazırlık aşamasında"
+            description="Grubun performans göstergeleri (toplantı düzenliliği, rapor sayısı, üye katılımı vb.) yakında bu sekmede yayımlanacak."
+            icon={BarChart3}
+          />
+        </TabsContent>
+
+        <TabsContent value="notlar">
+          <EmptyState
+            title="Danışman / KS Notları hazırlık aşamasında"
+            description="Danışman ve KS değerlendirme notları yakında bu sekmede yayımlanacak."
+            icon={NotebookPen}
+          />
         </TabsContent>
 
         <TabsContent value="uyeler">

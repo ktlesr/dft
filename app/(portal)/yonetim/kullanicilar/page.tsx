@@ -4,7 +4,6 @@ import { Search, Upload, UserPlus } from "lucide-react";
 import { PageHeader } from "@/components/app/page-header";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/app/empty-state";
 import { requireAdmin } from "@/lib/current-user";
@@ -66,6 +65,16 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
     include: {
       roles: { select: { role: true } },
       group: { select: { code: true, description: true } },
+      profile: {
+        select: {
+          title: true,
+          position: true,
+          organization: true,
+          phone: true,
+          city: true,
+          expertise: true,
+        },
+      },
     },
     take: 100,
   });
@@ -160,20 +169,13 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
         </Alert>
       ) : null}
 
-      <Card>
-        <CardContent className="p-0">
-          {users.length === 0 ? (
-            <EmptyState
-              title={q || status || role ? "Sonuç bulunamadı" : "Kullanıcı yok"}
-              className="border-0"
-            />
-          ) : (
-            <div className="p-4">
-              <UsersTableClient users={users} adminId={admin.id} />
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {users.length === 0 ? (
+        <EmptyState
+          title={q || status || role ? "Sonuç bulunamadı" : "Kullanıcı yok"}
+        />
+      ) : (
+        <UsersTableClient users={users} adminId={admin.id} />
+      )}
     </div>
   );
 }

@@ -2,9 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { AlertTriangle, CheckCircle2, Loader2, Trash2, XCircle, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2, CheckSquare, Loader2, Square, Trash2, XCircle, X } from "lucide-react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -17,9 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ROLE_LABELS, USER_STATUS_LABELS } from "@/lib/constants";
-import { avatarUrl, formatDate, initials } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import { UserCard, type UserCardData } from "@/features/users/user-card";
 import type { Role, UserStatus } from "@prisma/client";
 
 import { DeleteUserButton } from "./delete-user-button";
@@ -34,6 +31,14 @@ export type UsersTableUser = {
   createdAt: Date;
   roles: { role: Role }[];
   group: { code: string; description: string | null } | null;
+  profile: {
+    title: string | null;
+    position: string | null;
+    organization: string | null;
+    phone: string | null;
+    city: string | null;
+    expertise: string[];
+  } | null;
 };
 
 type Props = {
@@ -53,11 +58,11 @@ export function UsersTableClient({ users, adminId }: Props) {
   );
   const allSelected =
     selectableIds.length > 0 && selectableIds.every((id) => selected.has(id));
-  const someSelected = selected.size > 0 && !allSelected;
+  const someSelected = selected.size > 0;
 
-  const toggleAll = (checked: boolean | "indeterminate") => {
-    if (checked === true) setSelected(new Set(selectableIds));
-    else setSelected(new Set());
+  const toggleAll = () => {
+    if (allSelected) setSelected(new Set());
+    else setSelected(new Set(selectableIds));
   };
 
   const toggleOne = (id: string, checked: boolean | "indeterminate") => {
@@ -71,173 +76,159 @@ export function UsersTableClient({ users, adminId }: Props) {
 
   const clearSelection = () => setSelected(new Set());
 
-  // Submit sonrası ek action — selected'i temizlemek için kullanırız.
   const handleBulkSubmit = (fd: FormData) => {
     startTransition(() => bulkDeleteUsersByAdmin(fd));
     setBulkDialogOpen(false);
-    // selected, page reload sonrası anlamsız zaten — yine de UI hızlı temizlensin
     setSelected(new Set());
   };
 
   return (
     <div>
-      {/* Toplu aksiyon barı — herhangi bir şey seçildiğinde görünür */}
-      {selected.size > 0 ? (
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-md border border-primary/30 bg-primary/5 px-4 py-2.5">
-          <div className="flex items-center gap-2 text-sm">
-            <Badge variant="success" className="font-medium">
-              {selected.size}
-            </Badge>
-            <span>kullanıcı seçildi</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button type="button" variant="ghost" size="sm" onClick={clearSelection} className="h-8">
-              <X className="h-3.5 w-3.5" />
-              Seçimi temizle
-            </Button>
+      {/* Toolbar — seçim yokken "Tümünü seç", varken toplu aksiyon */}
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/20 px-3 py-2">
+        <div className="flex items-center gap-2 text-sm">
+          {someSelected ? (
+            <>
+              <Badge variant="success" className="font-medium">
+                {selected.size}
+              </Badge>
+              <span>kullanıcı seçildi</span>
+            </>
+          ) : (
+            <span className="text-muted-foreground">
+              {users.length} kullanıcı listeleniyor
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {selectableIds.length > 0 ? (
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="h-8 text-destructive hover:text-destructive"
-              onClick={() => setBulkDialogOpen(true)}
-              disabled={pending}
+              onClick={toggleAll}
+              className="h-8"
             >
-              <Trash2 className="h-3.5 w-3.5" />
-              Seçilenleri sil
+              {allSelected ? (
+                <>
+                  <Square className="h-3.5 w-3.5" />
+                  Seçimi kaldır
+                </>
+              ) : (
+                <>
+                  <CheckSquare className="h-3.5 w-3.5" />
+                  Tümünü seç
+                </>
+              )}
             </Button>
-          </div>
+          ) : null}
+          {someSelected ? (
+            <>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={clearSelection}
+                className="h-8"
+              >
+                <X className="h-3.5 w-3.5" />
+                Temizle
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 text-destructive hover:text-destructive"
+                onClick={() => setBulkDialogOpen(true)}
+                disabled={pending}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Seçilenleri sil
+              </Button>
+            </>
+          ) : null}
         </div>
-      ) : null}
+      </div>
 
-      <div className="overflow-x-auto rounded-md border">
-        <table className="w-full text-sm">
-          <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
-            <tr>
-              <th className="px-3 py-3 w-10">
-                <Checkbox
-                  checked={allSelected ? true : someSelected ? "indeterminate" : false}
-                  onCheckedChange={toggleAll}
-                  aria-label="Tümünü seç"
-                  disabled={selectableIds.length === 0}
-                />
-              </th>
-              <th className="px-4 py-3 font-medium">Kullanıcı</th>
-              <th className="px-4 py-3 font-medium">Durum</th>
-              <th className="px-4 py-3 font-medium">Grup</th>
-              <th className="px-4 py-3 font-medium">Roller</th>
-              <th className="px-4 py-3 font-medium">Kaydoldu</th>
-              <th className="px-4 py-3 text-right font-medium">İşlem</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {users.map((u) => {
-              const isSelf = u.id === adminId;
-              const isSelected = selected.has(u.id);
-              return (
-                <tr
-                  key={u.id}
-                  className={cn(
-                    "transition-colors hover:bg-muted/20",
-                    isSelected && "bg-primary/5",
-                  )}
-                >
-                  <td className="px-3 py-3">
-                    {!isSelf ? (
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={(c) => toggleOne(u.id, c)}
-                        aria-label={`${u.name ?? u.email} seç`}
-                      />
-                    ) : null}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        {u.image ? (
-                          <AvatarImage src={avatarUrl(u.id, u.image)} alt={u.name ?? u.email} />
-                        ) : null}
-                        <AvatarFallback>{initials(u.name, u.email)}</AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0">
-                        <Link
-                          href={`/yonetim/kullanicilar/${u.id}`}
-                          className="truncate font-medium hover:text-primary"
+      {/* Kart grid'i */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {users.map((u) => {
+          const isSelf = u.id === adminId;
+          const isSelected = selected.has(u.id);
+          const cardUser: UserCardData = {
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            image: u.image,
+            status: u.status,
+            createdAt: u.createdAt,
+            roles: u.roles,
+            group: u.group,
+            profile: u.profile,
+          };
+          return (
+            <UserCard
+              key={u.id}
+              user={cardUser}
+              variant="admin"
+              selected={isSelected}
+              topLeftSlot={
+                !isSelf ? (
+                  <div className="rounded-md bg-background/90 p-1 shadow-sm backdrop-blur-sm">
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={(c) => toggleOne(u.id, c)}
+                      aria-label={`${u.name ?? u.email} seç`}
+                    />
+                  </div>
+                ) : null
+              }
+              actions={
+                <>
+                  {u.status === "PENDING_APPROVAL" ? (
+                    <>
+                      <form action={approveUser}>
+                        <input type="hidden" name="userId" value={u.id} />
+                        <Button
+                          type="submit"
+                          size="sm"
+                          variant="accent"
+                          className="h-8 px-2"
                         >
-                          {u.name ?? u.email}
-                        </Link>
-                        <p className="truncate text-xs text-muted-foreground">{u.email}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={u.status} />
-                  </td>
-                  <td className="px-4 py-3">
-                    {u.group?.code ? (
-                      <span className="inline-flex items-center gap-1.5">
-                        <Badge variant="outline">{u.group.code}</Badge>
-                        {u.group.description ? (
-                          <span className="hidden text-[11px] text-muted-foreground sm:inline">
-                            {u.group.description}
-                          </span>
-                        ) : null}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-1">
-                      {u.roles
-                        .filter((r) => r.role !== "USER")
-                        .map((r) => (
-                          <Badge key={r.role} variant="secondary" className="text-[10px]">
-                            {ROLE_LABELS[r.role]}
-                          </Badge>
-                        ))}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{formatDate(u.createdAt)}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex justify-end gap-1">
-                      {u.status === "PENDING_APPROVAL" ? (
-                        <>
-                          <form action={approveUser}>
-                            <input type="hidden" name="userId" value={u.id} />
-                            <Button type="submit" size="sm" variant="accent" className="h-8 px-2">
-                              <CheckCircle2 className="h-3.5 w-3.5" />
-                              Onayla
-                            </Button>
-                          </form>
-                          <form action={rejectUser}>
-                            <input type="hidden" name="userId" value={u.id} />
-                            <Button
-                              type="submit"
-                              size="sm"
-                              variant="outline"
-                              className="h-8 px-2 text-destructive hover:text-destructive"
-                            >
-                              <XCircle className="h-3.5 w-3.5" />
-                              Reddet
-                            </Button>
-                          </form>
-                        </>
-                      ) : (
-                        <Button asChild size="sm" variant="ghost" className="h-8 px-2">
-                          <Link href={`/yonetim/kullanicilar/${u.id}`}>Detay</Link>
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          Onayla
                         </Button>
-                      )}
-                      {!isSelf ? (
-                        <DeleteUserButton userId={u.id} userName={u.name ?? u.email} compact />
-                      ) : null}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                      </form>
+                      <form action={rejectUser}>
+                        <input type="hidden" name="userId" value={u.id} />
+                        <Button
+                          type="submit"
+                          size="sm"
+                          variant="outline"
+                          className="h-8 px-2 text-destructive hover:text-destructive"
+                        >
+                          <XCircle className="h-3.5 w-3.5" />
+                          Reddet
+                        </Button>
+                      </form>
+                    </>
+                  ) : (
+                    <Button asChild size="sm" variant="ghost" className="h-8 px-2">
+                      <Link href={`/yonetim/kullanicilar/${u.id}`}>Detay</Link>
+                    </Button>
+                  )}
+                  {!isSelf ? (
+                    <DeleteUserButton
+                      userId={u.id}
+                      userName={u.name ?? u.email}
+                      compact
+                    />
+                  ) : null}
+                </>
+              }
+            />
+          );
+        })}
       </div>
 
       {/* Toplu silme onay dialog'u */}
@@ -258,7 +249,7 @@ export function UsersTableClient({ users, adminId }: Props) {
               </span>
               <span className="block font-medium text-destructive">Bu işlem geri alınamaz.</span>
               <span className="block text-xs">
-                Eğer seçim son admin'i de içeriyorsa o hesap otomatik korunur.
+                Eğer seçim son admin&apos;i de içeriyorsa o hesap otomatik korunur.
               </span>
             </DialogDescription>
           </DialogHeader>
@@ -296,19 +287,5 @@ export function UsersTableClient({ users, adminId }: Props) {
         </DialogContent>
       </Dialog>
     </div>
-  );
-}
-
-function StatusBadge({ status }: { status: UserStatus }) {
-  const variant =
-    status === "ACTIVE"
-      ? "success"
-      : status === "PENDING_APPROVAL"
-        ? "warning"
-        : "muted";
-  return (
-    <Badge variant={variant as "success" | "warning" | "muted"}>
-      {USER_STATUS_LABELS[status]}
-    </Badge>
   );
 }

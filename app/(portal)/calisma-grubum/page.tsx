@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 
 import { PageHeader } from "@/components/app/page-header";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,9 +19,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/app/empty-state";
 import { requireActiveUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
-import { BOARD_KIND_LABELS, REPORT_KIND_LABELS, ROLE_LABELS } from "@/lib/constants";
-import { avatarUrl, formatDate, formatDateTime, initials } from "@/lib/utils";
+import { BOARD_KIND_LABELS, REPORT_KIND_LABELS } from "@/lib/constants";
+import { formatDate, formatDateTime } from "@/lib/utils";
 import { listGroupDiscussions } from "@/features/forum/queries";
+import { UserCard } from "@/features/users/user-card";
 
 export const metadata = { title: "Çalışma Grubum" };
 export const dynamic = "force-dynamic";
@@ -69,7 +69,19 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
     prisma.user.findMany({
       where: { groupId: user.groupId, status: "ACTIVE" },
       orderBy: { name: "asc" },
-      include: { roles: { select: { role: true } } },
+      include: {
+        roles: { select: { role: true } },
+        profile: {
+          select: {
+            title: true,
+            position: true,
+            organization: true,
+            phone: true,
+            city: true,
+            expertise: true,
+          },
+        },
+      },
     }),
     // Grup bildirimleri = grup kapsamlı BoardPost'lar. Faz 10'da "Bildirim Ekle"
     // formu bu modeli oluşturur; sekme de buradan okur.
@@ -379,29 +391,20 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
           {members.length === 0 ? (
             <EmptyState title="Üye yok" icon={Users} />
           ) : (
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {members.map((m) => (
-                <div key={m.id} className="flex items-center gap-3 rounded-md border p-3">
-                  <Avatar className="h-9 w-9">
-                    {m.image ? (
-                      <AvatarImage src={avatarUrl(m.id, m.image)} alt={m.name ?? m.email} />
-                    ) : null}
-                    <AvatarFallback>{initials(m.name, m.email)}</AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{m.name ?? m.email}</p>
-                    <p className="truncate text-xs text-muted-foreground">{m.email}</p>
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {m.roles
-                      .filter((r) => r.role !== "USER")
-                      .map((r) => (
-                        <Badge key={r.role} variant="outline" className="text-[10px]">
-                          {ROLE_LABELS[r.role]}
-                        </Badge>
-                      ))}
-                  </div>
-                </div>
+                <UserCard
+                  key={m.id}
+                  variant="member"
+                  user={{
+                    id: m.id,
+                    name: m.name,
+                    email: m.email,
+                    image: m.image,
+                    roles: m.roles,
+                    profile: m.profile,
+                  }}
+                />
               ))}
             </div>
           )}

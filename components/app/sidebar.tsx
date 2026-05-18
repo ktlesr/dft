@@ -23,7 +23,6 @@ type SidebarProps = {
 
 function isActive(pathname: string, item: NavItem) {
   if (item.exact) return pathname === item.href;
-  if (item.href === "/panolar") return pathname.startsWith("/panolar");
   if (item.href === "/kayit/yeni") return pathname === "/kayit/yeni";
   if (item.href === "/kayitlarim") return pathname.startsWith("/kayitlarim");
   return pathname === item.href || pathname.startsWith(item.href + "/");

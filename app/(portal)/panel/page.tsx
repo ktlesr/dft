@@ -2,13 +2,9 @@ import Link from "next/link";
 import {
   ArrowUpRight,
   Briefcase,
-  CalendarDays,
-  ExternalLink,
   FileStack,
-  FileText,
   Lightbulb,
   Megaphone,
-  Paperclip,
   Pin,
   PlusCircle,
   Presentation,
@@ -25,6 +21,9 @@ import { requireActiveUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { BOARD_KIND_LABELS } from "@/lib/constants";
 import { formatDateTime, truncate } from "@/lib/utils";
+import { RecentFeedTabs } from "@/features/records/recent-feed-tabs";
+import { recentPublicRecords } from "@/features/records/recent-public";
+import { ACTIVE_RECORD_TYPES, type ActiveRecordTypeSlug } from "@/features/records/types";
 
 export const metadata = { title: "Ana Panel" };
 export const dynamic = "force-dynamic";
@@ -34,6 +33,11 @@ export default async function DashboardPage() {
 
   const activeOwn = { ownerId: user.id, deletedAt: null };
   const activeAll = { deletedAt: null };
+
+  const boardInclude = {
+    author: { select: { name: true, email: true } },
+    group: { select: { code: true } },
+  } as const;
 
   const [
     cntIdeasOwn,
@@ -48,10 +52,14 @@ export default async function DashboardPage() {
     cntContentAll,
     cntStakeholdersOwn,
     cntStakeholdersAll,
-    generalPosts,
-    groupPosts,
-    upcomingMeetings,
-    recentDocs,
+    // Sol büyük kart: Çağrı / Hibe / Etkinlik (genel kapsam — duyuru + kaynak)
+    callPosts,
+    // Orta kart: Genel Duyurular (genel kapsam — haber/etkinlik)
+    generalNotices,
+    // Sağ kart: Çalışma Grubu duyuruları
+    groupNotices,
+    // Sekmeli son paylaşımlar
+    ...recentByType
   ] = await Promise.all([
     prisma.projectIdeaRecord.count({ where: activeOwn }),
     prisma.projectIdeaRecord.count({ where: activeAll }),
@@ -65,41 +73,53 @@ export default async function DashboardPage() {
     prisma.contentRecord.count({ where: activeAll }),
     prisma.stakeholderRecord.count({ where: activeOwn }),
     prisma.stakeholderRecord.count({ where: activeAll }),
+    // Yalnızca ADMIN yetkisine sahip kullanıcıların paylaşımlarını göster.
+    // Schema seviyesinde "yalnızca admin yazabilir" kuralı yok (Faz 6 board
+    // policy'si moderatörü de admin olmayan grup paylaşımı için bırakıyor),
+    // dolayısıyla bu kart sırf yazar bazlı UI filtresi ile sınırlandırılır.
     prisma.boardPost.findMany({
-      where: { scope: "GENERAL", status: "PUBLISHED", deletedAt: null },
+      where: {
+        scope: "GENERAL",
+        status: "PUBLISHED",
+        deletedAt: null,
+        kind: { in: ["ANNOUNCEMENT", "RESOURCE"] },
+        author: { roles: { some: { role: "ADMIN" } } },
+      },
       orderBy: [{ pinned: "desc" }, { publishedAt: "desc" }],
-      take: 4,
-      include: { author: { select: { name: true, email: true } } },
+      take: 5,
+      include: boardInclude,
+    }),
+    prisma.boardPost.findMany({
+      where: {
+        scope: "GENERAL",
+        status: "PUBLISHED",
+        deletedAt: null,
+        kind: "NEWS",
+        author: { roles: { some: { role: "ADMIN" } } },
+      },
+      orderBy: [{ pinned: "desc" }, { publishedAt: "desc" }],
+      take: 5,
+      include: boardInclude,
     }),
     user.groupId
       ? prisma.boardPost.findMany({
-          where: { scope: "GROUP", groupId: user.groupId, status: "PUBLISHED", deletedAt: null },
+          where: {
+            scope: "GROUP",
+            groupId: user.groupId,
+            status: "PUBLISHED",
+            deletedAt: null,
+          },
           orderBy: [{ pinned: "desc" }, { publishedAt: "desc" }],
-          take: 4,
-          include: { author: { select: { name: true, email: true } } },
+          take: 5,
+          include: boardInclude,
         })
-      : [],
-    user.groupId
-      ? prisma.meeting.findMany({
-          where: { groupId: user.groupId, deletedAt: null, startAt: { gte: new Date() } },
-          orderBy: { startAt: "asc" },
-          take: 4,
-        })
-      : [],
-    prisma.document.findMany({
-      where: {
-        deletedAt: null,
-        OR: [
-          { category: "ORTAK" },
-          ...(user.groupId ? [{ groupId: user.groupId }] : []),
-          { uploadedById: user.id },
-        ],
-      },
-      orderBy: { createdAt: "desc" },
-      take: 4,
-      include: { attachments: { select: { id: true, originalName: true, size: true } } },
-    }),
+      : Promise.resolve([]),
+    ...ACTIVE_RECORD_TYPES.map((t) => recentPublicRecords(t, 5)),
   ]);
+
+  const feeds = Object.fromEntries(
+    ACTIVE_RECORD_TYPES.map((t, i) => [t, recentByType[i] ?? []]),
+  ) as Record<ActiveRecordTypeSlug, Awaited<ReturnType<typeof recentPublicRecords>>>;
 
   const stats = [
     {
@@ -194,23 +214,31 @@ export default async function DashboardPage() {
         ))}
       </section>
 
-      <section className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <section className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-4">
+        {/* Çağrı / Hibe / Etkinlik Duyuruları — admin yayını, herkese açık */}
         <Card className="lg:col-span-2">
           <CardHeader className="flex-row items-center justify-between">
-            <CardTitle>Genel Panodan Son Paylaşımlar</CardTitle>
+            <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Çağrı / Hibe / Etkinlik Duyuruları
+            </CardTitle>
             <Button asChild size="sm" variant="ghost">
-              <Link href="/panolar/genel">
+              <Link href="/panolar/genel?kategori=cagri-hibe-etkinlik">
                 Tümü
                 <ArrowUpRight className="h-3.5 w-3.5" />
               </Link>
             </Button>
           </CardHeader>
           <CardContent>
-            {generalPosts.length === 0 ? (
-              <EmptyState icon={Megaphone} title="Henüz paylaşım yok" className="border-0 py-6" />
+            {callPosts.length === 0 ? (
+              <EmptyState
+                icon={Megaphone}
+                title="Henüz duyuru yok"
+                description="Yönetici çağrı veya doküman paylaştığında burada görünecek."
+                className="border-0 py-6"
+              />
             ) : (
               <ul className="divide-y">
-                {generalPosts.map((p) => (
+                {callPosts.map((p) => (
                   <li key={p.id} className="py-3 first:pt-0 last:pb-0">
                     <div className="flex items-center gap-2">
                       {p.pinned ? <Pin className="h-3 w-3 text-amber-600" aria-label="Sabit" /> : null}
@@ -237,45 +265,48 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
+        {/* Genel Duyurular — admin yayını, herkese açık (haber/etkinlik tipi) */}
         <Card>
-          <CardHeader className="flex-row items-center justify-between">
-            <CardTitle>Yaklaşan Toplantılar</CardTitle>
-            {user.groupCode ? <Badge variant="outline">{user.groupCode}</Badge> : null}
+          <CardHeader className="flex-row items-center justify-between gap-2">
+            <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Genel Duyurular
+            </CardTitle>
+            <div className="flex items-center gap-1">
+              <Badge variant="outline">DFT</Badge>
+              <Button asChild size="sm" variant="ghost">
+                <Link href="/panolar/genel?kategori=genel-duyuru">
+                  Tümü
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                </Link>
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
-            {upcomingMeetings.length === 0 ? (
+            {generalNotices.length === 0 ? (
               <EmptyState
-                icon={CalendarDays}
-                title="Planlı toplantı yok"
-                description={
-                  user.groupId
-                    ? "Grup moderatörü yeni toplantı eklediğinde burada görünecek."
-                    : "Henüz bir çalışma grubunuz yok."
-                }
+                icon={Megaphone}
+                title="Henüz genel duyuru yok"
                 className="border-0 py-6"
               />
             ) : (
-              <ul className="space-y-3">
-                {upcomingMeetings.map((m) => (
-                  <li key={m.id} className="rounded-md border p-3">
-                    <p className="text-sm font-medium">{m.title}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {formatDateTime(m.startAt)}
-                    </p>
-                    {m.location ? (
-                      <p className="mt-0.5 truncate text-xs text-muted-foreground">📍 {m.location}</p>
-                    ) : null}
-                    {m.onlineUrl ? (
-                      <a
-                        href={m.onlineUrl}
-                        className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                        target="_blank"
-                        rel="noopener noreferrer"
+              <ul className="divide-y">
+                {generalNotices.map((p) => (
+                  <li key={p.id} className="py-3 first:pt-0 last:pb-0">
+                    <div className="flex items-center gap-2">
+                      {p.pinned ? <Pin className="h-3 w-3 text-amber-600" aria-label="Sabit" /> : null}
+                      <Link
+                        href="/panolar/genel"
+                        className="truncate text-sm font-medium hover:text-primary"
                       >
-                        <ExternalLink className="h-3 w-3" />
-                        Çevrim içi
-                      </a>
-                    ) : null}
+                        {p.title}
+                      </Link>
+                    </div>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                      {truncate(p.body, 110)}
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                      {p.author.name ?? p.author.email} · {formatDateTime(p.publishedAt)}
+                    </p>
                   </li>
                 ))}
               </ul>
@@ -283,15 +314,23 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2">
-          <CardHeader className="flex-row items-center justify-between">
-            <CardTitle>Grup Panosundan Gelişmeler</CardTitle>
-            <Button asChild size="sm" variant="ghost">
-              <Link href="/panolar/grup">
-                Tümü
-                <ArrowUpRight className="h-3.5 w-3.5" />
-              </Link>
-            </Button>
+        {/* Çalışma Grubu Duyuruları — yalnızca grup üyeleri görür */}
+        <Card>
+          <CardHeader className="flex-row items-center justify-between gap-2">
+            <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Çalışma Grubu Duyuruları
+            </CardTitle>
+            <div className="flex items-center gap-1">
+              {user.groupCode ? <Badge variant="outline">{user.groupCode}</Badge> : null}
+              {user.groupId ? (
+                <Button asChild size="sm" variant="ghost">
+                  <Link href="/panolar/grup">
+                    Tümü
+                    <ArrowUpRight className="h-3.5 w-3.5" />
+                  </Link>
+                </Button>
+              ) : null}
+            </div>
           </CardHeader>
           <CardContent>
             {!user.groupId ? (
@@ -301,15 +340,15 @@ export default async function DashboardPage() {
                 description="Yöneticiniz grubu atadıktan sonra paylaşımlar burada görünür."
                 className="border-0 py-6"
               />
-            ) : groupPosts.length === 0 ? (
+            ) : groupNotices.length === 0 ? (
               <EmptyState
                 icon={Megaphone}
-                title="Grup panosunda henüz paylaşım yok"
+                title="Grup duyurusu yok"
                 className="border-0 py-6"
               />
             ) : (
               <ul className="divide-y">
-                {groupPosts.map((p) => (
+                {groupNotices.map((p) => (
                   <li key={p.id} className="py-3 first:pt-0 last:pb-0">
                     <div className="flex items-center gap-2">
                       {p.pinned ? <Pin className="h-3 w-3 text-amber-600" aria-label="Sabit" /> : null}
@@ -324,7 +363,7 @@ export default async function DashboardPage() {
                       </Badge>
                     </div>
                     <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                      {truncate(p.body, 140)}
+                      {truncate(p.body, 110)}
                     </p>
                     <p className="mt-0.5 text-[11px] text-muted-foreground">
                       {p.author.name ?? p.author.email} · {formatDateTime(p.publishedAt)}
@@ -335,41 +374,23 @@ export default async function DashboardPage() {
             )}
           </CardContent>
         </Card>
+      </section>
 
+      <section className="mt-8">
         <Card>
           <CardHeader className="flex-row items-center justify-between">
-            <CardTitle>Son Belgeler</CardTitle>
+            <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Son Paylaşımlar
+            </CardTitle>
             <Button asChild size="sm" variant="ghost">
-              <Link href="/belgeler">
+              <Link href="/kayitlarim?scope=all">
                 Tümü
                 <ArrowUpRight className="h-3.5 w-3.5" />
               </Link>
             </Button>
           </CardHeader>
           <CardContent>
-            {recentDocs.length === 0 ? (
-              <EmptyState icon={FileText} title="Henüz belge yok" className="border-0 py-6" />
-            ) : (
-              <ul className="space-y-2">
-                {recentDocs.map((d) => (
-                  <li key={d.id} className="rounded-md border p-3">
-                    <p className="truncate text-sm font-medium">{d.title}</p>
-                    <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      {formatDateTime(d.createdAt)}
-                    </p>
-                    {d.attachments[0] ? (
-                      <Link
-                        href={`/api/dosya/${d.attachments[0].id}`}
-                        className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                      >
-                        <Paperclip className="h-3 w-3" />
-                        {d.attachments[0].originalName}
-                      </Link>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            )}
+            <RecentFeedTabs feeds={feeds} />
           </CardContent>
         </Card>
       </section>

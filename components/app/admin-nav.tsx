@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Building2,
   Gauge,
   Users,
   MailPlus,
@@ -24,6 +25,7 @@ const ITEMS: AdminNavItem[] = [
   { href: "/yonetim/kullanicilar", label: "Kullanıcılar", icon: Users },
   { href: "/yonetim/davetler", label: "Davetler", icon: MailPlus },
   { href: "/yonetim/gruplar", label: "Gruplar", icon: Users2 },
+  { href: "/yonetim/dft-hakkinda", label: "DFT Hakkında", icon: Building2 },
   { href: "/yonetim/loglar", label: "Audit log", icon: ScrollText },
 ];
 

@@ -16,7 +16,31 @@ import type { BoardPostKind } from "@prisma/client";
 
 export const metadata = { title: "Genel Pano" };
 
-type SearchParams = Promise<{ q?: string; tur?: string }>;
+type SearchParams = Promise<{ q?: string; tur?: string; kategori?: string }>;
+
+const CATEGORIES = {
+  "cagri-hibe-etkinlik": {
+    title: "Çağrı / Hibe / Etkinlik Duyuruları",
+    description:
+      "Tüm DFT üyelerine açık paylaşımlar: haber/etkinlik, çağrı/hibe duyuruları, doküman paylaşımları.",
+    kinds: ["ANNOUNCEMENT", "RESOURCE"] as BoardPostKind[],
+    authorIsAdmin: true,
+    /** Yalnızca admin yeni paylaşım açabilir. */
+    creatorAdminOnly: true,
+  },
+  "genel-duyuru": {
+    title: "Genel Duyurular",
+    description: "DFT yönetimi tarafından yapılan genel duyurular.",
+    kinds: ["NEWS"] as BoardPostKind[],
+    authorIsAdmin: true,
+    creatorAdminOnly: true,
+  },
+} as const;
+type CategoryKey = keyof typeof CATEGORIES;
+
+function isCategoryKey(v?: string): v is CategoryKey {
+  return !!v && v in CATEGORIES;
+}
 
 function isKind(v?: string): v is BoardPostKind {
   return !!v && v in BOARD_KIND_LABELS;
@@ -24,22 +48,44 @@ function isKind(v?: string): v is BoardPostKind {
 
 export default async function GeneralBoardPage({ searchParams }: { searchParams: SearchParams }) {
   const user = await requireActiveUser();
-  const { q, tur } = await searchParams;
+  const { q, tur, kategori } = await searchParams;
+  const kategoriKey = isCategoryKey(kategori) ? kategori : null;
+  const view = kategoriKey ? CATEGORIES[kategoriKey] : null;
   const kind = isKind(tur) ? tur : undefined;
+
+  const admin = isAdmin(user);
 
   const posts = await listBoardPosts({
     scope: "GENERAL",
     query: q,
-    kind,
+    // Kategori varsa kategori `kinds` listesi öncelikli; ek olarak kullanıcı
+    // alt-türü daraltabilir.
+    kinds: view ? view.kinds : undefined,
+    kind: view ? undefined : kind,
+    authorIsAdmin: view?.authorIsAdmin ?? false,
   });
 
-  const admin = isAdmin(user);
+  // Kategoriye özel kind dropdown listesi (sadece kategori kinds'lerinden).
+  const kindOptions = view
+    ? view.kinds.map((v) => ({ value: v, label: BOARD_KIND_LABELS[v] }))
+    : BOARD_KIND_BY_SCOPE.GENERAL.map((v) => ({ value: v, label: BOARD_KIND_LABELS[v] }));
+
+  // Yeni paylaşım yetkisi: kategori "yalnızca admin" ise sadece admin'e
+  // göster; aksi takdirde herkese (mevcut davranış).
+  const canCreate = view?.creatorAdminOnly ? admin : true;
+
+  const pageTitle = view?.title ?? "Genel Pano";
+  const pageDescription =
+    view?.description ??
+    "Tüm DFT üyelerine açık paylaşımlar: haber/etkinlik, çağrı/hibe duyuruları, doküman paylaşımları.";
+
+  const clearHref = kategoriKey ? `/panolar/genel?kategori=${kategoriKey}` : "/panolar/genel";
 
   return (
     <div className="mx-auto max-w-4xl">
       <PageHeader
-        title="Genel Pano"
-        description="Tüm DFT üyelerine açık paylaşımlar: haber/etkinlik, çağrı/hibe duyuruları, doküman paylaşımları."
+        title={pageTitle}
+        description={pageDescription}
         breadcrumbs={[{ label: "Panolar", href: "/panolar" }, { label: "Genel" }]}
         actions={
           <>
@@ -51,12 +97,13 @@ export default async function GeneralBoardPage({ searchParams }: { searchParams:
                 </Link>
               </Button>
             ) : null}
-            <NewBoardPostDialog scope="GENERAL" canPin={admin} />
+            {canCreate ? <NewBoardPostDialog scope="GENERAL" canPin={admin} /> : null}
           </>
         }
       />
 
       <form action="/panolar/genel" className="mb-4 flex flex-wrap items-center gap-2">
+        {kategoriKey ? <input type="hidden" name="kategori" value={kategoriKey} /> : null}
         <div className="relative flex-1 min-w-[220px] max-w-md">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input name="q" defaultValue={q ?? ""} placeholder="Paylaşımlarda ara…" className="pl-9" />
@@ -64,7 +111,7 @@ export default async function GeneralBoardPage({ searchParams }: { searchParams:
         <FilterSelect
           param="tur"
           value={kind}
-          options={BOARD_KIND_BY_SCOPE.GENERAL.map((v) => ({ value: v, label: BOARD_KIND_LABELS[v] }))}
+          options={kindOptions}
           placeholder="Tüm türler"
           allLabel="Tüm türler"
           ariaLabel="Tür filtresi"
@@ -74,7 +121,7 @@ export default async function GeneralBoardPage({ searchParams }: { searchParams:
         </Button>
         {q || kind ? (
           <Button asChild variant="ghost">
-            <Link href="/panolar/genel">Temizle</Link>
+            <Link href={clearHref}>Temizle</Link>
           </Button>
         ) : null}
       </form>
@@ -85,7 +132,9 @@ export default async function GeneralBoardPage({ searchParams }: { searchParams:
           description={
             q || kind
               ? "Farklı bir arama veya filtre deneyin."
-              : "İlk paylaşımı oluşturmak için sağ üstteki düğmeyi kullanın."
+              : view?.creatorAdminOnly
+                ? "Yönetici yeni paylaşım eklediğinde burada görünecek."
+                : "İlk paylaşımı oluşturmak için sağ üstteki düğmeyi kullanın."
           }
         />
       ) : (
@@ -118,4 +167,3 @@ export default async function GeneralBoardPage({ searchParams }: { searchParams:
     </div>
   );
 }
-

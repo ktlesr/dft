@@ -61,7 +61,11 @@ export default async function RecordDetailPage({ params }: { params: Params }) {
 
   const row = await loadRecord(type, id);
   if (!row || row.deletedAt) notFound();
-  if (row.ownerId !== user.id && !isAdmin(user)) redirect("/yetkisiz");
+
+  // Tüm aktif üyeler portal içi paylaşımları okuyabilir. Yazma / silme
+  // ayrıcalığı yalnızca sahibe ve admin'e aittir; bu kontrol aşağıdaki
+  // delete eylemi (`softDeleteRecord` → `mustOwnOr403`) içinde yapılıyor.
+  const canDelete = row.ownerId === user.id || isAdmin(user);
 
   const deleteAction = async () => {
     "use server";
@@ -88,12 +92,14 @@ export default async function RecordDetailPage({ params }: { params: Params }) {
                 Geri
               </Link>
             </Button>
-            <form action={deleteAction}>
-              <Button type="submit" variant="outline" className="text-destructive hover:text-destructive">
-                <Trash2 className="h-4 w-4" />
-                Sil
-              </Button>
-            </form>
+            {canDelete ? (
+              <form action={deleteAction}>
+                <Button type="submit" variant="outline" className="text-destructive hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                  Sil
+                </Button>
+              </form>
+            ) : null}
           </div>
         }
       />

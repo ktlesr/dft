@@ -1,6 +1,6 @@
 import {
   LayoutDashboard,
-  Newspaper,
+  Building2,
   PlusCircle,
   FileText,
   Users,
@@ -33,7 +33,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Ana menü",
     items: [
       { href: "/panel", label: "Ana Panel", icon: LayoutDashboard, exact: true },
-      { href: "/panolar", label: "Panolar", icon: Newspaper },
+      { href: "/dft-hakkinda", label: "DFT Hakkında", icon: Building2 },
       { href: "/kayit/yeni", label: "Yeni Kayıt Ekle", icon: PlusCircle },
       { href: "/kayitlarim", label: "Kayıtlarım", icon: FileText },
       { href: "/calisma-grubum", label: "Çalışma Grubum", icon: Users },

@@ -8,42 +8,55 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/app/empty-state";
 import { requireActiveUser } from "@/lib/current-user";
-import { countsByType, listMyRecords } from "@/features/records/queries";
+import {
+  countsByType,
+  countsByTypeForAll,
+  listAllRecords,
+  listMyRecords,
+} from "@/features/records/queries";
 import {
   ACTIVE_RECORD_TYPES,
   RECORD_LABELS,
-  RECORD_ORDER,
-  isRecordType,
+  type ActiveRecordTypeSlug,
   type RecordTypeSlug,
 } from "@/features/records/types";
 import { formatDate } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import {
   PROJECT_APPLICATION_STATUS_LABELS,
   PROJECT_IDEA_STAGE_LABELS,
   STAKEHOLDER_KIND_LABELS,
 } from "@/lib/constants";
 
-export const metadata = { title: "Kayıtlarım" };
+export const metadata = { title: "Paylaşımlar" };
 
-type SearchParams = Promise<{ tur?: string; q?: string }>;
+type SearchParams = Promise<{ tur?: string; q?: string; scope?: string }>;
+type ScopeMode = "mine" | "all";
 
-export default async function MyRecordsPage({ searchParams }: { searchParams: SearchParams }) {
+const DEFAULT_TYPE: ActiveRecordTypeSlug = "proje-fikri";
+
+function isActiveType(x: string): x is ActiveRecordTypeSlug {
+  return (ACTIVE_RECORD_TYPES as readonly string[]).includes(x);
+}
+
+export default async function PaylasimlarPage({ searchParams }: { searchParams: SearchParams }) {
   const user = await requireActiveUser();
-  const { tur, q } = await searchParams;
-  const activeType: RecordTypeSlug | null = tur && isRecordType(tur) ? tur : null;
+  const { tur, q, scope } = await searchParams;
+  const scopeMode: ScopeMode = scope === "all" ? "all" : "mine";
+  const activeType: ActiveRecordTypeSlug = tur && isActiveType(tur) ? tur : DEFAULT_TYPE;
 
   const [counts, rows] = await Promise.all([
-    countsByType(user.id),
-    listMyRecords(user.id, { type: activeType ?? undefined, query: q }),
+    scopeMode === "all" ? countsByTypeForAll() : countsByType(user.id),
+    scopeMode === "all"
+      ? listAllRecords({ type: activeType, query: q })
+      : listMyRecords(user.id, { type: activeType, query: q }),
   ]);
-
-  const total = Object.values(counts).reduce((a, b) => a + b, 0);
 
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader
-        title="Kayıtlarım"
-        description="Oluşturduğunuz tüm kayıtlar — tür ve arama ile filtreleyin."
+        title="Paylaşımlar"
+        description="DFT üyeleri tarafından girilen kayıtların yer aldığı alandır."
         breadcrumbs={[{ label: "Kayıtlarım" }]}
         actions={
           <Button asChild variant="brand">
@@ -56,19 +69,33 @@ export default async function MyRecordsPage({ searchParams }: { searchParams: Se
       />
 
       <div className="mb-5 flex flex-wrap items-center gap-2">
-        <TypePill href={mkHref(null, q)} active={activeType === null} label="Tümü" count={total} />
-        {RECORD_ORDER
-          // Aktif tiplerin tümünü göster; legacy tiplerden yalnızca kayıt varsa.
-          .filter((t) =>
-            (ACTIVE_RECORD_TYPES as readonly RecordTypeSlug[]).includes(t) || counts[t] > 0,
-          )
-          .map((t) => (
-            <TypePill key={t} href={mkHref(t, q)} active={activeType === t} label={RECORD_LABELS[t]} count={counts[t]} />
-          ))}
+        <ScopeButton
+          href={mkHref({ scope: "mine", tur: activeType, q })}
+          active={scopeMode === "mine"}
+          label="Kendi Kayıtlarım"
+        />
+        <ScopeButton
+          href={mkHref({ scope: "all", tur: activeType, q })}
+          active={scopeMode === "all"}
+          label="Tüm Kayıtlar"
+        />
+      </div>
+
+      <div className="mb-5 flex flex-wrap items-center gap-2">
+        {ACTIVE_RECORD_TYPES.map((t) => (
+          <TypePill
+            key={t}
+            href={mkHref({ scope: scopeMode, tur: t, q })}
+            active={activeType === t}
+            label={RECORD_LABELS[t]}
+            count={counts[t]}
+          />
+        ))}
       </div>
 
       <form className="mb-4 flex gap-2" action="/kayitlarim">
-        {activeType ? <input type="hidden" name="tur" value={activeType} /> : null}
+        <input type="hidden" name="scope" value={scopeMode} />
+        <input type="hidden" name="tur" value={activeType} />
         <div className="relative flex-1 max-w-md">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input name="q" defaultValue={q ?? ""} placeholder="Başlık içinde ara…" className="pl-9" />
@@ -78,7 +105,7 @@ export default async function MyRecordsPage({ searchParams }: { searchParams: Se
         </Button>
         {q ? (
           <Button asChild variant="ghost">
-            <Link href={mkHref(activeType, "")}>Temizle</Link>
+            <Link href={mkHref({ scope: scopeMode, tur: activeType, q: "" })}>Temizle</Link>
           </Button>
         ) : null}
       </form>
@@ -88,7 +115,13 @@ export default async function MyRecordsPage({ searchParams }: { searchParams: Se
           {rows.length === 0 ? (
             <EmptyState
               title={q ? "Arama sonuç bulamadı" : "Henüz kayıt yok"}
-              description={q ? "Farklı bir anahtar kelime deneyin." : "Sağ üstteki Yeni Kayıt düğmesi ile başlayın."}
+              description={
+                q
+                  ? "Farklı bir anahtar kelime deneyin."
+                  : scopeMode === "mine"
+                    ? "Sağ üstteki Yeni Kayıt düğmesi ile başlayın."
+                    : "Henüz hiçbir üye bu türde kayıt eklemedi."
+              }
               className="border-0"
             />
           ) : (
@@ -97,7 +130,9 @@ export default async function MyRecordsPage({ searchParams }: { searchParams: Se
                 <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="px-4 py-3 font-medium">Başlık</th>
-                    <th className="px-4 py-3 font-medium">Tür</th>
+                    {scopeMode === "all" ? (
+                      <th className="px-4 py-3 font-medium">Paylaşan</th>
+                    ) : null}
                     <th className="px-4 py-3 font-medium">Durum</th>
                     <th className="px-4 py-3 font-medium">Tarih</th>
                     <th className="px-4 py-3 font-medium text-right">Güncellendi</th>
@@ -117,9 +152,18 @@ export default async function MyRecordsPage({ searchParams }: { searchParams: Se
                           <p className="truncate text-xs text-muted-foreground">{r.subtitle}</p>
                         ) : null}
                       </td>
-                      <td className="px-4 py-3">
-                        <Badge variant="outline">{RECORD_LABELS[r.type]}</Badge>
-                      </td>
+                      {scopeMode === "all" ? (
+                        <td className="px-4 py-3 text-xs">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-foreground">{r.owner?.name ?? "—"}</span>
+                            {r.owner?.groupCode ? (
+                              <Badge variant="outline" className="text-[10px]">
+                                {r.owner.groupCode}
+                              </Badge>
+                            ) : null}
+                          </div>
+                        </td>
+                      ) : null}
                       <td className="px-4 py-3 text-xs">
                         {r.status ? humanStatus(r.type, r.status) : "—"}
                       </td>
@@ -139,12 +183,45 @@ export default async function MyRecordsPage({ searchParams }: { searchParams: Se
   );
 }
 
-function mkHref(t: RecordTypeSlug | null, q: string | undefined) {
+function mkHref({
+  scope,
+  tur,
+  q,
+}: {
+  scope: ScopeMode;
+  tur: ActiveRecordTypeSlug;
+  q: string | undefined;
+}) {
   const p = new URLSearchParams();
-  if (t) p.set("tur", t);
+  if (scope !== "mine") p.set("scope", scope);
+  if (tur !== DEFAULT_TYPE) p.set("tur", tur);
   if (q) p.set("q", q);
   const qs = p.toString();
   return qs ? `/kayitlarim?${qs}` : "/kayitlarim";
+}
+
+function ScopeButton({
+  href,
+  active,
+  label,
+}: {
+  href: string;
+  active: boolean;
+  label: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "inline-flex min-w-44 items-center justify-center rounded-md border px-4 py-2 text-sm font-semibold transition-colors",
+        active
+          ? "border-primary bg-primary/10 text-primary"
+          : "border-border bg-card text-foreground hover:border-primary/40 hover:text-primary",
+      )}
+    >
+      {label}
+    </Link>
+  );
 }
 
 function TypePill({

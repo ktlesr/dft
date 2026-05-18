@@ -48,6 +48,9 @@ export async function GET(
       dissemination: { select: { ownerId: true, deletedAt: true } },
       training: { select: { ownerId: true, deletedAt: true } },
       content: { select: { ownerId: true, deletedAt: true } },
+      notice: {
+        select: { scope: true, groupId: true, deletedAt: true },
+      },
     },
   });
   if (!att) return new NextResponse("Not found", { status: 404 });
@@ -89,12 +92,17 @@ function canView(
     dissemination: { deletedAt: Date | null } | null;
     training: { deletedAt: Date | null } | null;
     content: { deletedAt: Date | null } | null;
+    notice: { scope: "GENERAL" | "GROUP"; groupId: string | null; deletedAt: Date | null } | null;
   },
   viewerGroupId: string | null,
 ): boolean {
   if (att.boardPost && !att.boardPost.deletedAt) {
     if (att.boardPost.scope === "GENERAL") return true;
     return att.boardPost.groupId !== null && att.boardPost.groupId === viewerGroupId;
+  }
+  if (att.notice && !att.notice.deletedAt) {
+    if (att.notice.scope === "GENERAL") return true;
+    return att.notice.groupId !== null && att.notice.groupId === viewerGroupId;
   }
   if (att.meeting && !att.meeting.deletedAt) return att.meeting.groupId === viewerGroupId;
   if (att.minute && !att.minute.deletedAt) return att.minute.meeting?.groupId === viewerGroupId;

@@ -7,6 +7,7 @@ export type NoticeWithAuthor = Prisma.NoticeGetPayload<{
   include: {
     author: { select: { id: true; name: true; email: true; image: true } };
     group: { select: { id: true; code: true; name: true } };
+    attachments: { select: { id: true; originalName: true; size: true; mimeType: true } };
   };
 }>;
 
@@ -52,6 +53,7 @@ export async function listNotices(opts: ListOpts): Promise<NoticeWithAuthor[]> {
     include: {
       author: { select: { id: true, name: true, email: true, image: true } },
       group: { select: { id: true, code: true, name: true } },
+      attachments: { select: { id: true, originalName: true, size: true, mimeType: true } },
     },
   });
 }

@@ -9,6 +9,7 @@ import { requireActiveUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { canCreateNotice, isAdmin } from "@/lib/rbac";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { MAX_ATTACHMENTS_PER_REQUEST, UploadError, storeAttachments } from "@/lib/upload";
 import { noticeCreateSchema } from "./schemas";
 
 export type NoticeFormState = {
@@ -47,6 +48,7 @@ export async function createNotice(
     groupId: fd.get("groupId"),
     title: fd.get("title"),
     body: fd.get("body"),
+    eventAt: fd.get("eventAt"),
     pinned: fd.get("pinned"),
   });
   if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
@@ -63,25 +65,53 @@ export async function createNotice(
     if (!exists) return { ok: false, errors: { groupId: ["Grup bulunamadı."] } };
   }
 
-  const pinned = parsed.data.pinned && isAdmin(user); // moderatör sabitleyemez
+  // Pin yetkisi = oluşturma yetkisi. Admin her kapsam, moderatör kendi
+  // grubu için sabitleyebilir.
+  const pinned = parsed.data.pinned && canCreateNotice(user, parsed.data.scope, groupId);
 
   const row = await prisma.notice.create({
     data: {
       scope: parsed.data.scope,
       title: parsed.data.title,
       body: parsed.data.body,
+      eventAt: parsed.data.eventAt ?? null,
       pinned,
       authorId: user.id,
       groupId,
     },
   });
 
+  // Ek dosya yükleme — hata olursa notice'i geri sar (cascade temizliği için
+  // attachment kayıtları onDelete: Cascade ile birlikte düşer).
+  try {
+    const files = fd.getAll("attachments").filter((v): v is File => v instanceof File);
+    await storeAttachments({
+      files,
+      uploadedById: user.id,
+      owner: { noticeId: row.id },
+    });
+  } catch (e) {
+    await prisma.notice.delete({ where: { id: row.id } });
+    if (e instanceof UploadError) {
+      const msg =
+        e.code === "too_large"
+          ? "Bir dosya izin verilen boyutu aşıyor."
+          : e.code === "mime_not_allowed"
+            ? "Bir dosyanın türü desteklenmiyor."
+            : e.code === "too_many"
+              ? `En fazla ${MAX_ATTACHMENTS_PER_REQUEST} dosya yükleyebilirsiniz.`
+              : "Dosya yükleme başarısız.";
+      return { ok: false, message: msg };
+    }
+    throw e;
+  }
+
   await audit({
     action: "NOTICE_CREATED",
     actorId: user.id,
     targetType: "Notice",
     targetId: row.id,
-    metadata: { scope: row.scope, groupId: row.groupId, pinned: row.pinned },
+    metadata: { scope: row.scope, groupId: row.groupId, pinned: row.pinned, eventAt: row.eventAt },
   });
 
   revalidatePath("/duyurular");
@@ -118,14 +148,14 @@ export async function removeNotice(id: string): Promise<void> {
   revalidatePath("/panel");
 }
 
-/** Toggle pin. Admin anywhere; group-moderator within own group. */
+/** Toggle pin. Admin: her kapsam. Moderatör: kendi grubu için. */
 export async function toggleNoticePin(id: string): Promise<void> {
   const user = await requireActiveUser();
   const notice = await prisma.notice.findUnique({ where: { id } });
   if (!notice || notice.deletedAt) redirect("/duyurular");
 
-  if (!isAdmin(user)) {
-    // Moderatör sabitleyemez/çıkaramaz; sadece admin.
+  // Pin/unpin yetkisi = oluşturma yetkisi ile aynı kapsama bağlı.
+  if (!canCreateNotice(user, notice.scope, notice.groupId)) {
     redirect("/yetkisiz");
   }
 

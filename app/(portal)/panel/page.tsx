@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   ArrowUpRight,
   Briefcase,
+  CalendarClock,
   FileStack,
   Lightbulb,
   Megaphone,
@@ -201,9 +202,9 @@ export default async function DashboardPage() {
         ))}
       </section>
 
-      <section className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-4">
+      <section className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Çağrı / Hibe / Etkinlik Duyuruları — admin yayını, herkese açık */}
-        <Card className="lg:col-span-2">
+        <Card>
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Çağrı / Hibe / Etkinlik Duyuruları
@@ -252,6 +253,8 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
+        {/* Sağ kolon — Genel ve Çalışma Grubu Bildirimleri dikey yığın */}
+        <div className="flex flex-col gap-6">
         {/* Genel Bildirimler — Notice scope=GENERAL */}
         <Card>
           <CardHeader className="flex-row items-center justify-between gap-2">
@@ -288,6 +291,12 @@ export default async function DashboardPage() {
                         {n.title}
                       </Link>
                     </div>
+                    {n.eventAt ? (
+                      <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-primary">
+                        <CalendarClock className="h-3 w-3" />
+                        {formatDateTime(n.eventAt)}
+                      </p>
+                    ) : null}
                     <p className="mt-0.5 truncate text-xs text-muted-foreground">
                       {truncate(n.body, 110)}
                     </p>
@@ -355,6 +364,12 @@ export default async function DashboardPage() {
                         </Badge>
                       ) : null}
                     </div>
+                    {n.eventAt ? (
+                      <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-primary">
+                        <CalendarClock className="h-3 w-3" />
+                        {formatDateTime(n.eventAt)}
+                      </p>
+                    ) : null}
                     <p className="mt-0.5 truncate text-xs text-muted-foreground">
                       {truncate(n.body, 110)}
                     </p>
@@ -367,6 +382,7 @@ export default async function DashboardPage() {
             )}
           </CardContent>
         </Card>
+        </div>
       </section>
 
       <section className="mt-8">

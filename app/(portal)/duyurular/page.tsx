@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/app/empty-state";
 import { requireActiveUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
-import { isAdmin, isModerator } from "@/lib/rbac";
+import { canCreateNotice, isAdmin, isModerator } from "@/lib/rbac";
 import { listNotices } from "@/features/notice/queries";
 import { NewNoticeDialog } from "@/features/notice/new-notice-dialog";
 import { NoticeCard } from "@/features/notice/notice-card";
@@ -72,7 +72,9 @@ export default async function DuyurularPage({ searchParams }: { searchParams: Se
             caps={{
               canCreateGeneral,
               groupsForGroupScope,
-              canPin: admin,
+              // Pin yetkisi = oluşturma yetkisiyle aynı (admin her şey,
+              // moderatör kendi grubu).
+              canPin: admin || (moderator && groupsForGroupScope.length > 0),
             }}
             fixedGroupId={!admin && moderator && myGroup ? myGroup.id : null}
           />
@@ -134,7 +136,8 @@ export default async function DuyurularPage({ searchParams }: { searchParams: Se
                 key={n.id}
                 notice={n}
                 caps={{
-                  canPin: admin,
+                  // Pin/unpin yetkisi: oluşturma yetkisiyle aynı kapsamda.
+                  canPin: canCreateNotice(user, n.scope, n.groupId),
                   canRemove:
                     admin ||
                     n.authorId === user.id ||

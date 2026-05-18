@@ -7,6 +7,12 @@ const checkboxToBool = z
   .optional()
   .transform((v) => v === "on" || v === "true");
 
+const optionalDateTime = z
+  .string()
+  .optional()
+  .transform((v) => (v && v !== "" ? new Date(v) : undefined))
+  .refine((v) => v === undefined || !Number.isNaN(v.getTime()), "Geçersiz tarih.");
+
 export const noticeCreateSchema = z
   .object({
     scope: z.enum(NOTICE_SCOPES),
@@ -17,6 +23,8 @@ export const noticeCreateSchema = z
       .transform((v) => (v && v !== "" ? v : undefined)),
     title: z.string().trim().min(2, "Başlık en az 2 karakter.").max(200, "Başlık çok uzun."),
     body: z.string().trim().min(1, "İçerik zorunlu.").max(10_000, "İçerik çok uzun."),
+    /** Bildirimin atıfta bulunduğu olay tarihi (örn. toplantı saati). */
+    eventAt: optionalDateTime,
     pinned: checkboxToBool,
   })
   .superRefine((v, ctx) => {

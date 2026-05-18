@@ -354,6 +354,9 @@ model Attachment {
   stakeholderId String?
   stakeholder   StakeholderRecord? @relation(fields: [stakeholderId], references: [id], onDelete: Cascade)
 
+  noticeId      String?
+  notice        Notice? @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+
   @@index([uploadedById])
   @@index([boardPostId])
   @@index([meetingId])
@@ -410,6 +413,10 @@ model Notice {
   // GROUP scope için zorunlu; GENERAL scope için null.
   groupId     String?
   group       Group?      @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  // Opsiyonel — bildirimin atıfta bulunduğu olay tarihi (toplantı saati,
+  // başvuru son tarihi vb.). `publishedAt`/`createdAt` ise yayım anıdır.
+  eventAt     DateTime?
+  attachments Attachment[]
   publishedAt DateTime    @default(now())
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
@@ -418,6 +425,7 @@ model Notice {
   @@index([scope, publishedAt])
   @@index([groupId, publishedAt])
   @@index([authorId])
+  @@index([eventAt])
 }
 
 // ============================================================

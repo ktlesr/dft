@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field } from "@/features/shared/form-field";
+import { AttachmentInput } from "@/features/shared/attachment-input";
 import { createNotice, type NoticeFormState } from "./actions";
 
 const INITIAL: NoticeFormState = { ok: true };
@@ -157,9 +158,23 @@ export function NewNoticeDialog({ kanal, caps, fixedGroupId }: Props) {
             <Input id="title" name="title" required maxLength={200} />
           </Field>
 
+          <Field
+            name="eventAt"
+            label="Tarih ve saat (opsiyonel)"
+            hint="Bildirimin atıfta bulunduğu olay zamanı; toplantı, son başvuru vb. için."
+            error={state.errors?.eventAt}
+          >
+            <Input id="eventAt" name="eventAt" type="datetime-local" />
+          </Field>
+
           <Field name="body" label="İçerik" required error={state.errors?.body}>
             <Textarea id="body" name="body" rows={5} required maxLength={10_000} />
           </Field>
+
+          <div className="space-y-1.5">
+            <p className="text-sm font-medium">Ek dosyalar (opsiyonel)</p>
+            <AttachmentInput disabled={pending} />
+          </div>
 
           {caps.canPin ? (
             <div className="flex items-center gap-2">

@@ -1,4 +1,4 @@
-import { Pin, Trash2 } from "lucide-react";
+import { CalendarClock, Paperclip, Pin, Trash2 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,12 @@ type Props = {
   notice: NoticeWithAuthor;
   caps: { canPin: boolean; canRemove: boolean };
 };
+
+function humanSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 export function NoticeCard({ notice, caps }: Props) {
   const author = notice.author.name?.trim() || notice.author.email.split("@")[0];
@@ -45,9 +51,36 @@ export function NoticeCard({ notice, caps }: Props) {
           ) : null}
         </div>
 
+        {notice.eventAt ? (
+          <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
+            <CalendarClock className="h-3.5 w-3.5" />
+            <span>{formatDateTime(notice.eventAt)}</span>
+          </div>
+        ) : null}
+
         <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
           {notice.body}
         </p>
+
+        {notice.attachments.length > 0 ? (
+          <ul className="space-y-1 pt-1">
+            {notice.attachments.map((a) => (
+              <li key={a.id}>
+                <a
+                  href={`/api/dosya/${a.id}`}
+                  className="inline-flex max-w-full items-center gap-1.5 truncate rounded-md border bg-muted/40 px-2 py-1 text-xs text-foreground transition-colors hover:bg-muted hover:text-primary"
+                  rel="noreferrer"
+                >
+                  <Paperclip className="h-3 w-3 shrink-0" />
+                  <span className="truncate">{a.originalName}</span>
+                  <span className="shrink-0 text-[10px] text-muted-foreground">
+                    {humanSize(a.size)}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        ) : null}
 
         <div className="flex items-center justify-between gap-2 border-t pt-2">
           <p className="text-[11px] text-muted-foreground">

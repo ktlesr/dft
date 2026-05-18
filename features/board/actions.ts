@@ -118,8 +118,28 @@ export async function createBoardPost(
 
   await audit({ action: "BOARD_POST_CREATED", actorId: user.id, targetType: "BoardPost", targetId: row.id });
   revalidatePath(parsed.data.scope === "GENERAL" ? "/panolar/genel" : "/panolar/grup");
+  revalidatePath("/calisma-grubum");
   revalidatePath("/panel");
   return OK;
+}
+
+/**
+ * Sayfa formu (/bildirim/yeni) için sürüm — başarıda doğrudan
+ * /calisma-grubum'a yönlendirir. Dialog kullanan akış hâlâ
+ * `createBoardPost` (state döner) kullanır.
+ */
+export async function createGroupNoticeFromPage(
+  _prev: BoardFormState,
+  fd: FormData,
+): Promise<BoardFormState> {
+  const result = await createBoardPost(_prev, fd);
+  if (result.ok && !result.errors && !result.message) {
+    // `createBoardPost` zaten revalidate ediyor; burada da Bildirimler
+    // sekmesine ulaşan yolu kesin yenile + yönlendir.
+    revalidatePath("/calisma-grubum");
+    redirect("/calisma-grubum?tab=bildirimler");
+  }
+  return result;
 }
 
 /** Toggle pin state. Admins: anywhere. Moderators: only in own group. */

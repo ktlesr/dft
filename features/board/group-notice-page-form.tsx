@@ -1,8 +1,7 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { AlertCircle, Loader2, Send } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -22,35 +21,19 @@ import {
 import { AttachmentInput } from "@/features/shared/attachment-input";
 import { Field } from "@/features/shared/form-field";
 import { BOARD_KIND_BY_SCOPE, BOARD_KIND_LABELS } from "@/lib/constants";
-import { createBoardPost, type BoardFormState } from "./actions";
+import { createGroupNoticeFromPage, type BoardFormState } from "./actions";
 
 const INITIAL: BoardFormState = { ok: true };
 
 /**
  * "Bildirim Ekle" sayfa formu — grup panosu paylaşımı dialog'unun sayfa
- * sürümü. `createBoardPost` server action'ı scope=GROUP ile çağırır;
- * başarılı submit'te /calisma-grubum sayfasına döner.
+ * sürümü. `createGroupNoticeFromPage` action'ı scope=GROUP ile çağırır;
+ * başarılı submit sunucu tarafında redirect ile /calisma-grubum'a döner.
  */
 export function GroupNoticePageForm({ canPin }: { canPin: boolean }) {
-  const [state, action, pending] = useActionState(createBoardPost, INITIAL);
+  const [state, action, pending] = useActionState(createGroupNoticeFromPage, INITIAL);
   const allowedKinds = BOARD_KIND_BY_SCOPE.GROUP;
   const defaultKind = allowedKinds[0];
-
-  // Başarılı submit sonrası bildirim sekmesine dön.
-  const router = useRouter();
-  const prevPending = useRef(false);
-  useEffect(() => {
-    if (
-      prevPending.current &&
-      !pending &&
-      state.ok &&
-      !state.errors &&
-      !state.message
-    ) {
-      router.push("/calisma-grubum?tab=bildirimler");
-    }
-    prevPending.current = pending;
-  }, [state, pending, router]);
 
   return (
     <form action={action}>

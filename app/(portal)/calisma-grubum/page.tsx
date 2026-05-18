@@ -27,8 +27,26 @@ import { listGroupDiscussions } from "@/features/forum/queries";
 export const metadata = { title: "Çalışma Grubum" };
 export const dynamic = "force-dynamic";
 
-export default async function MyGroupPage() {
+const VALID_TABS = [
+  "ozet",
+  "forum",
+  "bildirimler",
+  "toplantilar",
+  "raporlar",
+  "kpi",
+  "notlar",
+  "uyeler",
+] as const;
+type GroupTab = (typeof VALID_TABS)[number];
+
+type GroupSearchParams = Promise<{ tab?: string }>;
+
+export default async function MyGroupPage({ searchParams }: { searchParams: GroupSearchParams }) {
   const user = await requireActiveUser();
+  const { tab } = await searchParams;
+  const activeTab: GroupTab = (VALID_TABS as readonly string[]).includes(tab ?? "")
+    ? (tab as GroupTab)
+    : "ozet";
 
   if (!user.groupId || !user.groupCode) {
     return (
@@ -101,7 +119,7 @@ export default async function MyGroupPage() {
         }
       />
 
-      <Tabs defaultValue="ozet">
+      <Tabs defaultValue={activeTab}>
         <TabsList>
           <TabsTrigger value="ozet">Özet</TabsTrigger>
           <TabsTrigger value="forum">Forum</TabsTrigger>

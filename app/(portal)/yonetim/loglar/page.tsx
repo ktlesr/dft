@@ -23,6 +23,7 @@ const ACTION_LABELS: Record<AuditAction, string> = {
   USER_APPROVED: "Kullanıcı onayı",
   USER_REJECTED: "Kullanıcı reddi",
   USER_SUSPENDED: "Askıya alma",
+  USER_DELETED: "Kullanıcı silindi",
   USER_ROLE_ADDED: "Rol eklendi",
   USER_ROLE_REMOVED: "Rol kaldırıldı",
   USER_GROUP_CHANGED: "Grup değişikliği",

@@ -30,10 +30,10 @@ export type CreateUserFormState = {
  * no invite acceptance or admin approval step required.
  *
  * `USER` is always included in the role set; any admin-selected elevated
- * roles (MODERATOR / RAPPORTEUR / ADMIN) are added on top.
+ * roles (MODERATOR / RAPPORTEUR / ADVISOR / ADMIN) are added on top.
  */
 
-const EXTRA_ROLE = z.enum(["MODERATOR", "RAPPORTEUR", "ADMIN"]);
+const EXTRA_ROLE = z.enum(["MODERATOR", "RAPPORTEUR", "ADVISOR", "ADMIN"]);
 
 // Faz 7: group codes are now free-form strings kept in the DB. Accept any
 // well-formed code string (validated against existence at use time) or the
@@ -254,7 +254,7 @@ export async function suspendUser(formData: FormData): Promise<void> {
   revalidatePath(`/yonetim/kullanicilar/${id}`);
 }
 
-const roleValues = ["USER", "MODERATOR", "RAPPORTEUR", "ADMIN"] as const;
+const roleValues = ["USER", "MODERATOR", "RAPPORTEUR", "ADVISOR", "ADMIN"] as const;
 const roleSchema = z.enum(roleValues);
 
 export async function addRole(formData: FormData): Promise<void> {
@@ -338,4 +338,141 @@ export async function changeUserGroup(formData: FormData): Promise<void> {
     metadata: { groupCode: code || null },
   });
   revalidatePath(`/yonetim/kullanicilar/${userId}`);
+}
+
+/* ──────────────────────────────────────────────────────────────
+ * Admin: kullanıcı bilgilerini güncelleme
+ * ────────────────────────────────────────────────────────────── */
+
+export type UpdateUserFormState = {
+  ok: boolean;
+  message?: string;
+  errors?: Record<string, string[]>;
+};
+
+const updateUserSchema = z.object({
+  userId: z.string().min(1),
+  name: z.string().trim().min(2, "Ad soyad çok kısa.").max(100, "Ad soyad çok uzun."),
+  organization: optionalShort,
+  academicTitle: optionalShort,
+  position: optionalShort,
+  city: optionalShort,
+  phone: optionalShort,
+  bio: z
+    .string()
+    .trim()
+    .max(2000, "Özgeçmiş çok uzun.")
+    .optional()
+    .transform((v) => (v && v !== "" ? v : undefined)),
+});
+
+export async function updateUserProfileByAdmin(
+  _prev: UpdateUserFormState,
+  fd: FormData,
+): Promise<UpdateUserFormState> {
+  const admin = await requireAdmin();
+  const parsed = updateUserSchema.safeParse({
+    userId: fd.get("userId"),
+    name: fd.get("name"),
+    organization: fd.get("organization"),
+    academicTitle: fd.get("academicTitle"),
+    position: fd.get("position"),
+    city: fd.get("city"),
+    phone: fd.get("phone"),
+    bio: fd.get("bio"),
+  });
+  if (!parsed.success) return { ok: false, errors: fieldErrors(parsed.error) };
+
+  const target = await prisma.user.findUnique({
+    where: { id: parsed.data.userId },
+    select: { id: true },
+  });
+  if (!target) return { ok: false, message: "Kullanıcı bulunamadı." };
+
+  await prisma.user.update({
+    where: { id: parsed.data.userId },
+    data: {
+      name: parsed.data.name,
+      profile: {
+        upsert: {
+          create: {
+            title: parsed.data.academicTitle ?? null,
+            position: parsed.data.position ?? null,
+            organization: parsed.data.organization ?? null,
+            phone: parsed.data.phone ?? null,
+            city: parsed.data.city ?? null,
+            bio: parsed.data.bio ?? null,
+          },
+          update: {
+            title: parsed.data.academicTitle ?? null,
+            position: parsed.data.position ?? null,
+            organization: parsed.data.organization ?? null,
+            phone: parsed.data.phone ?? null,
+            city: parsed.data.city ?? null,
+            bio: parsed.data.bio ?? null,
+          },
+        },
+      },
+    },
+  });
+
+  await audit({
+    action: "SETTINGS_CHANGED",
+    actorId: admin.id,
+    targetType: "User",
+    targetId: parsed.data.userId,
+    metadata: { kind: "profile_update_by_admin" },
+  });
+
+  revalidatePath(`/yonetim/kullanicilar/${parsed.data.userId}`);
+  revalidatePath("/yonetim/kullanicilar");
+  return { ok: true };
+}
+
+/* ──────────────────────────────────────────────────────────────
+ * Admin: kullanıcı hesabını silme (cascade)
+ * ────────────────────────────────────────────────────────────── */
+
+export async function deleteUserByAdmin(formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
+  const userId = idSchema.parse(formData.get("userId"));
+
+  // Kendini silmeye karşı koruma.
+  if (userId === admin.id) {
+    redirect(`/yonetim/kullanicilar/${userId}?hata=kendi-silinemez`);
+  }
+
+  // Son admin'i silmeye karşı koruma.
+  const target = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      roles: { select: { role: true } },
+    },
+  });
+  if (!target) redirect("/yonetim/kullanicilar");
+  if (target.roles.some((r) => r.role === "ADMIN")) {
+    const adminCount = await prisma.roleAssignment.count({ where: { role: "ADMIN" } });
+    if (adminCount <= 1) {
+      redirect(`/yonetim/kullanicilar/${userId}?hata=son-admin`);
+    }
+  }
+
+  // Cascade silme — User şemasındaki onDelete: Cascade ilişkileri (kayıtlar,
+  // panolar, toplantılar, vb.) otomatik temizler.
+  await prisma.user.delete({ where: { id: userId } });
+
+  await audit({
+    action: "USER_DELETED",
+    actorId: admin.id,
+    targetType: "User",
+    targetId: userId,
+    metadata: { email: target.email, name: target.name },
+  });
+
+  revalidatePath("/yonetim/kullanicilar");
+  revalidatePath("/yonetim");
+  redirect("/yonetim/kullanicilar?silindi=1");
 }

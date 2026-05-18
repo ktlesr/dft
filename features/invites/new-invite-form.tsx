@@ -70,7 +70,7 @@ export function NewInviteForm({ groups }: { groups: InviteGroupOption[] }) {
           Roller (USER her zaman atanır)
         </legend>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {(["MODERATOR", "RAPPORTEUR", "ADMIN"] as const).map((r) => (
+          {(["MODERATOR", "RAPPORTEUR", "ADVISOR", "ADMIN"] as const).map((r) => (
             <label key={r} className="flex items-center gap-2 text-sm">
               <Checkbox name="roles" value={r} />
               {ROLE_LABELS[r]}

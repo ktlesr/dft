@@ -37,6 +37,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   USER: "Üye",
   MODERATOR: "Moderatör",
   RAPPORTEUR: "Raportör",
+  ADVISOR: "Danışman",
   ADMIN: "Yönetici",
 };
 

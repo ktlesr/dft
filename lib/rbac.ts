@@ -17,6 +17,7 @@ export const hasRole = (user: Pick<SessionUser, "roles">, ...roles: Role[]) =>
 export const isAdmin = (user: Pick<SessionUser, "roles">) => user.roles.includes("ADMIN");
 export const isModerator = (user: Pick<SessionUser, "roles">) => user.roles.includes("MODERATOR");
 export const isRapporteur = (user: Pick<SessionUser, "roles">) => user.roles.includes("RAPPORTEUR");
+export const isAdvisor = (user: Pick<SessionUser, "roles">) => user.roles.includes("ADVISOR");
 
 export function canCreateMeeting(user: SessionUser, targetGroupId: string) {
   if (isAdmin(user)) return true;

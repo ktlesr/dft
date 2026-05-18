@@ -1,8 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CheckCircle2, PauseCircle, XCircle } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle2,
+  PauseCircle,
+  XCircle,
+} from "lucide-react";
 
 import { PageHeader } from "@/components/app/page-header";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +26,8 @@ import {
   removeRole,
   suspendUser,
 } from "@/features/admin/user-actions";
+import { DeleteUserButton } from "@/features/admin/delete-user-button";
+import { UserEditForm } from "@/features/admin/user-edit-form";
 import { UserGroupForm } from "@/features/admin/user-group-form";
 import { ProfilePhotoUploader, CvUploader } from "@/features/profile/media-forms";
 import { AdminPanelNav } from "@/components/app/admin-nav";
@@ -26,9 +35,9 @@ import type { Role } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 type Params = Promise<{ id: string }>;
-type SearchParams = Promise<{ olusturuldu?: string }>;
+type SearchParams = Promise<{ olusturuldu?: string; hata?: string }>;
 
-const ALL_ROLES: Role[] = ["USER", "MODERATOR", "RAPPORTEUR", "ADMIN"];
+const ALL_ROLES: Role[] = ["USER", "MODERATOR", "RAPPORTEUR", "ADVISOR", "ADMIN"];
 
 export default async function AdminUserDetail({
   params,
@@ -40,6 +49,12 @@ export default async function AdminUserDetail({
   const { id } = await params;
   const sp = await searchParams;
   const justCreated = sp.olusturuldu === "1";
+  const deleteError =
+    sp.hata === "kendi-silinemez"
+      ? "Kendi hesabınızı silemezsiniz."
+      : sp.hata === "son-admin"
+        ? "Son yönetici hesabını silemezsiniz; önce başka birini ADMIN yapın."
+        : null;
   const admin = await requireAdmin();
 
   const [user, allGroups] = await Promise.all([
@@ -103,6 +118,13 @@ export default async function AdminUserDetail({
             Profil → Güvenlik sekmesinden şifreyi değiştirebilir.
           </span>
         </div>
+      ) : null}
+
+      {deleteError ? (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{deleteError}</AlertDescription>
+        </Alert>
       ) : null}
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -321,6 +343,45 @@ export default async function AdminUserDetail({
           </Card>
         </div>
       </div>
+
+      {/* Bilgi düzenleme — full-width altında */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle className="text-base">Kullanıcı bilgilerini düzenle</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <UserEditForm
+            defaults={{
+              userId: user.id,
+              name: user.name ?? "",
+              organization: user.profile?.organization ?? "",
+              academicTitle: user.profile?.title ?? "",
+              position: user.profile?.position ?? "",
+              city: user.profile?.city ?? "",
+              phone: user.profile?.phone ?? "",
+              bio: user.profile?.bio ?? "",
+            }}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Tehlikeli işlemler — silme */}
+      {!isSelf ? (
+        <Card className="mt-6 border-destructive/30">
+          <CardHeader>
+            <CardTitle className="text-base text-destructive">Tehlikeli işlemler</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Hesabı silmek bu üyenin profilini, atadığı rollerini ve sahip olduğu tüm
+              kayıtları (proje, etkinlik, pano paylaşımları, toplantılar, tutanaklar,
+              raporlar, paydaşlar, dijital içerikler vb.) <strong>kalıcı olarak</strong>{" "}
+              kaldırır. Geri alınamaz.
+            </p>
+            <DeleteUserButton userId={user.id} userName={user.name ?? user.email} />
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   );
 }

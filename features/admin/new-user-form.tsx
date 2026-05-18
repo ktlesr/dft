@@ -190,7 +190,7 @@ export function NewUserForm({ groups }: { groups: NewUserGroupOption[] }) {
                   <span className="text-[10px] text-muted-foreground">Her zaman atanır</span>
                 </div>
               </label>
-              {(["MODERATOR", "RAPPORTEUR", "ADMIN"] as const).map((r) => (
+              {(["MODERATOR", "RAPPORTEUR", "ADVISOR", "ADMIN"] as const).map((r) => (
                 <label
                   key={r}
                   className="flex cursor-pointer items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm transition-colors hover:border-primary/40"
@@ -203,8 +203,9 @@ export function NewUserForm({ groups }: { groups: NewUserGroupOption[] }) {
             <p className="px-1 text-[11px] text-muted-foreground">
               <strong>Üye</strong> portala erişimin temel rolüdür; tüm hesaplara atanır. Üzerine
               ihtiyaca göre <strong>Moderatör</strong> (grup panosu moderasyonu + toplantı
-              bildirimi), <strong>Raportör</strong> (tutanak + rapor) veya
-              <strong> Yönetici</strong> (tam erişim) ekleyebilirsiniz.
+              bildirimi), <strong>Raportör</strong> (tutanak + rapor),{" "}
+              <strong>Danışman</strong> (uzman danışmanlık) veya{" "}
+              <strong>Yönetici</strong> (tam erişim) ekleyebilirsiniz.
             </p>
           </fieldset>
 

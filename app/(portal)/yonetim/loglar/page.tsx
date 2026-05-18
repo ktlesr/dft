@@ -80,7 +80,7 @@ export default async function AuditLogPage({ searchParams }: { searchParams: Sea
   });
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Audit log"
         description="Kritik eylemler — giriş, onay, rol/grup değişikliği, pano/toplantı/rapor/belge işlemleri."

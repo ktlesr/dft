@@ -8,7 +8,7 @@ export const metadata = { title: "Panolar" };
 
 export default function BoardsIndexPage() {
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Panolar"
         description="DFT'nin genel panosu ve çalışma grubunuza özel grup panosu."

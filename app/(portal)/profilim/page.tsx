@@ -34,7 +34,7 @@ export default async function ProfilePage() {
   const hasPassword = !!userRow?.passwordHash;
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Profilim"
         description="Kişisel bilgileriniz, iletişim, uzmanlık ve güvenlik ayarlarınız."

@@ -14,7 +14,7 @@ export default async function BulkImportUsersPage() {
   await requireAdmin();
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Toplu üye içe aktar"
         description="CSV veya Excel (.xlsx) dosyasıyla birden çok üyeyi tek seferde ekleyin. Her satır için güçlü geçici şifre üretilir; sonuçta indirilebilir bir CSV özet sunulur."

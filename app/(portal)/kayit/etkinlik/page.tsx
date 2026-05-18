@@ -5,7 +5,7 @@ export const metadata = { title: "Etkinlik" };
 
 export default function Page() {
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Etkinlik"
         description="Düzenlediğiniz ya da yer aldığınız toplantı, çalıştay ve ağ kurma etkinlikleri."

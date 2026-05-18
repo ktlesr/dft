@@ -33,7 +33,7 @@ export default async function EditGroupPage({ params }: { params: Params }) {
   if (!group) notFound();
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title={`Grubu düzenle · ${group.code}`}
         description="Kod, ad veya açıklamayı güncelleyin. Kod değişirse üyelerde görünen kod da güncellenir."

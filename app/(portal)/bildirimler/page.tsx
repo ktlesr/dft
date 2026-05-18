@@ -26,7 +26,7 @@ export default async function NotificationsPage() {
   const unreadCount = items.filter((i) => !i.readAt).length;
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Bildirimler"
         description="Grup toplantıları, raporlar, hesap onayları ve diğer sistem olayları."

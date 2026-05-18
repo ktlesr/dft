@@ -15,7 +15,7 @@ export default async function NewReportPage() {
   const user = await requireActiveUser();
   if (!user.groupId) {
     return (
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto max-w-7xl">
         <PageHeader title="Rapor Ekle" breadcrumbs={[{ label: "Rapor" }]} />
         <EmptyState icon={Users} title="Bir çalışma grubuna atanmadınız" />
       </div>
@@ -24,7 +24,7 @@ export default async function NewReportPage() {
   if (!canCreateReport(user, user.groupId)) redirect("/yetkisiz");
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Rapor Ekle"
         description="Türler — Yol Haritası (ilk dönem: 1 Haz 2026 – 31 Ağu 2026) · İki Aylık · Kapanış · Anlık Not."

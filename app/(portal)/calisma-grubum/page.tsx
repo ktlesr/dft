@@ -32,7 +32,7 @@ export default async function MyGroupPage() {
 
   if (!user.groupId || !user.groupCode) {
     return (
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-7xl">
         <PageHeader
           title="Çalışma Grubum"
           breadcrumbs={[{ label: "Çalışma Grubum" }]}
@@ -86,7 +86,7 @@ export default async function MyGroupPage() {
   const rapporteurs = members.filter((m) => m.roles.some((r) => r.role === "RAPPORTEUR"));
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title={`Çalışma Grubum · ${user.groupCode}`}
         description={user.groupDescription ?? undefined}

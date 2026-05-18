@@ -83,7 +83,7 @@ const GROUPS: RecordGroup[] = [
 
 export default function NewRecordPage() {
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Yeni Kayıt Ekle"
         description="Eklemek istediğiniz kayıt türünü seçin. Her tip için özel form ekranı açılır."

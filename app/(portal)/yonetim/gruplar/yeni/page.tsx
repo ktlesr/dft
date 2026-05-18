@@ -15,7 +15,7 @@ export default async function NewGroupPage() {
   await requireAdmin();
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Yeni çalışma grubu"
         description="Grup kodunu, adını ve açıklamasını belirleyin. Grup oluşturulduktan sonra üyelere atayabilirsiniz."

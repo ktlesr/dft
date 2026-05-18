@@ -26,7 +26,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
       : { groups: [], totalShown: 0 };
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Arama"
         description={

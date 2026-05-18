@@ -53,7 +53,7 @@ export default async function PaylasimlarPage({ searchParams }: { searchParams: 
   ]);
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Paylaşımlar"
         description="DFT üyeleri tarafından girilen kayıtların yer aldığı alandır."

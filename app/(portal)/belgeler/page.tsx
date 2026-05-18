@@ -71,7 +71,7 @@ export default async function DocumentsPage({ searchParams }: { searchParams: Se
   });
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Belgeler"
         description="Ortak belgeler, grup belgeleri, tutanak ve rapor ekleri tek ekranda."

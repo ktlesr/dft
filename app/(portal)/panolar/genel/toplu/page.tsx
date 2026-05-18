@@ -13,7 +13,7 @@ export default async function GeneralBoardBulkImportPage() {
   await requireAdmin();
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Genel panoya toplu içe aktarma"
         description="Doldurulmuş Excel şablonu ile birden fazla paylaşımı tek seferde ekleyin. Satırlardan herhangi birinde hata olursa hiçbir kayıt oluşturulmaz."

@@ -14,7 +14,7 @@ export default async function NewMeetingPage() {
   const user = await requireActiveUser();
   if (!user.groupId) {
     return (
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto max-w-7xl">
         <PageHeader title="Toplantı Bildirimi Ekle" breadcrumbs={[{ label: "Toplantı Bildirimi" }]} />
         <EmptyState
           icon={Users}
@@ -27,7 +27,7 @@ export default async function NewMeetingPage() {
   if (!canCreateMeeting(user, user.groupId)) redirect("/yetkisiz");
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Toplantı Bildirimi Ekle"
         description={`${user.groupCode ?? "Grup"}${user.groupDescription ? ` · ${user.groupDescription}` : ""}`}

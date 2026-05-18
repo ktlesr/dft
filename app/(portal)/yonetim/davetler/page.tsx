@@ -36,7 +36,7 @@ export default async function AdminInvitesPage() {
   const now = Date.now();
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Davetler"
         description="Davet bağlantıları oluşturun ve kabul / iptal durumlarını takip edin."

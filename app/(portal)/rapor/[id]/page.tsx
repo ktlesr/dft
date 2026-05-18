@@ -39,7 +39,7 @@ export default async function ReportDetailPage({ params }: { params: Params }) {
   };
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title={report.title}
         description={`${report.group?.code ?? ""} · ${REPORT_KIND_LABELS[report.kind]} · ${formatDateTime(report.createdAt)}`}

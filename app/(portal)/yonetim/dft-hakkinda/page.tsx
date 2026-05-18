@@ -12,7 +12,7 @@ export default async function AdminAboutPage() {
   const current = await getAboutContent();
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="DFT Hakkında"
         description="Üyelere açılan 'DFT Projesi Nedir?' kartı, modaldaki detaylı içerik ve eklenmiş belgeleri buradan yönetin."

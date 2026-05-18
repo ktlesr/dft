@@ -57,7 +57,7 @@ export default async function DuyurularPage({ searchParams }: { searchParams: Se
   const sectionTitle = channel === "genel" ? "Genel Bildirimler" : "Çalışma Grubu Bildirimleri";
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Bildirimler"
         description={

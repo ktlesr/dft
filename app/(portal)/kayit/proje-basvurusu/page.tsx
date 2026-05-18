@@ -5,7 +5,7 @@ export const metadata = { title: "Proje Başvurusu" };
 
 export default function Page() {
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Proje Başvurusu"
         description="Başvurusu yapılmış ancak henüz sonuçlanmamış projeler."

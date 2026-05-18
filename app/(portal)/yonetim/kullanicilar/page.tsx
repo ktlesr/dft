@@ -71,7 +71,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
   });
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Kullanıcılar"
         description="Portal üyelerini görüntüleyin, oluşturun ve rollerini / gruplarını yönetin."

@@ -33,7 +33,7 @@ export default async function DftAboutPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="DFT Hakkında"
         description="DFT topluluğu, çalışma grupları ve kurumsal kimliği hakkında genel bilgi."

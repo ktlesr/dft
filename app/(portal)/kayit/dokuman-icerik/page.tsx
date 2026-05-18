@@ -5,7 +5,7 @@ export const metadata = { title: "Dijital İçerik" };
 
 export default function Page() {
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Dijital İçerik"
         description="DFT çalışmaları kapsamında faydalı olabilecek dijital içerikler (rapor, makale, strateji belgesi, eğitim videosu vb.)."

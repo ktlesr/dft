@@ -90,7 +90,7 @@ export default async function AdminUserDetail({
   const canRemoveAdmin = adminCount > 1;
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title={user.name ?? user.email}
         description={`Üye detayı · ${USER_STATUS_LABELS[user.status]}`}

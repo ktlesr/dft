@@ -40,7 +40,7 @@ export default async function AdminGroupsPage({ searchParams }: { searchParams: 
   });
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Çalışma grupları"
         description="Grup kodu, adı ve açıklamasını yönetin; yeni grup ekleyin veya kaldırın."

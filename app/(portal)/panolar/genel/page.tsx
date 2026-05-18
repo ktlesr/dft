@@ -82,7 +82,7 @@ export default async function GeneralBoardPage({ searchParams }: { searchParams:
   const clearHref = kategoriKey ? `/panolar/genel?kategori=${kategoriKey}` : "/panolar/genel";
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title={pageTitle}
         description={pageDescription}

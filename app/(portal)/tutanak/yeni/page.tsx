@@ -19,7 +19,7 @@ export default async function NewMinutePage({ searchParams }: { searchParams: Se
 
   if (!user.groupId) {
     return (
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto max-w-7xl">
         <PageHeader title="Toplantı Tutanağı Ekle" breadcrumbs={[{ label: "Tutanak" }]} />
         <EmptyState icon={Users} title="Bir çalışma grubuna atanmadınız" />
       </div>
@@ -35,7 +35,7 @@ export default async function NewMinutePage({ searchParams }: { searchParams: Se
   });
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Toplantı Tutanağı Ekle"
         description="Grubunuzun bir toplantısına bağlı tutanak oluşturun."

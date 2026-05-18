@@ -49,7 +49,7 @@ export default async function MeetingDetailPage({ params }: { params: Params }) 
   };
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title={meeting.title}
         description={`${meeting.group?.code ?? ""} grubu · ${formatDateTime(meeting.startAt)}`}

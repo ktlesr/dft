@@ -20,7 +20,7 @@ export default async function NewBildirimPage() {
   // Grup ataması yoksa içerik gösterme.
   if (!user.groupId && !isAdmin(user)) {
     return (
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-7xl">
         <PageHeader title="Bildirim Ekle" breadcrumbs={[{ label: "Bildirim Ekle" }]} />
         <EmptyState
           icon={Users}
@@ -32,7 +32,7 @@ export default async function NewBildirimPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Bildirim Ekle"
         description={

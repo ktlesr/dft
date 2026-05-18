@@ -38,7 +38,7 @@ export default async function AdminHomePage() {
   ];
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Yönetim Paneli"
         description="Kullanıcı onayları, davet yönetimi, rol atamaları ve audit takibi."

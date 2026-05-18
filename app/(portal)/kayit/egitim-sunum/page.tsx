@@ -5,7 +5,7 @@ export const metadata = { title: "Eğitim / Sunum Kaydı" };
 
 export default function Page() {
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Eğitim / Sunum Kaydı"
         description="Verdiğiniz eğitim, sunum ve akademik paylaşımlar."

@@ -19,7 +19,7 @@ export default async function NewUserPage() {
   });
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Yeni kullanıcı oluştur"
         description="E-posta, geçici şifre, grup ve rolleri belirleyin. Hesap anında aktifleşir — bilgiyi kullanıcıya güvenli kanaldan iletin."

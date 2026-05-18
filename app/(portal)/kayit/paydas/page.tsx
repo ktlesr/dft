@@ -5,7 +5,7 @@ export const metadata = { title: "Paydaş" };
 
 export default function Page() {
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Paydaş"
         description="DFT'nin ağ oluşturma çalışmaları kapsamında faydalı olabilecek ulusal / uluslararası paydaşlar."

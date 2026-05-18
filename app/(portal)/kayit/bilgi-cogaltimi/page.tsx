@@ -5,7 +5,7 @@ export const metadata = { title: "Bilgi Çoğaltımı Kaydı" };
 
 export default function Page() {
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Bilgi Çoğaltımı Kaydı"
         description="Sunum, seminer, çalıştay veya yayın yoluyla yaydığınız bilgi faaliyetleri."

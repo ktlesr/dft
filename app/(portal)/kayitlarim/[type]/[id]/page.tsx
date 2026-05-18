@@ -75,7 +75,7 @@ export default async function RecordDetailPage({ params }: { params: Params }) {
   const { title, fields } = describe(type, row);
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title={title}
         description={RECORD_LABELS[type]}

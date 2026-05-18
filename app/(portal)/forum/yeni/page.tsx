@@ -14,7 +14,7 @@ export default async function NewDiscussionPage() {
   // Grup üyeliği yoksa form göstermek yerine yönlendirici bir boş durum.
   if (!user.groupId && !isAdmin(user)) {
     return (
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-7xl">
         <PageHeader
           title="Konu / Tartışma Başlat"
           breadcrumbs={[{ label: "Konu / Tartışma Başlat" }]}
@@ -29,7 +29,7 @@ export default async function NewDiscussionPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Konu / Tartışma Başlat"
         description={

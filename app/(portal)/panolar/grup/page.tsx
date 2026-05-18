@@ -30,7 +30,7 @@ export default async function GroupBoardPage({ searchParams }: { searchParams: S
 
   if (!user.groupId || !user.groupCode) {
     return (
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-7xl">
         <PageHeader
           title="Grup Panosu"
           breadcrumbs={[{ label: "Panolar", href: "/panolar" }, { label: "Grup" }]}
@@ -54,7 +54,7 @@ export default async function GroupBoardPage({ searchParams }: { searchParams: S
   const admin = isAdmin(user);
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Grup Panosu"
         description={`Yalnızca ${user.groupCode} grubundaki üyeler görür.`}

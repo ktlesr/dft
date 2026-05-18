@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { BOARD_KIND_LABELS } from "@/lib/constants";
 import { avatarUrl, formatDateTime, initials } from "@/lib/utils";
 import { removeBoardPost, togglePin } from "./actions";
+import { CoverImageLightbox } from "./cover-image-lightbox";
 import { EditBoardPostDialog } from "./edit-post-dialog";
 
 type Attachment = {
@@ -103,21 +104,11 @@ export function PostCard({ post, caps }: { post: PostRow; caps: Caps }) {
         {/* İçerik — kapak resmi varsa solda, içerik sağda */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
           {coverImage ? (
-            <a
-              href={`/api/dosya/${coverImage.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group block shrink-0 self-start overflow-hidden rounded-md border bg-muted"
-              title={coverImage.originalName}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`/api/dosya/${coverImage.id}`}
-                alt={coverImage.originalName}
-                className="h-44 w-44 object-cover transition-transform group-hover:scale-[1.02] sm:h-48 sm:w-48"
-                loading="lazy"
-              />
-            </a>
+            <CoverImageLightbox
+              src={`/api/dosya/${coverImage.id}`}
+              alt={coverImage.originalName}
+              externalUrl={post.externalUrl}
+            />
           ) : null}
 
           <div className="min-w-0 flex-1">

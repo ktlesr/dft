@@ -63,10 +63,14 @@ export async function GET(
 
   try {
     const { stream, size } = await storage.get(att.storageKey);
+    // Faz 10: resim eklerini doğrudan tarayıcıda göstermek için `inline`
+    // döndürürüz; PDF/Office/ZIP gibi binary türler `attachment` ile indirilir.
+    const isImage = (att.mimeType ?? "").startsWith("image/");
+    const disposition = isImage ? "inline" : "attachment";
     const headers = new Headers({
       "Content-Type": att.mimeType || "application/octet-stream",
       "Content-Length": String(size),
-      "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(att.originalName)}`,
+      "Content-Disposition": `${disposition}; filename*=UTF-8''${encodeURIComponent(att.originalName)}`,
       "Cache-Control": "private, no-store",
       "X-Content-Type-Options": "nosniff",
     });

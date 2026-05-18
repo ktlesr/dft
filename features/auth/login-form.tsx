@@ -42,14 +42,17 @@ export function LoginForm({ banner }: { banner?: "dogrulandi" | "dogrulama-hata"
 
       <form className="space-y-4" action={formAction} noValidate>
         <div className="space-y-2">
-          <Label htmlFor="email">E-posta</Label>
+          <Label htmlFor="email">E-posta veya kullanıcı adı</Label>
           <Input
             id="email"
             name="email"
-            type="email"
-            autoComplete="email"
+            // type=email tarayıcıyı katı doğrulamaya zorluyor — ad.soyad gibi
+            // kullanıcı adlarını reddediyor; bu yüzden type=text.
+            type="text"
+            inputMode="email"
+            autoComplete="username"
             required
-            placeholder="ad.soyad@kurum.tr"
+            placeholder="ad.soyad veya ad.soyad@kurum.tr"
             aria-invalid={!!state.errors?.email}
           />
           <FieldError messages={state.errors?.email} />

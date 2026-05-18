@@ -73,9 +73,11 @@ function buildTemplateCsv(): string {
 }
 
 function buildCredentialsCsv(creds: BulkUserCredential[]): string {
-  const head = ["Adı Soyadı", "E-Posta", "Geçici Şifre"].map(csvEscape).join(",");
+  const head = ["Adı Soyadı", "Kullanıcı Adı", "E-Posta", "Geçici Şifre"]
+    .map(csvEscape)
+    .join(",");
   const rows = creds.map((c) =>
-    [c.name, c.email, c.password].map(csvEscape).join(","),
+    [c.name, c.username ?? "", c.email, c.password].map(csvEscape).join(","),
   );
   return head + "\n" + rows.join("\n") + "\n";
 }
@@ -224,6 +226,7 @@ export function UserBulkImportForm() {
                 <thead className="border-b text-left text-[10px] uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="py-1.5 pr-3 font-medium">Ad</th>
+                    <th className="py-1.5 pr-3 font-medium">Kullanıcı Adı</th>
                     <th className="py-1.5 pr-3 font-medium">E-Posta</th>
                     <th className="py-1.5 font-medium">Geçici Şifre</th>
                   </tr>
@@ -232,6 +235,7 @@ export function UserBulkImportForm() {
                   {state.credentials.map((c, i) => (
                     <tr key={i}>
                       <td className="py-1.5 pr-3">{c.name}</td>
+                      <td className="py-1.5 pr-3 font-mono">{c.username ?? "—"}</td>
                       <td className="py-1.5 pr-3 font-mono">{c.email}</td>
                       <td className="py-1.5 font-mono">{c.password}</td>
                     </tr>

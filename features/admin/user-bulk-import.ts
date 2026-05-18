@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { MAX_BULK_IMPORT_BYTES, MAX_BULK_IMPORT_ROWS } from "@/lib/constants";
+import { generateUniqueUsername } from "./username";
 import type { Role } from "@prisma/client";
 
 /**
@@ -38,6 +39,7 @@ export type BulkUserImportError = {
 
 export type BulkUserCredential = {
   email: string;
+  username: string | null;
   name: string;
   password: string;
 };
@@ -497,6 +499,14 @@ export async function bulkImportUsers(
   const passwords = drafts.map(() => generatePassword());
   const hashes = await Promise.all(passwords.map((p) => hashPassword(p)));
 
+  // Kullanıcı adlarını sırayla üret — `reserved` ile aynı dosya içindeki
+  // adlar arasında DB'ye gitmeden çakışma engellenir.
+  const reservedUsernames = new Set<string>();
+  const usernames: Array<string | null> = [];
+  for (const d of drafts) {
+    usernames.push(await generateUniqueUsername(d.name, { reserved: reservedUsernames }));
+  }
+
   const now = new Date();
   // Tek transaction; hata olursa hiçbiri yazılmaz.
   await prisma.$transaction(async (tx) => {
@@ -507,6 +517,7 @@ export async function bulkImportUsers(
       await tx.user.create({
         data: {
           email: d.email,
+          username: usernames[i] ?? null,
           name: d.name,
           passwordHash,
           status: "ACTIVE",
@@ -545,6 +556,7 @@ export async function bulkImportUsers(
 
   const credentials: BulkUserCredential[] = drafts.map((d, i) => ({
     email: d.email,
+    username: usernames[i] ?? null,
     name: d.name,
     password: passwords[i]!,
   }));

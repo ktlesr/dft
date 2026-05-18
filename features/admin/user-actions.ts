@@ -9,6 +9,7 @@ import { requireAdmin } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password";
 import { approvalNotificationEmail, sendMail } from "@/lib/mail";
+import { generateUniqueUsername } from "./username";
 import type { Role } from "@prisma/client";
 
 type ActionResult = { ok: true } | { ok: false; message: string };
@@ -129,9 +130,14 @@ export async function createUserByAdmin(
   // USER is implicit; admin-selected extras are layered on top (deduped).
   const roles = Array.from(new Set<Role>(["USER", ...parsed.data.extraRoles]));
 
+  // ad.soyad biçiminde benzersiz kullanıcı adı — opsiyonel; isim çok kısa
+  // veya tamamen sembol ise null kalır.
+  const username = await generateUniqueUsername(parsed.data.name);
+
   const created = await prisma.user.create({
     data: {
       email: parsed.data.email,
+      username,
       name: parsed.data.name,
       passwordHash,
       status: "ACTIVE",

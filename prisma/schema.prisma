@@ -143,6 +143,9 @@ enum AuditAction {
 model User {
   id              String      @id @default(cuid())
   email           String      @unique
+  // Faz 9: ad.soyad biçiminde kullanıcı adı; opsiyonel (eski kayıtlarda boş).
+  // Login akışı e-posta VEYA kullanıcı adı kabul eder.
+  username        String?     @unique
   emailVerified   DateTime?
   passwordHash    String?     // null for Google-only users
   name            String?

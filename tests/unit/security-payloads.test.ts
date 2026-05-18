@@ -118,6 +118,9 @@ describe("URL fields — javascript:/data:/scheme bypass attempts", () => {
 /* ── Email injection ───────────────────────────────────────────── */
 
 describe("email — header / CRLF injection attempts", () => {
+  // "@" içeren bozuk e-postalar — hem login hem forgot schema reddetmeli.
+  // (Faz 9: login schema artık kullanıcı adını da kabul ediyor — ama "@"
+  // bulundurduğu için yine email dalından geçer ve sıkı kontrole takılır.)
   const EMAIL_BAD = [
     "user@example.com\r\nBcc: attacker@evil.com",
     "user@example.com%0d%0aBcc:%20attacker@evil.com",
@@ -128,20 +131,37 @@ describe("email — header / CRLF injection attempts", () => {
     'user"@example.com',
     "@example.com",
     "user@",
-    "plainstring",
   ];
+
+  // forgot-schema yalnızca e-posta kabul ettiği için bu kayıt orada bad.
+  // login-schema kullanıcı adı (ad.soyad) da kabul ettiğinden "plainstring"
+  // gibi serbest bir kelime artık geçerli sayılır.
+  const FORGOT_EXTRA_BAD = ["plainstring"];
 
   it.each(EMAIL_BAD)("login email rejects %j", (bad) => {
     expect(loginSchema.safeParse({ email: bad, password: "x" }).success).toBe(false);
   });
 
-  it.each(EMAIL_BAD)("forgot email rejects %j", (bad) => {
+  it.each([...EMAIL_BAD, ...FORGOT_EXTRA_BAD])("forgot email rejects %j", (bad) => {
     expect(forgotSchema.safeParse({ email: bad }).success).toBe(false);
   });
 
   it("normalises email to lowercase + trims", () => {
     const r = loginSchema.parse({ email: "  ADMIN+Test@DFT.LOCAL  ", password: "x" });
     expect(r.email).toBe("admin+test@dft.local");
+  });
+
+  it("login schema accepts ad.soyad biçiminde kullanıcı adı", () => {
+    expect(loginSchema.safeParse({ email: "ali.erturk", password: "x" }).success).toBe(true);
+    expect(loginSchema.safeParse({ email: "MEHMET.CAKAR", password: "x" }).data?.email).toBe(
+      "mehmet.cakar",
+    );
+  });
+
+  it("login schema rejects username with invalid characters", () => {
+    expect(loginSchema.safeParse({ email: "ali erturk", password: "x" }).success).toBe(false);
+    expect(loginSchema.safeParse({ email: ".ali.erturk", password: "x" }).success).toBe(false);
+    expect(loginSchema.safeParse({ email: "ali.erturk.", password: "x" }).success).toBe(false);
   });
 });
 

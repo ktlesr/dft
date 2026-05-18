@@ -42,10 +42,21 @@ export function NewBoardPostDialog({
   const allowedKinds = BOARD_KIND_BY_SCOPE[scope];
   const defaultKind = allowedKinds[0];
 
-  // Close dialog automatically after a successful submit (no errors, not pending).
+  // Başarılı submit (pending: true → false geçişi + hata yok) sonrası
+  // dialog'u kapat. İlk mount'ta yanlışlıkla kapanmasın diye bir ref ile
+  // önceki pending durumu izlenir.
+  const prevPending = React.useRef(false);
   React.useEffect(() => {
-    if (!pending && state.ok && !state.errors && !state.message) return;
-    if (state.ok && !state.message && !state.errors && !pending) setOpen(false);
+    if (
+      prevPending.current &&
+      !pending &&
+      state.ok &&
+      !state.errors &&
+      !state.message
+    ) {
+      setOpen(false);
+    }
+    prevPending.current = pending;
   }, [state, pending]);
 
   return (

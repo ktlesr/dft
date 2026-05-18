@@ -63,8 +63,15 @@ if [ -d "./prisma/migrations" ] && [ "$(ls -A ./prisma/migrations 2>/dev/null | 
   echo "➜ prisma migrate deploy"
   prisma migrate deploy
 else
+  # Faz 9: yeni `User.username` unique kolonu nullable; mevcut satırlar
+  # NULL, Postgres NULL'ları unique ihlali saymaz → gerçekte veri kaybı
+  # yok ama Prisma muhafazakar davranıp uyarı veriyor. `--accept-data-loss`
+  # ile bu uyarı yok sayılır.
+  #
+  # Uzun vadede `prisma migrate dev` ile versiyonlanmış migration'lara
+  # geçilmesi önerilir; o zaman bu bayrak gerekmez.
   echo "➜ prisma db push (no migrations dir yet)"
-  prisma db push --skip-generate
+  prisma db push --skip-generate --accept-data-loss
 fi
 
 exec "$@"

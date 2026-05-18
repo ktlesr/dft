@@ -24,6 +24,8 @@ import { formatDateTime, truncate } from "@/lib/utils";
 import { RecentFeedTabs } from "@/features/records/recent-feed-tabs";
 import { recentPublicRecords } from "@/features/records/recent-public";
 import { ACTIVE_RECORD_TYPES, type ActiveRecordTypeSlug } from "@/features/records/types";
+import { listNotices } from "@/features/notice/queries";
+import { isAdmin } from "@/lib/rbac";
 
 export const metadata = { title: "Ana Panel" };
 export const dynamic = "force-dynamic";
@@ -33,6 +35,7 @@ export default async function DashboardPage() {
 
   const activeOwn = { ownerId: user.id, deletedAt: null };
   const activeAll = { deletedAt: null };
+  const admin = isAdmin(user);
 
   const boardInclude = {
     author: { select: { name: true, email: true } },
@@ -89,31 +92,15 @@ export default async function DashboardPage() {
       take: 5,
       include: boardInclude,
     }),
-    prisma.boardPost.findMany({
-      where: {
-        scope: "GENERAL",
-        status: "PUBLISHED",
-        deletedAt: null,
-        kind: "NEWS",
-        author: { roles: { some: { role: "ADMIN" } } },
-      },
-      orderBy: [{ pinned: "desc" }, { publishedAt: "desc" }],
-      take: 5,
-      include: boardInclude,
-    }),
-    user.groupId
-      ? prisma.boardPost.findMany({
-          where: {
-            scope: "GROUP",
-            groupId: user.groupId,
-            status: "PUBLISHED",
-            deletedAt: null,
-          },
-          orderBy: [{ pinned: "desc" }, { publishedAt: "desc" }],
-          take: 5,
-          include: boardInclude,
-        })
-      : Promise.resolve([]),
+    // Faz 9: Genel Bildirimler — yeni Notice modelinden, scope=GENERAL.
+    listNotices({ scope: "GENERAL", take: 5 }),
+    // Faz 9: Çalışma Grubu Bildirimleri — admin tüm grupları görür,
+    // diğer üyeler yalnızca kendi grubunu.
+    admin
+      ? listNotices({ scope: "GROUP", allGroups: true, take: 5 })
+      : user.groupId
+        ? listNotices({ scope: "GROUP", groupId: user.groupId, take: 5 })
+        : Promise.resolve([]),
     ...ACTIVE_RECORD_TYPES.map((t) => recentPublicRecords(t, 5)),
   ]);
 
@@ -265,16 +252,16 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Genel Duyurular — admin yayını, herkese açık (haber/etkinlik tipi) */}
+        {/* Genel Bildirimler — Notice scope=GENERAL */}
         <Card>
           <CardHeader className="flex-row items-center justify-between gap-2">
             <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Genel Duyurular
+              Genel Bildirimler
             </CardTitle>
             <div className="flex items-center gap-1">
               <Badge variant="outline">DFT</Badge>
               <Button asChild size="sm" variant="ghost">
-                <Link href="/panolar/genel?kategori=genel-duyuru">
+                <Link href="/duyurular?kanal=genel">
                   Tümü
                   <ArrowUpRight className="h-3.5 w-3.5" />
                 </Link>
@@ -285,27 +272,27 @@ export default async function DashboardPage() {
             {generalNotices.length === 0 ? (
               <EmptyState
                 icon={Megaphone}
-                title="Henüz genel duyuru yok"
+                title="Henüz genel bildirim yok"
                 className="border-0 py-6"
               />
             ) : (
               <ul className="divide-y">
-                {generalNotices.map((p) => (
-                  <li key={p.id} className="py-3 first:pt-0 last:pb-0">
+                {generalNotices.map((n) => (
+                  <li key={n.id} className="py-3 first:pt-0 last:pb-0">
                     <div className="flex items-center gap-2">
-                      {p.pinned ? <Pin className="h-3 w-3 text-amber-600" aria-label="Sabit" /> : null}
+                      {n.pinned ? <Pin className="h-3 w-3 text-amber-600" aria-label="Sabit" /> : null}
                       <Link
-                        href="/panolar/genel"
+                        href="/duyurular?kanal=genel"
                         className="truncate text-sm font-medium hover:text-primary"
                       >
-                        {p.title}
+                        {n.title}
                       </Link>
                     </div>
                     <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                      {truncate(p.body, 110)}
+                      {truncate(n.body, 110)}
                     </p>
                     <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      {p.author.name ?? p.author.email} · {formatDateTime(p.publishedAt)}
+                      {n.author.name ?? n.author.email} · {formatDateTime(n.publishedAt)}
                     </p>
                   </li>
                 ))}
@@ -314,17 +301,21 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Çalışma Grubu Duyuruları — yalnızca grup üyeleri görür */}
+        {/* Çalışma Grubu Bildirimleri — Notice scope=GROUP, kullanıcının grubu (admin: tümü) */}
         <Card>
           <CardHeader className="flex-row items-center justify-between gap-2">
             <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Çalışma Grubu Duyuruları
+              Çalışma Grubu Bildirimleri
             </CardTitle>
             <div className="flex items-center gap-1">
-              {user.groupCode ? <Badge variant="outline">{user.groupCode}</Badge> : null}
-              {user.groupId ? (
+              {user.groupCode ? (
+                <Badge variant="outline">{user.groupCode}</Badge>
+              ) : admin ? (
+                <Badge variant="outline">Tüm gruplar</Badge>
+              ) : null}
+              {user.groupId || admin ? (
                 <Button asChild size="sm" variant="ghost">
-                  <Link href="/panolar/grup">
+                  <Link href="/duyurular?kanal=grup">
                     Tümü
                     <ArrowUpRight className="h-3.5 w-3.5" />
                   </Link>
@@ -333,40 +324,42 @@ export default async function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {!user.groupId ? (
+            {!user.groupId && !admin ? (
               <EmptyState
                 icon={Megaphone}
                 title="Henüz bir çalışma grubunuz yok"
-                description="Yöneticiniz grubu atadıktan sonra paylaşımlar burada görünür."
+                description="Yöneticiniz grubu atadıktan sonra bildirimler burada görünür."
                 className="border-0 py-6"
               />
             ) : groupNotices.length === 0 ? (
               <EmptyState
                 icon={Megaphone}
-                title="Grup duyurusu yok"
+                title="Grup bildirimi yok"
                 className="border-0 py-6"
               />
             ) : (
               <ul className="divide-y">
-                {groupNotices.map((p) => (
-                  <li key={p.id} className="py-3 first:pt-0 last:pb-0">
+                {groupNotices.map((n) => (
+                  <li key={n.id} className="py-3 first:pt-0 last:pb-0">
                     <div className="flex items-center gap-2">
-                      {p.pinned ? <Pin className="h-3 w-3 text-amber-600" aria-label="Sabit" /> : null}
+                      {n.pinned ? <Pin className="h-3 w-3 text-amber-600" aria-label="Sabit" /> : null}
                       <Link
-                        href="/panolar/grup"
+                        href="/duyurular?kanal=grup"
                         className="truncate text-sm font-medium hover:text-primary"
                       >
-                        {p.title}
+                        {n.title}
                       </Link>
-                      <Badge variant="secondary" className="shrink-0 text-[10px]">
-                        {BOARD_KIND_LABELS[p.kind]}
-                      </Badge>
+                      {n.group ? (
+                        <Badge variant="secondary" className="shrink-0 text-[10px]">
+                          {n.group.code}
+                        </Badge>
+                      ) : null}
                     </div>
                     <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                      {truncate(p.body, 110)}
+                      {truncate(n.body, 110)}
                     </p>
                     <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      {p.author.name ?? p.author.email} · {formatDateTime(p.publishedAt)}
+                      {n.author.name ?? n.author.email} · {formatDateTime(n.publishedAt)}
                     </p>
                   </li>
                 ))}

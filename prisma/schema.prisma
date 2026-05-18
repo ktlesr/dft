@@ -51,6 +51,11 @@ enum BoardPostStatus {
   REMOVED
 }
 
+enum NoticeScope {
+  GENERAL  // tüm aktif üyelere açık; yalnızca admin yazar
+  GROUP    // yalnızca ilgili grup üyeleri görür; admin veya o grubun moderatörü yazar
+}
+
 enum ProjectApplicationKind {
   BIREYSEL
   DFT_ILE_BIRLIKTE
@@ -112,6 +117,9 @@ enum AuditAction {
   BOARD_POST_CREATED
   BOARD_POST_UPDATED
   BOARD_POST_REMOVED
+  NOTICE_CREATED
+  NOTICE_UPDATED
+  NOTICE_REMOVED
   MEETING_CREATED
   MEETING_UPDATED
   MEETING_REMOVED
@@ -148,6 +156,7 @@ model User {
   sessions        AuthSession[]
   createdInvites  Invite[]     @relation("InviteCreator")
   boardPosts      BoardPost[]
+  notices         Notice[]
   meetings        Meeting[]
   minutes         MeetingMinute[]
   reports         GroupReport[]
@@ -205,6 +214,7 @@ model Group {
   description String?
   users       User[]
   boardPosts  BoardPost[]
+  notices     Notice[]
   meetings    Meeting[]
   reports     GroupReport[]
   documents   Document[]
@@ -383,6 +393,31 @@ model BoardPost {
   @@index([groupId])
   @@index([authorId])
   @@index([pinned])
+}
+
+// ============================================================
+// NOTICES (Faz 9 — Bildirimler)
+// ============================================================
+
+model Notice {
+  id          String      @id @default(cuid())
+  scope       NoticeScope
+  title       String
+  body        String      @db.Text
+  pinned      Boolean     @default(false)
+  authorId    String
+  author      User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  // GROUP scope için zorunlu; GENERAL scope için null.
+  groupId     String?
+  group       Group?      @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  publishedAt DateTime    @default(now())
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  deletedAt   DateTime?
+
+  @@index([scope, publishedAt])
+  @@index([groupId, publishedAt])
+  @@index([authorId])
 }
 
 // ============================================================

@@ -24,6 +24,22 @@ export function canCreateMeeting(user: SessionUser, targetGroupId: string) {
   return user.groupId === targetGroupId;
 }
 
+/**
+ * Bildirim oluşturma yetkisi.
+ * - GENERAL kapsam → yalnızca admin
+ * - GROUP kapsam   → admin VEYA targetGroupId ile aynı gruptaki moderatör
+ */
+export function canCreateNotice(
+  user: SessionUser,
+  scope: "GENERAL" | "GROUP",
+  targetGroupId: string | null,
+) {
+  if (isAdmin(user)) return true;
+  if (scope === "GENERAL") return false;
+  if (!isModerator(user)) return false;
+  return !!targetGroupId && user.groupId === targetGroupId;
+}
+
 export function canCreateMinute(user: SessionUser, targetGroupId: string) {
   if (isAdmin(user)) return true;
   if (!isRapporteur(user)) return false;

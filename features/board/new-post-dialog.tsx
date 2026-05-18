@@ -122,7 +122,7 @@ export function NewBoardPostDialog({
           {scope === "GENERAL" ? (
             <Field
               name="assessment"
-              label="Paylaşımın TR33 Bölgesi açısından değerlendirmesi"
+              label="Değerlendirme/Yorum"
               hint="Opsiyonel. Yayınlandıktan sonra tüm üyelere gösterilir."
               error={state.errors?.assessment}
             >

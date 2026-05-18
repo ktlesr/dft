@@ -396,7 +396,7 @@ model BoardPost {
   kind        BoardPostKind
   title       String
   body        String          @db.Text
-  // Faz 6: genel panoda editörün "TR33 Bölgesi Açısından Değerlendirme"
+  // Faz 6: genel panoda editörün "Değerlendirme/Yorum"
   // metni için ayrı alan. Grup panosunda boş bırakılır.
   assessment  String?         @db.Text
   tags        String[]        @default([])

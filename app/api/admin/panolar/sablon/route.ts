@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
  *   Paylaşım Türü                                    // kind          (required, dropdown)
  *   İlgili Bağlantı                                  // externalUrl   (optional)
  *   Paylaşımın İçeriği                               // body          (required)
- *   Paylaşımın TR33 Bölgesi Açısından Değerlendirmesi // assessment   (optional, long text)
+ *   Değerlendirme/Yorum                             // assessment   (optional, long text)
  *
  * Tür dropdown values are the user-facing labels; the import action
  * reverses them into BoardPostKind enums.
@@ -42,13 +42,13 @@ export async function GET(_req: NextRequest) {
   });
   ws.columns = [
     { header: "No", key: "no", width: 6 },
-    { header: "Paylaşım İsmi", key: "title", width: 36 },
-    { header: "Paylaşım Tarihi", key: "publishedAt", width: 16 },
-    { header: "Paylaşım Türü", key: "kind", width: 22 },
-    { header: "İlgili Bağlantı", key: "externalUrl", width: 36 },
-    { header: "Paylaşımın İçeriği", key: "body", width: 60 },
+    { header: "Başlık", key: "title", width: 36 },
+    { header: "Tarih", key: "publishedAt", width: 16 },
+    { header: "Tür", key: "kind", width: 22 },
+    { header: "Bağlantı", key: "externalUrl", width: 36 },
+    { header: "İçerik", key: "body", width: 60 },
     {
-      header: "Paylaşımın TR33 Bölgesi Açısından Değerlendirmesi",
+      header: "Değerlendirme/Yorum",
       key: "assessment",
       width: 60,
     },
@@ -81,7 +81,7 @@ export async function GET(_req: NextRequest) {
     kind: BOARD_KIND_LABELS.NEWS, // "Haber/Etkinlik"
     externalUrl: "",
     body: "Bu örnek satırı silip kendi kayıtlarınızı girebilirsiniz.",
-    assessment: "İsteğe bağlı — paylaşımın TR33 bölgesi için değerlendirmesi.",
+    assessment: "İsteğe bağlı — değerlendirme/yorum.",
   });
   ws.getCell("C2").numFmt = "dd.mm.yyyy";
 
@@ -141,7 +141,7 @@ export async function GET(_req: NextRequest) {
       desc: "İçerik metni. 2–10.000 karakter. Hücre içinde satır için ALT+Enter.",
     },
     {
-      col: "Paylaşımın TR33 Bölgesi Açısından Değerlendirmesi",
+      col: "Değerlendirme/Yorum",
       req: "Hayır",
       desc: "Editör notu / değerlendirme. En fazla 10.000 karakter.",
     },

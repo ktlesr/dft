@@ -49,7 +49,8 @@ export async function listBoardPosts(opts: BoardListOpts) {
     take: opts.take ?? 50,
     include: {
       author: { select: { id: true, name: true, email: true, image: true } },
-      attachments: { select: { id: true, originalName: true, size: true } },
+      // mimeType: PostCard'da görsel-tipi ekleri kapak olarak gösterebilmek için.
+      attachments: { select: { id: true, originalName: true, size: true, mimeType: true } },
     },
   });
 }

@@ -70,13 +70,12 @@ function tr(s: string): string {
 // Maps a normalised header to our canonical field key.
 const HEADER_MAP: Record<string, "no" | "title" | "publishedAt" | "kind" | "externalUrl" | "body" | "assessment"> = {
   "no": "no",
-  "paylasim ismi": "title",
-  "paylasim tarihi": "publishedAt",
-  "paylasim turu": "kind",
-  "ilgili baglanti": "externalUrl",
-  "paylasimin icerigi": "body",
-  "paylasimin tr33 bolgesi acisindan degerlendirmesi": "assessment",
-  "tr33 degerlendirmesi": "assessment",
+  "baslik": "title",
+  "tarih": "publishedAt",
+  "tur": "kind",
+  "baglanti": "externalUrl",
+  "icerik": "body",
+  "degerlendirme/yorum": "assessment",
   // English fallbacks (keep older template uploads working)
   "title": "title",
   "body": "body",

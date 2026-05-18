@@ -9,6 +9,14 @@ import { BOARD_KIND_LABELS } from "@/lib/constants";
 import { avatarUrl, formatDateTime, initials } from "@/lib/utils";
 import { removeBoardPost, togglePin } from "./actions";
 
+type Attachment = {
+  id: string;
+  originalName: string;
+  size: number;
+  /** Faz 10: kapak resmi belirleyebilmek için mimeType da projeksiyondan gelir. */
+  mimeType?: string;
+};
+
 type PostRow = {
   id: string;
   scope: "GENERAL" | "GROUP";
@@ -26,13 +34,23 @@ type PostRow = {
     email: string;
     image: string | null;
   };
-  attachments: { id: string; originalName: string; size: number }[];
+  attachments: Attachment[];
 };
 
 type Caps = {
   canPin: boolean;
   canRemove: boolean;
 };
+
+function isImage(mime?: string): boolean {
+  return !!mime && mime.startsWith("image/");
+}
+
+function humanSize(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 export function PostCard({ post, caps }: { post: PostRow; caps: Caps }) {
   const pinAction = async () => {
@@ -44,41 +62,69 @@ export function PostCard({ post, caps }: { post: PostRow; caps: Caps }) {
     await removeBoardPost(post.id);
   };
 
+  // İlk image-tipi ek dosyayı kapak olarak kullan; geri kalanı (varsa)
+  // dosya listesinde göster. Aynı ek hem kapak hem dosya listesinde
+  // tekrar etmesin diye filtrelenir.
+  const coverImage = post.attachments.find((a) => isImage(a.mimeType));
+  const nonImageAttachments = post.attachments.filter((a) => a.id !== coverImage?.id);
+
   return (
     <Card className={post.pinned ? "border-primary/40" : undefined}>
       <CardContent className="p-5">
-        <div className="flex items-start gap-3">
-          <Avatar className="h-9 w-9 shrink-0">
+        {/* Üst meta — avatar + yazar + tarih + rozetler */}
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <Avatar className="h-7 w-7 shrink-0">
             {post.author.image ? (
               <AvatarImage
                 src={avatarUrl(post.author.id, post.author.image)}
                 alt={post.author.name ?? post.author.email}
               />
             ) : null}
-            <AvatarFallback>{initials(post.author.name, post.author.email)}</AvatarFallback>
+            <AvatarFallback className="text-[10px]">
+              {initials(post.author.name, post.author.email)}
+            </AvatarFallback>
           </Avatar>
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-medium">{post.author.name ?? post.author.email}</span>
-              <span className="text-[11px] text-muted-foreground">
-                · {formatDateTime(post.publishedAt)}
-              </span>
-              <Badge variant="secondary">{BOARD_KIND_LABELS[post.kind]}</Badge>
-              {post.pinned ? (
-                <Badge variant="warning" className="gap-1">
-                  <Pin className="h-3 w-3" />
-                  Sabit
-                </Badge>
-              ) : null}
-            </div>
+          <span className="text-sm font-medium">{post.author.name ?? post.author.email}</span>
+          <span className="text-[11px] text-muted-foreground">
+            · {formatDateTime(post.publishedAt)}
+          </span>
+          <Badge variant="secondary">{BOARD_KIND_LABELS[post.kind]}</Badge>
+          {post.pinned ? (
+            <Badge variant="warning" className="gap-1">
+              <Pin className="h-3 w-3" />
+              Sabit
+            </Badge>
+          ) : null}
+        </div>
 
-            <h3 className="mt-2 text-base font-semibold leading-snug">{post.title}</h3>
+        {/* İçerik — kapak resmi varsa solda, içerik sağda */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+          {coverImage ? (
+            <a
+              href={`/api/dosya/${coverImage.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group block shrink-0 self-start overflow-hidden rounded-md border bg-muted"
+              title={coverImage.originalName}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`/api/dosya/${coverImage.id}`}
+                alt={coverImage.originalName}
+                className="h-44 w-44 object-cover transition-transform group-hover:scale-[1.02] sm:h-48 sm:w-48"
+                loading="lazy"
+              />
+            </a>
+          ) : null}
+
+          <div className="min-w-0 flex-1">
+            <h3 className="text-base font-semibold leading-snug">{post.title}</h3>
             <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{post.body}</p>
 
             {post.assessment ? (
               <div className="mt-3 rounded-md border border-primary/20 bg-primary/5 p-3">
                 <p className="text-[11px] font-medium uppercase tracking-wider text-primary">
-                  TR33 Bölgesi açısından değerlendirme
+                  TR33 BÖLGESİ AÇISINDAN DEĞERLENDİRME
                 </p>
                 <p className="mt-1 whitespace-pre-wrap text-sm">{post.assessment}</p>
               </div>
@@ -106,9 +152,9 @@ export function PostCard({ post, caps }: { post: PostRow; caps: Caps }) {
               </div>
             ) : null}
 
-            {post.attachments.length > 0 ? (
+            {nonImageAttachments.length > 0 ? (
               <ul className="mt-3 space-y-1">
-                {post.attachments.map((a) => (
+                {nonImageAttachments.map((a) => (
                   <li key={a.id}>
                     <Link
                       href={`/api/dosya/${a.id}`}
@@ -116,40 +162,40 @@ export function PostCard({ post, caps }: { post: PostRow; caps: Caps }) {
                     >
                       <Paperclip className="h-3.5 w-3.5" />
                       {a.originalName}
-                      <span className="text-muted-foreground">· {Math.round(a.size / 1024)} KB</span>
+                      <span className="text-muted-foreground">· {humanSize(a.size)}</span>
                     </Link>
                   </li>
                 ))}
               </ul>
             ) : null}
-
-            {caps.canPin || caps.canRemove ? (
-              <div className="mt-3 flex items-center justify-end gap-1">
-                {caps.canPin ? (
-                  <form action={pinAction}>
-                    <Button type="submit" variant="ghost" size="sm">
-                      <Pin className="h-3.5 w-3.5" />
-                      {post.pinned ? "Sabitlemeyi kaldır" : "Sabitle"}
-                    </Button>
-                  </form>
-                ) : null}
-                {caps.canRemove ? (
-                  <form action={removeAction}>
-                    <Button
-                      type="submit"
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Kaldır
-                    </Button>
-                  </form>
-                ) : null}
-              </div>
-            ) : null}
           </div>
         </div>
+
+        {caps.canPin || caps.canRemove ? (
+          <div className="mt-3 flex items-center justify-end gap-1 border-t pt-3">
+            {caps.canPin ? (
+              <form action={pinAction}>
+                <Button type="submit" variant="ghost" size="sm">
+                  <Pin className="h-3.5 w-3.5" />
+                  {post.pinned ? "Sabitlemeyi kaldır" : "Sabitle"}
+                </Button>
+              </form>
+            ) : null}
+            {caps.canRemove ? (
+              <form action={removeAction}>
+                <Button
+                  type="submit"
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Kaldır
+                </Button>
+              </form>
+            ) : null}
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );

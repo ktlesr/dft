@@ -34,7 +34,7 @@ export const boardPostSchema = z.object({
   kind: z.enum(boardKinds),
   title: z.string().trim().min(2, "Başlık çok kısa.").max(200, "Başlık çok uzun."),
   body: z.string().trim().min(2, "İçerik çok kısa.").max(10_000, "İçerik çok uzun."),
-  // Faz 6: genel panoda editör "TR33 Bölgesi Açısından Değerlendirme"
+  // Faz 6: genel panoda editör "Değerlendirme/Yorum"
   // metnini ayrıca doldurabilir. Boş bırakılabilir.
   assessment: z
     .string()

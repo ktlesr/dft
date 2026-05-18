@@ -11,25 +11,40 @@ import { deleteUserByAdmin } from "./user-actions";
  * yükseltmek için bir adım yeterli — şimdilik klavye dostu ve en basit
  * yaklaşım.
  */
-export function DeleteUserButton({ userId, userName }: { userId: string; userName: string }) {
+export function DeleteUserButton({
+  userId,
+  userName,
+  compact = false,
+}: {
+  userId: string;
+  userName: string;
+  /** Liste satırında küçük "Sil" varyantı; false (varsayılan) tam metin. */
+  compact?: boolean;
+}) {
   const formRef = useRef<HTMLFormElement>(null);
 
   return (
-    <form ref={formRef} action={deleteUserByAdmin}>
+    <form ref={formRef} action={deleteUserByAdmin} className={compact ? "inline" : undefined}>
       <input type="hidden" name="userId" value={userId} />
       <Button
         type="button"
-        variant="outline"
-        className="text-destructive hover:text-destructive"
+        size={compact ? "sm" : undefined}
+        variant={compact ? "ghost" : "outline"}
+        className={
+          compact
+            ? "h-8 px-2 text-destructive hover:text-destructive"
+            : "text-destructive hover:text-destructive"
+        }
         onClick={() => {
           const ok = window.confirm(
             `"${userName}" hesabını ve bu hesaba ait tüm kayıtları kalıcı olarak silmek istediğinize emin misiniz?\n\nBu işlem geri alınamaz.`,
           );
           if (ok) formRef.current?.requestSubmit();
         }}
+        title={compact ? "Hesabı kalıcı olarak sil" : undefined}
       >
-        <Trash2 className="h-4 w-4" />
-        Hesabı kalıcı olarak sil
+        <Trash2 className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} />
+        {compact ? "Sil" : "Hesabı kalıcı olarak sil"}
       </Button>
     </form>
   );

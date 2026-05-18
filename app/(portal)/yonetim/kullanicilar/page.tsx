@@ -14,6 +14,7 @@ import { ROLE_LABELS, USER_STATUS_LABELS } from "@/lib/constants";
 import { avatarUrl, formatDate, initials } from "@/lib/utils";
 import { AdminPanelNav } from "@/components/app/admin-nav";
 import { approveUser, rejectUser } from "@/features/admin/user-actions";
+import { DeleteUserButton } from "@/features/admin/delete-user-button";
 import type { UserStatus } from "@prisma/client";
 
 export const metadata = { title: "Kullanıcılar · Yönetim" };
@@ -26,7 +27,7 @@ function isStatus(v?: string): v is UserStatus {
 }
 
 export default async function AdminUsersPage({ searchParams }: { searchParams: SearchParams }) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const { durum, q } = await searchParams;
   const status = isStatus(durum) ? durum : undefined;
 
@@ -208,6 +209,13 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
                               <Link href={`/yonetim/kullanicilar/${u.id}`}>Detay</Link>
                             </Button>
                           )}
+                          {u.id !== admin.id ? (
+                            <DeleteUserButton
+                              userId={u.id}
+                              userName={u.name ?? u.email}
+                              compact
+                            />
+                          ) : null}
                         </div>
                       </td>
                     </tr>

@@ -33,6 +33,7 @@ const TEMPLATE_HEADERS = [
   "İl",
   "Cep Tel",
   "E-Posta",
+  "Kullanıcı Adı",
   "Çalışma Grubu",
   "Rolü",
   "Şifre",
@@ -67,6 +68,7 @@ function buildTemplateCsv(): string {
     "Afyonkarahisar",
     "0532 000 00 00",
     "ornek@kurum.tr",
+    "ornek.uye", // Kullanıcı Adı — boş bırakırsanız adres adından üretilir
     "UAK",
     "Üye",
     "", // Şifre — boş bırakırsanız otomatik üretilir
@@ -98,11 +100,16 @@ export function UserBulkImportForm() {
               Boş şablonu indir, doldur, yükle. Başlıklar sabit; sıra değişebilir.
               Zorunlu alanlar: <strong>Adı Soyadı</strong> ve <strong>E-Posta</strong>.
               Çalışma Grubu önceden tanımlı olmalı (Yönetim → Gruplar). Rolü
-              boşsa "Üye" varsayılır. <strong>Şifre</strong> sütunu opsiyoneldir
-              — boş bırakırsanız her üye için 10 karakterlik güçlü şifre
-              otomatik üretilir; doldurursanız en az 8 karakter olmalıdır.
-              Üyeler ilk girişten sonra şifrelerini Profil sayfasından
-              değiştirebilir; <strong>kullanıcı adı değiştirilemez</strong>.
+              boşsa "Üye" varsayılır. <strong>Kullanıcı Adı</strong> sütunu
+              opsiyoneldir — boş bırakırsanız Adı Soyadı'ndan{" "}
+              <span className="font-mono">ad.soyad</span> biçiminde otomatik
+              üretilir; doldurursanız yalnızca küçük harf, rakam ve nokta
+              içerebilir (ör. <span className="font-mono">ali.erturk</span>).
+              <strong>Şifre</strong> sütunu da opsiyoneldir — boş bırakırsanız
+              her üye için 10 karakterlik güçlü şifre otomatik üretilir;
+              doldurursanız en az 8 karakter olmalıdır. Üyeler ilk girişten
+              sonra şifrelerini Profil sayfasından değiştirebilir;{" "}
+              <strong>kullanıcı adı değiştirilemez</strong>.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">

@@ -83,6 +83,7 @@ type HeaderKey =
   | "city"
   | "phone"
   | "email"
+  | "username"
   | "groupCode"
   | "role"
   | "password"
@@ -113,6 +114,9 @@ const HEADER_MAP: Record<string, HeaderKey> = {
   "e posta": "email",
   "eposta": "email",
   "email": "email",
+  "kullanici adi": "username",
+  "kullaniciadi": "username",
+  "username": "username",
   "calisma grubu": "groupCode",
   "grup": "groupCode",
   "group": "groupCode",
@@ -126,6 +130,9 @@ const HEADER_MAP: Record<string, HeaderKey> = {
   "no": "no",
   "sira": "no",
 };
+
+// Kullanıcı adı şekil regex'i (auth ile aynı kural).
+const USERNAME_RE = /^[a-z0-9](?:[a-z0-9.]{1,48}[a-z0-9])?$/;
 
 // ── Role label → enum mapping ────────────────────────────────────
 const ROLE_LABEL_TO_ENUM: Record<string, Role> = {
@@ -350,6 +357,7 @@ export async function bulkImportUsers(
     const labelFor: Record<HeaderKey, string> = {
       name: "Adı Soyadı",
       email: "E-Posta",
+      username: "Kullanıcı Adı",
       organization: "Kurum / Kuruluş",
       title: "Akademik Ünvan",
       position: "Görevi",
@@ -384,9 +392,12 @@ export async function bulkImportUsers(
     extraRole?: Role;
     /** Admin tarafından CSV'de sağlanmış şifre; yoksa otomatik üretilir. */
     suppliedPassword?: string;
+    /** Admin tarafından CSV'de sağlanmış kullanıcı adı; yoksa otomatik üretilir. */
+    suppliedUsername?: string;
   };
   const drafts: RowDraft[] = [];
   const seenEmails = new Set<string>();
+  const seenUsernames = new Set<string>();
 
   for (let r = 1; r < rows.length; r++) {
     const row = rows[r]!;
@@ -454,6 +465,34 @@ export async function bulkImportUsers(
       if (code !== "USER") extraRole = code;
     }
 
+    // İsteğe bağlı Kullanıcı Adı sütunu — doluysa direkt kullanılır
+    // (lower-case + trim + regex doğrulaması), boşsa adres adından
+    // ad.soyad biçiminde otomatik üretilir.
+    let suppliedUsername: string | undefined;
+    const usernameRaw = get("username");
+    if (usernameRaw) {
+      const u = usernameRaw.toLowerCase();
+      if (!USERNAME_RE.test(u)) {
+        errors.push({
+          row: rowNum,
+          column: "Kullanıcı Adı",
+          message:
+            "Geçersiz kullanıcı adı. Yalnızca a-z, 0-9 ve nokta; baş/son nokta olamaz.",
+        });
+        continue;
+      }
+      if (seenUsernames.has(u)) {
+        errors.push({
+          row: rowNum,
+          column: "Kullanıcı Adı",
+          message: "Dosya içinde yinelenen kullanıcı adı.",
+        });
+        continue;
+      }
+      seenUsernames.add(u);
+      suppliedUsername = u;
+    }
+
     // İsteğe bağlı Şifre sütunu — boş bırakılırsa otomatik üretilir.
     // Sağlanmışsa min 8 karakter zorunludur (yalnız sayı / yalnız tek karakter
     // gibi açık zayıflıkları engeller). Sınıf zorunluluğu yok — admin CSV'sini
@@ -492,6 +531,7 @@ export async function bulkImportUsers(
       groupId,
       extraRole,
       suppliedPassword,
+      suppliedUsername,
     });
   }
 
@@ -507,12 +547,12 @@ export async function bulkImportUsers(
   }
 
   // E-posta benzersizliği DB'de
-  const existing = await prisma.user.findMany({
+  const existingByEmail = await prisma.user.findMany({
     where: { email: { in: drafts.map((d) => d.email) } },
     select: { email: true },
   });
-  if (existing.length > 0) {
-    const set = new Set(existing.map((e) => e.email));
+  if (existingByEmail.length > 0) {
+    const set = new Set(existingByEmail.map((e) => e.email));
     for (const d of drafts) {
       if (set.has(d.email)) {
         errors.push({
@@ -529,16 +569,50 @@ export async function bulkImportUsers(
     };
   }
 
+  // CSV'den gelen kullanıcı adlarının DB benzersizliği
+  const suppliedUsernames = drafts
+    .map((d) => d.suppliedUsername)
+    .filter((u): u is string => !!u);
+  if (suppliedUsernames.length > 0) {
+    const existingByUsername = await prisma.user.findMany({
+      where: { username: { in: suppliedUsernames } },
+      select: { username: true },
+    });
+    if (existingByUsername.length > 0) {
+      const set = new Set(existingByUsername.map((e) => e.username!));
+      for (const d of drafts) {
+        if (d.suppliedUsername && set.has(d.suppliedUsername)) {
+          errors.push({
+            row: d.rowNum,
+            column: "Kullanıcı Adı",
+            message: "Bu kullanıcı adı zaten kayıtlı.",
+          });
+        }
+      }
+      return {
+        ok: false,
+        message: `${errors.length} kayıt zaten mevcut. Hiçbir kayıt oluşturulmadı.`,
+        errors: errors.slice(0, 200),
+      };
+    }
+  }
+
   // Şifreleri belirle: CSV'de verilmişse onu kullan, yoksa üret.
   // hashleme paralel.
   const passwords = drafts.map((d) => d.suppliedPassword ?? generatePassword());
   const hashes = await Promise.all(passwords.map((p) => hashPassword(p)));
 
-  // Kullanıcı adlarını sırayla üret — `reserved` ile aynı dosya içindeki
-  // adlar arasında DB'ye gitmeden çakışma engellenir.
-  const reservedUsernames = new Set<string>();
+  // Kullanıcı adı belirleme stratejisi:
+  //  - Admin CSV'de yazmışsa → o değer
+  //  - Yazılmamışsa → adres adından ad.soyad biçiminde üret
+  // Aynı dosya içindeki çakışmaları `reserved` ile engelle.
+  const reservedUsernames = new Set<string>(suppliedUsernames);
   const usernames: Array<string | null> = [];
   for (const d of drafts) {
+    if (d.suppliedUsername) {
+      usernames.push(d.suppliedUsername);
+      continue;
+    }
     usernames.push(await generateUniqueUsername(d.name, { reserved: reservedUsernames }));
   }
 

@@ -42,6 +42,8 @@ export type BulkUserCredential = {
   username: string | null;
   name: string;
   password: string;
+  /** true → şifre admin tarafından CSV'de verildi; false → sistem üretti */
+  passwordFromCsv: boolean;
 };
 
 export type BulkUserImportState = {
@@ -668,6 +670,7 @@ export async function bulkImportUsers(
     username: usernames[i] ?? null,
     name: d.name,
     password: passwords[i]!,
+    passwordFromCsv: !!d.suppliedPassword,
   }));
 
   return {

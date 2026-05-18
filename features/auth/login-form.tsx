@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ const INITIAL: FormState = { ok: true };
 
 export function LoginForm({ banner }: { banner?: "dogrulandi" | "dogrulama-hata" | null }) {
   const [state, formAction, pending] = useActionState(loginAction, INITIAL);
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <div className="space-y-4">
@@ -63,14 +64,26 @@ export function LoginForm({ banner }: { banner?: "dogrulandi" | "dogrulama-hata"
               Şifremi unuttum
             </Link>
           </div>
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-            aria-invalid={!!state.errors?.password}
-          />
+          <div className="relative">
+            <Input
+              id="password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              required
+              aria-invalid={!!state.errors?.password}
+              className="pr-10"
+            />
+            <button
+              type="button"
+              aria-label={showPassword ? "Şifreyi gizle" : "Şifreyi göster"}
+              onClick={() => setShowPassword((v) => !v)}
+              tabIndex={-1}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
           <FieldError messages={state.errors?.password} />
         </div>
         <Button type="submit" className="w-full" variant="brand" disabled={pending}>

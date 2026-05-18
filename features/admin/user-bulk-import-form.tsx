@@ -77,11 +77,13 @@ function buildTemplateCsv(): string {
 }
 
 function buildCredentialsCsv(creds: BulkUserCredential[]): string {
-  const head = ["Adı Soyadı", "Kullanıcı Adı", "E-Posta", "Geçici Şifre"]
+  const head = ["Adı Soyadı", "Kullanıcı Adı", "E-Posta", "Geçici Şifre", "Şifre Kaynağı"]
     .map(csvEscape)
     .join(",");
   const rows = creds.map((c) =>
-    [c.name, c.username ?? "", c.email, c.password].map(csvEscape).join(","),
+    [c.name, c.username ?? "", c.email, c.password, c.passwordFromCsv ? "CSV" : "Otomatik"]
+      .map(csvEscape)
+      .join(","),
   );
   return head + "\n" + rows.join("\n") + "\n";
 }
@@ -241,7 +243,8 @@ export function UserBulkImportForm() {
                     <th className="py-1.5 pr-3 font-medium">Ad</th>
                     <th className="py-1.5 pr-3 font-medium">Kullanıcı Adı</th>
                     <th className="py-1.5 pr-3 font-medium">E-Posta</th>
-                    <th className="py-1.5 font-medium">Geçici Şifre</th>
+                    <th className="py-1.5 pr-3 font-medium">Geçici Şifre</th>
+                    <th className="py-1.5 font-medium">Kaynak</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -250,7 +253,19 @@ export function UserBulkImportForm() {
                       <td className="py-1.5 pr-3">{c.name}</td>
                       <td className="py-1.5 pr-3 font-mono">{c.username ?? "—"}</td>
                       <td className="py-1.5 pr-3 font-mono">{c.email}</td>
-                      <td className="py-1.5 font-mono">{c.password}</td>
+                      <td className="py-1.5 pr-3 font-mono">{c.password}</td>
+                      <td className="py-1.5">
+                        <span
+                          className={
+                            c.passwordFromCsv
+                              ? "rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
+                              : "rounded-md bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                          }
+                          title={c.passwordFromCsv ? "Şifre CSV'den okundu" : "Şifre otomatik üretildi"}
+                        >
+                          {c.passwordFromCsv ? "CSV" : "Otomatik"}
+                        </span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

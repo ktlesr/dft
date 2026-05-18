@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoginForm } from "@/features/auth/login-form";
 
 export const metadata: Metadata = {
@@ -26,13 +26,6 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
       <CardContent>
         <LoginForm banner={banner} />
       </CardContent>
-
-      <CardFooter className="flex flex-col gap-2 border-t pt-5 text-center text-xs text-muted-foreground">
-        <p>
-          Erişim talebiniz için DFT yöneticileriyle iletişime geçin. Hesap oluşturulduğunda size
-          e-posta ile bildirilir.
-        </p>
-      </CardFooter>
     </Card>
   );
 }

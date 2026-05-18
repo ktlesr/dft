@@ -4,7 +4,9 @@ import {
   Briefcase,
   CalendarDays,
   ExternalLink,
+  FileStack,
   FileText,
+  Lightbulb,
   Megaphone,
   Paperclip,
   Pin,
@@ -30,20 +32,39 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   const user = await requireActiveUser();
 
+  const activeOwn = { ownerId: user.id, deletedAt: null };
+  const activeAll = { deletedAt: null };
+
   const [
-    cntProjectApps,
-    cntSuccess,
-    cntEvents,
-    cntStakeholders,
+    cntIdeasOwn,
+    cntIdeasAll,
+    cntProjectAppsOwn,
+    cntProjectAppsAll,
+    cntSuccessOwn,
+    cntSuccessAll,
+    cntEventsOwn,
+    cntEventsAll,
+    cntContentOwn,
+    cntContentAll,
+    cntStakeholdersOwn,
+    cntStakeholdersAll,
     generalPosts,
     groupPosts,
     upcomingMeetings,
     recentDocs,
   ] = await Promise.all([
-    prisma.projectApplicationRecord.count({ where: { ownerId: user.id, deletedAt: null } }),
-    prisma.successfulProjectRecord.count({ where: { ownerId: user.id, deletedAt: null } }),
-    prisma.eventRecord.count({ where: { ownerId: user.id, deletedAt: null } }),
-    prisma.stakeholderRecord.count({ where: { ownerId: user.id, deletedAt: null } }),
+    prisma.projectIdeaRecord.count({ where: activeOwn }),
+    prisma.projectIdeaRecord.count({ where: activeAll }),
+    prisma.projectApplicationRecord.count({ where: activeOwn }),
+    prisma.projectApplicationRecord.count({ where: activeAll }),
+    prisma.successfulProjectRecord.count({ where: activeOwn }),
+    prisma.successfulProjectRecord.count({ where: activeAll }),
+    prisma.eventRecord.count({ where: activeOwn }),
+    prisma.eventRecord.count({ where: activeAll }),
+    prisma.contentRecord.count({ where: activeOwn }),
+    prisma.contentRecord.count({ where: activeAll }),
+    prisma.stakeholderRecord.count({ where: activeOwn }),
+    prisma.stakeholderRecord.count({ where: activeAll }),
     prisma.boardPost.findMany({
       where: { scope: "GENERAL", status: "PUBLISHED", deletedAt: null },
       orderBy: [{ pinned: "desc" }, { publishedAt: "desc" }],
@@ -82,26 +103,44 @@ export default async function DashboardPage() {
 
   const stats = [
     {
-      label: "Proje Başvurularım",
-      value: cntProjectApps,
+      label: "Proje Fikri Kayıtlarım",
+      value: cntIdeasOwn,
+      total: cntIdeasAll,
+      icon: Lightbulb,
+      href: "/kayitlarim?tur=proje-fikri",
+    },
+    {
+      label: "Proje Başvurusu Kayıtlarım",
+      value: cntProjectAppsOwn,
+      total: cntProjectAppsAll,
       icon: Briefcase,
       href: "/kayitlarim?tur=proje-basvurusu",
     },
     {
-      label: "Başarılı Projelerim",
-      value: cntSuccess,
+      label: "Başarılı Proje Kayıtlarım",
+      value: cntSuccessOwn,
+      total: cntSuccessAll,
       icon: Trophy,
       href: "/kayitlarim?tur=basarili-proje",
     },
     {
       label: "Etkinlik Kayıtlarım",
-      value: cntEvents,
+      value: cntEventsOwn,
+      total: cntEventsAll,
       icon: Presentation,
       href: "/kayitlarim?tur=etkinlik",
     },
     {
+      label: "Dijital İçerik Kayıtlarım",
+      value: cntContentOwn,
+      total: cntContentAll,
+      icon: FileStack,
+      href: "/kayitlarim?tur=dokuman-icerik",
+    },
+    {
       label: "Paydaş Kayıtlarım",
-      value: cntStakeholders,
+      value: cntStakeholdersOwn,
+      total: cntStakeholdersAll,
       icon: Users,
       href: "/kayitlarim?tur=paydas",
     },
@@ -122,18 +161,24 @@ export default async function DashboardPage() {
         }
       />
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {stats.map((s) => (
           <Card key={s.label} className="hover:shadow-md">
             <CardContent className="p-5">
-              <div className="flex items-start justify-between">
+              <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="truncate text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     {s.label}
                   </p>
-                  <p className="mt-2 text-3xl font-semibold tracking-tight">{s.value}</p>
+                  <div className="mt-2 flex items-baseline gap-2">
+                    <span className="text-3xl font-semibold tracking-tight">{s.value}</span>
+                    <span className="text-sm text-muted-foreground">
+                      / {s.total}
+                      <span className="ml-1 text-xs">toplam</span>
+                    </span>
+                  </div>
                 </div>
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <s.icon className="h-4 w-4" />
                 </div>
               </div>

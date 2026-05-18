@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { AttachmentInput } from "@/features/shared/attachment-input";
 import { Field } from "@/features/shared/form-field";
+import { TagInput } from "@/features/shared/tag-input";
 import { BOARD_KIND_BY_SCOPE, BOARD_KIND_LABELS } from "@/lib/constants";
 import { createGroupNoticeFromPage, type BoardFormState } from "./actions";
 
@@ -69,21 +70,21 @@ export function GroupNoticePageForm({ canPin }: { canPin: boolean }) {
             </Field>
           </div>
 
-          <Field name="title" label="Paylaşım ismi" required error={state.errors?.title}>
+          <Field name="title" label="Bildirim başlığı" required error={state.errors?.title}>
             <Input id="title" name="title" required maxLength={200} />
           </Field>
 
-          <Field name="body" label="Paylaşımın içeriği" required error={state.errors?.body}>
+          <Field name="body" label="Bildirim içeriği" required error={state.errors?.body}>
             <Textarea id="body" name="body" rows={6} required maxLength={10_000} />
           </Field>
 
           <Field
             name="tags"
             label="Etiketler"
-            hint="Virgülle ayırın. En fazla 12."
+            hint="Virgül veya Enter ile ekleyin. En fazla 12."
             error={state.errors?.tags}
           >
-            <Input id="tags" name="tags" placeholder="örn. program, pilot, yayın" />
+            <TagInput name="tags" placeholder="örn. program, pilot, yayın" max={12} />
           </Field>
 
           {canPin ? (
@@ -108,12 +109,12 @@ export function GroupNoticePageForm({ canPin }: { canPin: boolean }) {
               {pending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Paylaşılıyor…
+                  Ekleniyor…
                 </>
               ) : (
                 <>
                   <Send className="h-4 w-4" />
-                  Paylaş
+                  Bildirim ekle
                 </>
               )}
             </Button>

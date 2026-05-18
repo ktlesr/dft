@@ -55,7 +55,12 @@ export const USER_STATUS_LABELS = {
  * bakın) ama eski kayıtlar için legacy etiket olarak tutuluyor.
  */
 export const BOARD_KIND_LABELS = {
-  NEWS: "Haber/Etkinlik",
+  // Faz 10 — grup bildirimleri için yeni türler
+  MEETING: "Toplantı",
+  EVENT: "Etkinlik",
+  NEWS: "Haber",
+  OTHER: "Diğer",
+  // Legacy etiketler (eski kayıtlar için)
   ANNOUNCEMENT: "Çağrı/Hibe Duyurusu",
   RESOURCE: "Doküman Paylaşımı",
   IDEA: "Fikir",
@@ -71,7 +76,8 @@ export const BOARD_KIND_LABELS = {
  */
 export const BOARD_KIND_BY_SCOPE = {
   GENERAL: ["NEWS", "ANNOUNCEMENT", "RESOURCE"] as const,
-  GROUP: ["NEWS", "ANNOUNCEMENT", "IDEA"] as const,
+  // Faz 10: grup bildirimi yeni türler — sıra UI'de aynen kullanılır.
+  GROUP: ["MEETING", "EVENT", "NEWS", "OTHER"] as const,
 } as const;
 
 export const REPORT_KIND_LABELS = {

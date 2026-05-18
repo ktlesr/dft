@@ -22,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { AttachmentInput } from "@/features/shared/attachment-input";
 import { Field } from "@/features/shared/form-field";
+import { TagInput } from "@/features/shared/tag-input";
 import { BOARD_KIND_LABELS, BOARD_KIND_BY_SCOPE } from "@/lib/constants";
 import { createBoardPost, type BoardFormState } from "./actions";
 
@@ -129,8 +130,8 @@ export function NewBoardPostDialog({
             </Field>
           ) : null}
 
-          <Field name="tags" label="Etiketler" hint="Virgülle ayırın. En fazla 12." error={state.errors?.tags}>
-            <Input id="tags" name="tags" placeholder="örn. program, pilot, yayın" />
+          <Field name="tags" label="Etiketler" hint="Virgül veya Enter ile ekleyin. En fazla 12." error={state.errors?.tags}>
+            <TagInput name="tags" placeholder="örn. program, pilot, yayın" max={12} />
           </Field>
 
           {canPin ? (

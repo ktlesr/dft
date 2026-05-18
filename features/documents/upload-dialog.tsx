@@ -20,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AttachmentInput } from "@/features/shared/attachment-input";
 import { Field } from "@/features/shared/form-field";
+import { TagInput } from "@/features/shared/tag-input";
 import { createDocument, type DocumentFormState } from "./actions";
 
 const INITIAL: DocumentFormState = { ok: true };
@@ -92,8 +93,8 @@ export function UploadDocumentDialog({ isAdmin, isModerator, hasGroup }: Props) 
             <Textarea id="description" name="description" rows={3} maxLength={2000} />
           </Field>
 
-          <Field name="tags" label="Etiketler" hint="Virgülle ayırın." error={state.errors?.tags}>
-            <Input id="tags" name="tags" placeholder="örn. prosedür, şablon" />
+          <Field name="tags" label="Etiketler" hint="Virgül veya Enter ile ekleyin. En fazla 12." error={state.errors?.tags}>
+            <TagInput name="tags" placeholder="örn. prosedür, şablon" max={12} />
           </Field>
 
           <div>

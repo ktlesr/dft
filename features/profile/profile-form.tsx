@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field } from "@/features/shared/form-field";
+import { TagInput } from "@/features/shared/tag-input";
 import { updateProfile, type ProfileFormState } from "./actions";
 
 const INITIAL: ProfileFormState = { ok: true };
@@ -53,10 +54,18 @@ export function ProfileForm({ defaults }: { defaults: Defaults }) {
         <Field
           name="expertise"
           label="Uzmanlık alanları"
-          hint="Virgülle ayırın. En fazla 20."
+          hint="Virgül veya Enter ile ekleyin. En fazla 20."
           error={state.errors?.expertise}
         >
-          <Input id="expertise" name="expertise" defaultValue={defaults.expertise} placeholder="örn. veri yönetişimi, AB programları" />
+          <TagInput
+            name="expertise"
+            defaultValue={defaults.expertise
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean)}
+            placeholder="örn. veri yönetişimi, AB programları"
+            max={20}
+          />
         </Field>
         <Field name="bio" label="Kısa özgeçmiş" error={state.errors?.bio} className="md:col-span-2">
           <Textarea id="bio" name="bio" rows={4} maxLength={2000} defaultValue={defaults.bio} />

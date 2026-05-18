@@ -44,6 +44,9 @@ enum BoardPostKind {
   IDEA
   RESOURCE
   DISCUSSION
+  MEETING
+  EVENT
+  OTHER
 }
 
 enum BoardPostStatus {

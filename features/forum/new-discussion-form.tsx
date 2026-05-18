@@ -30,7 +30,7 @@ export function NewDiscussionForm({ canPin }: { canPin: boolean }) {
             </Alert>
           ) : null}
 
-          <Field name="title" label="Konu başlığı" required error={state.errors?.title}>
+          <Field name="title" label="Başlık" required error={state.errors?.title}>
             <Input
               id="title"
               name="title"

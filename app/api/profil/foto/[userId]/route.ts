@@ -42,7 +42,18 @@ export async function GET(
         "X-Content-Type-Options": "nosniff",
       },
     });
-  } catch {
+  } catch (e) {
+    // Dosya storage'da yoksa (ör. volume mount yok / upload klasörü
+    // sıfırlandı), DB'deki ölü referansı temizleyip 404 dön. Böylece
+    // browser <img> fallback'i (avatar baş harfleri) doğal görünür ve
+    // konsoldaki sürekli 500 gürültüsü biter.
+    const code = (e as NodeJS.ErrnoException)?.code;
+    if (code === "ENOENT") {
+      await prisma.user
+        .update({ where: { id: userId }, data: { image: null } })
+        .catch(() => undefined);
+      return new NextResponse("Not found", { status: 404 });
+    }
     return new NextResponse("Storage error", { status: 500 });
   }
 }

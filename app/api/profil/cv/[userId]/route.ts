@@ -45,7 +45,18 @@ export async function GET(
         "X-Content-Type-Options": "nosniff",
       },
     });
-  } catch {
+  } catch (e) {
+    // Dosya storage'da yoksa DB referansını temizleyip 404 dön.
+    const code = (e as NodeJS.ErrnoException)?.code;
+    if (code === "ENOENT") {
+      await prisma.profile
+        .update({
+          where: { userId },
+          data: { cvStorageKey: null, cvOriginalName: null },
+        })
+        .catch(() => undefined);
+      return new NextResponse("Not found", { status: 404 });
+    }
     return new NextResponse("Storage error", { status: 500 });
   }
 }

@@ -107,7 +107,13 @@ volumes:
   # another Dokploy app that happens to pick a similar slug.
   dft_pgdata:
     name: tr33_dft_pgdata
+  # `external: true` → bu volume compose tarafından yönetilmez. Dokploy /
+  # `docker compose down -v` çalıştırsa bile silinmesi engellenir, dolayısıyla
+  # her deploy'da uploads klasörü sıfırlanmaz. Sunucu tarafında ilk deploy'dan
+  # önce bir kez şu komut çalıştırılmalı:
+  #   docker volume create tr33_dft_uploads
   dft_uploads:
+    external: true
     name: tr33_dft_uploads
 
 networks:

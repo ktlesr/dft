@@ -122,6 +122,11 @@ enum AuditAction {
   NOTICE_CREATED
   NOTICE_UPDATED
   NOTICE_REMOVED
+  DISCUSSION_CREATED
+  DISCUSSION_UPDATED
+  DISCUSSION_REMOVED
+  DISCUSSION_REPLY_CREATED
+  DISCUSSION_REPLY_REMOVED
   MEETING_CREATED
   MEETING_UPDATED
   MEETING_REMOVED
@@ -162,6 +167,8 @@ model User {
   createdInvites  Invite[]     @relation("InviteCreator")
   boardPosts      BoardPost[]
   notices         Notice[]
+  discussions     Discussion[]
+  discussionReplies DiscussionReply[]
   meetings        Meeting[]
   minutes         MeetingMinute[]
   reports         GroupReport[]
@@ -222,6 +229,7 @@ model Group {
   users       User[]
   boardPosts  BoardPost[]
   notices     Notice[]
+  discussions Discussion[]
   meetings    Meeting[]
   reports     GroupReport[]
   documents   Document[]
@@ -433,6 +441,49 @@ model Notice {
   @@index([groupId, publishedAt])
   @@index([authorId])
   @@index([eventAt])
+}
+
+// ============================================================
+// FORUM (Faz 10 — Grup içi konu / tartışma)
+// ============================================================
+//
+// Çalışma grubu kapsamlı, forum-tarzı konu ve cevap akışı. Aynı gruba
+// üye olan herhangi bir aktif kullanıcı konu başlatabilir ve cevap
+// yazabilir; admin tüm grupları okuyabilir.
+
+model Discussion {
+  id          String   @id @default(cuid())
+  groupId     String
+  group       Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  title       String
+  body        String   @db.Text
+  pinned      Boolean  @default(false)
+  locked      Boolean  @default(false) // cevapları kapatmak için (admin/moderatör)
+  replies     DiscussionReply[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  @@index([groupId, createdAt])
+  @@index([groupId, pinned])
+  @@index([authorId])
+}
+
+model DiscussionReply {
+  id           String     @id @default(cuid())
+  discussionId String
+  discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  authorId     String
+  author       User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  body         String     @db.Text
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deletedAt    DateTime?
+
+  @@index([discussionId, createdAt])
+  @@index([authorId])
 }
 
 // ============================================================

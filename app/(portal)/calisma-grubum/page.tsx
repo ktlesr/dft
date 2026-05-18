@@ -1,5 +1,14 @@
 import Link from "next/link";
-import { CalendarDays, FileText, Megaphone, Paperclip, Users } from "lucide-react";
+import {
+  CalendarDays,
+  FileText,
+  Megaphone,
+  MessageSquare,
+  MessageSquarePlus,
+  Paperclip,
+  Pin,
+  Users,
+} from "lucide-react";
 
 import { PageHeader } from "@/components/app/page-header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,6 +25,7 @@ import {
   ROLE_LABELS,
 } from "@/lib/constants";
 import { avatarUrl, formatDate, formatDateTime, initials } from "@/lib/utils";
+import { listGroupDiscussions } from "@/features/forum/queries";
 
 export const metadata = { title: "Çalışma Grubum" };
 export const dynamic = "force-dynamic";
@@ -39,7 +49,7 @@ export default async function MyGroupPage() {
     );
   }
 
-  const [group, members, posts, meetings, minutes, reports, docs] = await Promise.all([
+  const [group, members, posts, discussions, meetings, minutes, reports, docs] = await Promise.all([
     prisma.group.findUnique({ where: { id: user.groupId } }),
     prisma.user.findMany({
       where: { groupId: user.groupId, status: "ACTIVE" },
@@ -56,6 +66,7 @@ export default async function MyGroupPage() {
       orderBy: [{ pinned: "desc" }, { publishedAt: "desc" }],
       take: 6,
     }),
+    listGroupDiscussions({ groupId: user.groupId, take: 50 }),
     prisma.meeting.findMany({
       where: { groupId: user.groupId, deletedAt: null },
       orderBy: { startAt: "desc" },
@@ -102,6 +113,7 @@ export default async function MyGroupPage() {
       <Tabs defaultValue="ozet">
         <TabsList>
           <TabsTrigger value="ozet">Özet</TabsTrigger>
+          <TabsTrigger value="forum">Forum</TabsTrigger>
           <TabsTrigger value="pano">Pano</TabsTrigger>
           <TabsTrigger value="toplantilar">Toplantılar</TabsTrigger>
           <TabsTrigger value="tutanaklar">Tutanaklar</TabsTrigger>
@@ -173,6 +185,63 @@ export default async function MyGroupPage() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="forum">
+          <div className="mb-4 flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">
+              Grup üyelerinin başlattığı konular — en son yanıtlananlar üstte.
+            </p>
+            <Button asChild variant="brand" size="sm">
+              <Link href="/forum/yeni">
+                <MessageSquarePlus className="h-4 w-4" />
+                Yeni konu
+              </Link>
+            </Button>
+          </div>
+
+          {discussions.length === 0 ? (
+            <EmptyState
+              title="Henüz konu açılmadı"
+              description="İlk konuyu siz başlatın — tüm grup üyeleri görür ve yanıt verebilir."
+              icon={MessageSquare}
+            />
+          ) : (
+            <ul className="space-y-2">
+              {discussions.map((d) => {
+                const authorName = d.author.name?.trim() || d.author.email.split("@")[0];
+                return (
+                  <li key={d.id}>
+                    <Link
+                      href={`/forum/${d.id}`}
+                      className="block rounded-md border p-4 transition-colors hover:border-primary/40 hover:bg-muted/20"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {d.pinned ? (
+                              <Pin className="h-3 w-3 shrink-0 text-amber-600" aria-label="Sabit" />
+                            ) : null}
+                            <p className="truncate font-medium hover:text-primary">{d.title}</p>
+                          </div>
+                          <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                            {d.body}
+                          </p>
+                          <p className="mt-1.5 text-[11px] text-muted-foreground">
+                            {authorName} · {formatDateTime(d.updatedAt)}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+                          <MessageSquare className="h-3.5 w-3.5" />
+                          <span>{d._count.replies}</span>
+                        </div>
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </TabsContent>
 
         <TabsContent value="pano">

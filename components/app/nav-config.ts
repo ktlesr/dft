@@ -4,10 +4,10 @@ import {
   PlusCircle,
   FileText,
   Users,
-  FolderOpen,
   User,
   CalendarDays,
   FileSpreadsheet,
+  MessageSquarePlus,
   Settings2,
   type LucideIcon,
 } from "lucide-react";
@@ -37,13 +37,18 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/kayit/yeni", label: "Yeni Kayıt Ekle", icon: PlusCircle },
       { href: "/kayitlarim", label: "Paylaşımlar", icon: FileText },
       { href: "/calisma-grubum", label: "Çalışma Grubum", icon: Users },
-      { href: "/belgeler", label: "Belgeler", icon: FolderOpen },
       { href: "/profilim", label: "Profilim", icon: User },
     ],
   },
   {
     label: "Grup işlemleri",
     items: [
+      {
+        // Tüm aktif üyeler tartışma başlatabilir; rol kısıtı yok.
+        href: "/forum/yeni",
+        label: "Konu/Tartışma Başlat",
+        icon: MessageSquarePlus,
+      },
       {
         href: "/toplanti-bildirimi/yeni",
         label: "Toplantı Bildirimi Ekle",

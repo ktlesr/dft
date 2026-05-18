@@ -18,6 +18,7 @@ export type DiscussionWithReplies = Prisma.DiscussionGetPayload<{
   include: {
     author: { select: { id: true; name: true; email: true; image: true } };
     group: { select: { id: true; code: true; name: true } };
+    attachments: { select: { id: true; originalName: true; size: true; mimeType: true } };
     replies: {
       include: {
         author: { select: { id: true; name: true; email: true; image: true } };
@@ -44,13 +45,14 @@ export async function listGroupDiscussions(opts: ListOpts): Promise<DiscussionLi
   });
 }
 
-/** Tek tartışma + yanıtları. */
+/** Tek tartışma + yanıtları + ek dosyalar. */
 export async function getDiscussion(id: string): Promise<DiscussionWithReplies | null> {
   return prisma.discussion.findUnique({
     where: { id },
     include: {
       author: AUTHOR_SELECT,
       group: { select: { id: true, code: true, name: true } },
+      attachments: { select: { id: true, originalName: true, size: true, mimeType: true } },
       replies: {
         where: { deletedAt: null },
         orderBy: { createdAt: "asc" },

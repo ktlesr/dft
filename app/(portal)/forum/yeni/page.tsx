@@ -3,7 +3,7 @@ import { Users } from "lucide-react";
 import { PageHeader } from "@/components/app/page-header";
 import { EmptyState } from "@/components/app/empty-state";
 import { requireActiveUser } from "@/lib/current-user";
-import { isAdmin } from "@/lib/rbac";
+import { isAdmin, isModerator } from "@/lib/rbac";
 import { NewDiscussionForm } from "@/features/forum/new-discussion-form";
 
 export const metadata = { title: "Konu / Tartışma Başlat" };
@@ -42,7 +42,7 @@ export default async function NewDiscussionPage() {
           { label: "Konu / Tartışma Başlat" },
         ]}
       />
-      <NewDiscussionForm canPin={isAdmin(user)} />
+      <NewDiscussionForm canPin={isAdmin(user) || isModerator(user)} />
     </div>
   );
 }

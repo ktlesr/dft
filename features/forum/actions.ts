@@ -9,6 +9,7 @@ import { requireActiveUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { isAdmin, isModerator } from "@/lib/rbac";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { MAX_ATTACHMENTS_PER_REQUEST, UploadError, storeAttachments } from "@/lib/upload";
 import { discussionCreateSchema, replyCreateSchema } from "./schemas";
 
 export type ForumFormState = {
@@ -58,7 +59,9 @@ export async function createDiscussion(
   });
   if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
 
-  const pinned = parsed.data.pinned && isAdmin(user);
+  // Pin yetkisi: admin VEYA grup moderatörü (kendi grubu içinde).
+  const canPin = isAdmin(user) || isModerator(user);
+  const pinned = parsed.data.pinned && canPin;
 
   const row = await prisma.discussion.create({
     data: {
@@ -69,6 +72,30 @@ export async function createDiscussion(
       pinned,
     },
   });
+
+  // Ek dosya yükleme — hata olursa tartışmayı sil (cascade).
+  try {
+    const files = fd.getAll("attachments").filter((v): v is File => v instanceof File);
+    await storeAttachments({
+      files,
+      uploadedById: user.id,
+      owner: { discussionId: row.id },
+    });
+  } catch (e) {
+    await prisma.discussion.delete({ where: { id: row.id } });
+    if (e instanceof UploadError) {
+      const msg =
+        e.code === "too_large"
+          ? "Bir dosya izin verilen boyutu aşıyor."
+          : e.code === "mime_not_allowed"
+            ? "Bir dosyanın türü desteklenmiyor."
+            : e.code === "too_many"
+              ? `En fazla ${MAX_ATTACHMENTS_PER_REQUEST} dosya yükleyebilirsiniz.`
+              : "Dosya yükleme başarısız.";
+      return { ok: false, message: msg };
+    }
+    throw e;
+  }
 
   await audit({
     action: "DISCUSSION_CREATED",

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, Lock, MessageCircle, Pin, Trash2 } from "lucide-react";
+import { ArrowLeft, Lock, MessageCircle, Paperclip, Pin, Trash2 } from "lucide-react";
 
 import { PageHeader } from "@/components/app/page-header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -102,6 +102,30 @@ export default async function DiscussionPage({ params }: { params: Params }) {
               <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed">
                 {discussion.body}
               </p>
+
+              {discussion.attachments.length > 0 ? (
+                <ul className="mt-3 flex flex-wrap gap-2">
+                  {discussion.attachments.map((a) => (
+                    <li key={a.id}>
+                      <a
+                        href={`/api/dosya/${a.id}`}
+                        className="inline-flex items-center gap-1.5 rounded-md border bg-muted/40 px-2.5 py-1 text-xs text-foreground transition-colors hover:bg-muted hover:text-primary"
+                        rel="noreferrer"
+                      >
+                        <Paperclip className="h-3 w-3 shrink-0" />
+                        <span className="max-w-[260px] truncate">{a.originalName}</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {a.size < 1024
+                            ? `${a.size} B`
+                            : a.size < 1024 * 1024
+                              ? `${Math.round(a.size / 1024)} KB`
+                              : `${(a.size / (1024 * 1024)).toFixed(1)} MB`}
+                        </span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
           </div>
 

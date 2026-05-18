@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Field } from "@/features/shared/form-field";
+import { AttachmentInput } from "@/features/shared/attachment-input";
 import { createDiscussion, type ForumFormState } from "./actions";
 
 const INITIAL: ForumFormState = { ok: true };
@@ -48,6 +49,11 @@ export function NewDiscussionForm({ canPin }: { canPin: boolean }) {
           >
             <Textarea id="body" name="body" rows={8} required maxLength={20_000} />
           </Field>
+
+          <div className="space-y-1.5">
+            <p className="text-sm font-medium">Ek dosyalar (opsiyonel)</p>
+            <AttachmentInput />
+          </div>
 
           {canPin ? (
             <div className="flex items-center gap-2">

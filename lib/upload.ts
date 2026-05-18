@@ -104,7 +104,8 @@ type AttachmentOwnerKey =
   | "trainingId"
   | "contentId"
   | "stakeholderId"
-  | "noticeId";
+  | "noticeId"
+  | "discussionId";
 
 type StoreAttachmentsInput = {
   files: File[];

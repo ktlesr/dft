@@ -51,6 +51,9 @@ export async function GET(
       notice: {
         select: { scope: true, groupId: true, deletedAt: true },
       },
+      discussion: {
+        select: { groupId: true, deletedAt: true },
+      },
     },
   });
   if (!att) return new NextResponse("Not found", { status: 404 });
@@ -93,6 +96,7 @@ function canView(
     training: { deletedAt: Date | null } | null;
     content: { deletedAt: Date | null } | null;
     notice: { scope: "GENERAL" | "GROUP"; groupId: string | null; deletedAt: Date | null } | null;
+    discussion: { groupId: string; deletedAt: Date | null } | null;
   },
   viewerGroupId: string | null,
 ): boolean {
@@ -103,6 +107,11 @@ function canView(
   if (att.notice && !att.notice.deletedAt) {
     if (att.notice.scope === "GENERAL") return true;
     return att.notice.groupId !== null && att.notice.groupId === viewerGroupId;
+  }
+  if (att.discussion && !att.discussion.deletedAt) {
+    // Tartışma ekleri yalnızca aynı grubun üyelerine açıktır
+    // (admin için caller'da `isAdmin` zaten true döner).
+    return att.discussion.groupId === viewerGroupId;
   }
   if (att.meeting && !att.meeting.deletedAt) return att.meeting.groupId === viewerGroupId;
   if (att.minute && !att.minute.deletedAt) return att.minute.meeting?.groupId === viewerGroupId;

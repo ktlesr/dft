@@ -372,6 +372,9 @@ model Attachment {
   noticeId      String?
   notice        Notice? @relation(fields: [noticeId], references: [id], onDelete: Cascade)
 
+  discussionId  String?
+  discussion    Discussion? @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+
   @@index([uploadedById])
   @@index([boardPostId])
   @@index([meetingId])
@@ -462,6 +465,7 @@ model Discussion {
   pinned      Boolean  @default(false)
   locked      Boolean  @default(false) // cevapları kapatmak için (admin/moderatör)
   replies     DiscussionReply[]
+  attachments Attachment[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   deletedAt   DateTime?

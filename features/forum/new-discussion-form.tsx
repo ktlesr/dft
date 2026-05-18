@@ -68,7 +68,7 @@ export function NewDiscussionForm({ canPin }: { canPin: boolean }) {
               ) : (
                 <>
                   <MessageSquarePlus className="h-4 w-4" />
-                  Tartışmayı başlat
+                  Başlat
                 </>
               )}
             </Button>

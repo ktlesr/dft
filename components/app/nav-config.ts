@@ -35,7 +35,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/panel", label: "Ana Panel", icon: LayoutDashboard, exact: true },
       { href: "/dft-hakkinda", label: "DFT Hakkında", icon: Building2 },
       { href: "/kayit/yeni", label: "Yeni Kayıt Ekle", icon: PlusCircle },
-      { href: "/kayitlarim", label: "Kayıtlarım", icon: FileText },
+      { href: "/kayitlarim", label: "Paylaşımlar", icon: FileText },
       { href: "/calisma-grubum", label: "Çalışma Grubum", icon: Users },
       { href: "/belgeler", label: "Belgeler", icon: FolderOpen },
       { href: "/profilim", label: "Profilim", icon: User },

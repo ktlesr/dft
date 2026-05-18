@@ -57,7 +57,7 @@ export default async function PaylasimlarPage({ searchParams }: { searchParams: 
       <PageHeader
         title="Paylaşımlar"
         description="DFT üyeleri tarafından girilen kayıtların yer aldığı alandır."
-        breadcrumbs={[{ label: "Kayıtlarım" }]}
+        breadcrumbs={[{ label: "Paylaşımlar" }]}
         actions={
           <Button asChild variant="brand">
             <Link href="/kayit/yeni">

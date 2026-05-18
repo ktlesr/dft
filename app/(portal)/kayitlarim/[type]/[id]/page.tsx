@@ -80,7 +80,7 @@ export default async function RecordDetailPage({ params }: { params: Params }) {
         title={title}
         description={RECORD_LABELS[type]}
         breadcrumbs={[
-          { label: "Kayıtlarım", href: "/kayitlarim" },
+          { label: "Paylaşımlar", href: "/kayitlarim" },
           { label: RECORD_LABELS[type], href: `/kayitlarim?tur=${type}` },
           { label: title },
         ]}

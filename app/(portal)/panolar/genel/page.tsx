@@ -159,6 +159,7 @@ export default async function GeneralBoardPage({ searchParams }: { searchParams:
               caps={{
                 canPin: admin,
                 canRemove: admin || p.authorId === user.id,
+                canEdit: admin,
               }}
             />
           ))}

@@ -5,13 +5,14 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { audit } from "@/lib/audit";
-import { requireActiveUser } from "@/lib/current-user";
+import { requireActiveUser, requireAdmin } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { isAdmin, isModerator } from "@/lib/rbac";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { storage } from "@/lib/storage";
 import { UploadError, storeAttachments } from "@/lib/upload";
 import { BOARD_KIND_BY_SCOPE } from "@/lib/constants";
-import { boardPostSchema } from "./schemas";
+import { boardPostEditSchema, boardPostSchema } from "./schemas";
 
 export type BoardFormState = {
   ok: boolean;
@@ -140,6 +141,110 @@ export async function createGroupNoticeFromPage(
     redirect("/calisma-grubum?tab=bildirimler");
   }
   return result;
+}
+
+/**
+ * Edit an existing board post. Admin-only — fields, tags, kind ve ek
+ * dosyalar (ekleme/silme) güncellenebilir. `scope` ve `pinned` değişmez.
+ */
+export async function updateBoardPost(
+  _prev: BoardFormState,
+  fd: FormData,
+): Promise<BoardFormState> {
+  const user = await requireAdmin();
+
+  const id = String(fd.get("id") ?? "");
+  if (!id) return { ok: false, message: "Paylaşım bulunamadı." };
+
+  const post = await prisma.boardPost.findUnique({
+    where: { id },
+    include: { attachments: { select: { id: true, storageKey: true } } },
+  });
+  if (!post || post.deletedAt) return { ok: false, message: "Paylaşım bulunamadı." };
+
+  const parsed = boardPostEditSchema.safeParse({
+    kind: fd.get("kind"),
+    title: fd.get("title"),
+    body: fd.get("body"),
+    assessment: fd.get("assessment"),
+    publishedAt: fd.get("publishedAt"),
+    externalUrl: fd.get("externalUrl"),
+    tags: fd.get("tags"),
+  });
+  if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
+
+  const allowedKinds = BOARD_KIND_BY_SCOPE[post.scope] as readonly string[];
+  if (!allowedKinds.includes(parsed.data.kind)) {
+    return { ok: false, errors: { kind: ["Bu pano için geçersiz tür."] } };
+  }
+
+  // Silinecek ek dosyalar — formdaki "removeAttachmentIds" değerleri.
+  // Yalnızca bu post'a ait olanları kabul et (forge edilmiş id'leri yok say).
+  const requestedRemoveIds = new Set(
+    fd
+      .getAll("removeAttachmentIds")
+      .map((v) => String(v))
+      .filter((s) => s.length > 0),
+  );
+  const removeRows = post.attachments.filter((a) => requestedRemoveIds.has(a.id));
+
+  // Yeni dosyalar — `storeAttachments` ile doğrulanır ve eklenir.
+  const newFiles = filesFrom(fd);
+
+  // Önce metin alanlarını güncelle. Ek dosyalar başarısız olursa kayıt geri
+  // alınamaz ama orijinal davranışla uyumlu: storeAttachments hata fırlatırsa
+  // yeni eklenen dosyalar storage'tan otomatik temizleniyor.
+  await prisma.boardPost.update({
+    where: { id },
+    data: {
+      kind: parsed.data.kind,
+      title: parsed.data.title,
+      body: parsed.data.body,
+      assessment:
+        post.scope === "GENERAL" ? parsed.data.assessment ?? null : null,
+      tags: parsed.data.tags,
+      externalUrl: parsed.data.externalUrl ?? null,
+      ...(post.scope === "GENERAL" && parsed.data.publishedAt
+        ? { publishedAt: parsed.data.publishedAt }
+        : {}),
+    },
+  });
+
+  if (newFiles.length > 0) {
+    try {
+      await storeAttachments({
+        files: newFiles,
+        uploadedById: user.id,
+        owner: { boardPostId: id },
+      });
+    } catch (e) {
+      if (e instanceof UploadError) return { ok: false, message: "Ek dosya reddedildi." };
+      throw e;
+    }
+  }
+
+  if (removeRows.length > 0) {
+    await prisma.attachment.deleteMany({
+      where: { id: { in: removeRows.map((a) => a.id) }, boardPostId: id },
+    });
+    await Promise.allSettled(removeRows.map((a) => storage.remove(a.storageKey)));
+  }
+
+  await audit({
+    action: "BOARD_POST_UPDATED",
+    actorId: user.id,
+    targetType: "BoardPost",
+    targetId: id,
+    metadata: {
+      addedFiles: newFiles.length,
+      removedFiles: removeRows.length,
+    },
+  });
+
+  revalidatePath(post.scope === "GENERAL" ? "/panolar/genel" : "/panolar/grup");
+  revalidatePath("/calisma-grubum");
+  revalidatePath("/panel");
+  return OK;
 }
 
 /** Toggle pin state. Admins: anywhere. Moderators: only in own group. */

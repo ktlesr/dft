@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { BOARD_KIND_LABELS } from "@/lib/constants";
 import { avatarUrl, formatDateTime, initials } from "@/lib/utils";
 import { removeBoardPost, togglePin } from "./actions";
+import { EditBoardPostDialog } from "./edit-post-dialog";
 
 type Attachment = {
   id: string;
@@ -40,6 +41,8 @@ type PostRow = {
 type Caps = {
   canPin: boolean;
   canRemove: boolean;
+  /** Faz 10: yalnızca admin paylaşımı düzenleyebilir. */
+  canEdit?: boolean;
 };
 
 function isImage(mime?: string): boolean {
@@ -171,8 +174,27 @@ export function PostCard({ post, caps }: { post: PostRow; caps: Caps }) {
           </div>
         </div>
 
-        {caps.canPin || caps.canRemove ? (
+        {caps.canPin || caps.canRemove || caps.canEdit ? (
           <div className="mt-3 flex items-center justify-end gap-1 border-t pt-3">
+            {caps.canEdit ? (
+              <EditBoardPostDialog
+                post={{
+                  id: post.id,
+                  scope: post.scope,
+                  kind: post.kind,
+                  title: post.title,
+                  body: post.body,
+                  assessment: post.assessment ?? null,
+                  tags: post.tags,
+                  externalUrl: post.externalUrl,
+                  publishedAt: post.publishedAt,
+                  attachments: post.attachments.map((a) => ({
+                    id: a.id,
+                    originalName: a.originalName,
+                  })),
+                }}
+              />
+            ) : null}
             {caps.canPin ? (
               <form action={pinAction}>
                 <Button type="submit" variant="ghost" size="sm">

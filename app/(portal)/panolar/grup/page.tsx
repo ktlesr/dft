@@ -124,6 +124,7 @@ export default async function GroupBoardPage({ searchParams }: { searchParams: S
               caps={{
                 canPin: admin || groupMod,
                 canRemove: admin || groupMod || p.authorId === user.id,
+                canEdit: admin,
               }}
             />
           ))}

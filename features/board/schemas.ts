@@ -65,3 +65,10 @@ export const boardPostSchema = z.object({
 });
 
 export type BoardPostInput = z.infer<typeof boardPostSchema>;
+
+// Faz 10: admin'in geçmiş paylaşımları düzenleyebilmesi için kullanılan
+// alt-şema. `scope` post üzerinden okunur; `pinned` durumu ayrı bir aksiyonla
+// (`togglePin`) yönetildiği için burada yer almaz.
+export const boardPostEditSchema = boardPostSchema.omit({ scope: true, pinned: true });
+
+export type BoardPostEditInput = z.infer<typeof boardPostEditSchema>;

@@ -62,8 +62,11 @@ services:
     # The Dockerfile's `EXPOSE 3000` is still honoured.
     expose:
       - "3000"
-    volumes:
-      - dft_uploads:/app/storage/uploads
+    # NOTE: `/app/storage/uploads` mount'u Dokploy UI'ın
+    # "General → Volumes" bölümünden tanımlandı (Mount Type: VOLUME,
+    # Volume Name: tr33_dft_uploads). Tek bir kaynaktan yönetmek için
+    # compose burada `volumes:` bildirmiyor. UI mount'u çıkarılırsa
+    # buraya geri eklenebilir.
     healthcheck:
       test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok||r.status===307||r.status===302?0:1)).catch(()=>process.exit(1))\""]
       interval: 30s
@@ -107,14 +110,10 @@ volumes:
   # another Dokploy app that happens to pick a similar slug.
   dft_pgdata:
     name: tr33_dft_pgdata
-  # `external: true` → bu volume compose tarafından yönetilmez. Dokploy /
-  # `docker compose down -v` çalıştırsa bile silinmesi engellenir, dolayısıyla
-  # her deploy'da uploads klasörü sıfırlanmaz. Sunucu tarafında ilk deploy'dan
-  # önce bir kez şu komut çalıştırılmalı:
-  #   docker volume create tr33_dft_uploads
-  dft_uploads:
-    external: true
-    name: tr33_dft_uploads
+  # `tr33_dft_uploads` volume'ü artık Dokploy UI (General → Volumes)
+  # üzerinden tanımlanıyor; compose burada bildirmiyor. Bu sayede
+  # Dokploy mount'u kendi mekanizmasıyla her deploy'a aynı volume'le
+  # bağlar — uploads klasörü sıfırlanmaz.
 
 networks:
   # Dokploy creates this shared network out-of-band; Traefik joins it and

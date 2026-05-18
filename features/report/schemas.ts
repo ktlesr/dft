@@ -17,7 +17,7 @@ const optionalDate = z
 
 export const reportSchema = z
   .object({
-    kind: z.enum(["YOL_HARITASI", "IKI_AYLIK", "KAPANIS", "ANLIK_NOT"]),
+    kind: z.enum(["YOL_HARITASI", "DORT_AYLIK_1", "DORT_AYLIK_2", "DORT_AYLIK_3", "KAPANIS"]),
     title: required(200),
     periodStart: optionalDate,
     periodEnd: optionalDate,

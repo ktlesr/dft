@@ -23,9 +23,10 @@ export function ReportForm({ defaultKind = "YOL_HARITASI" }: { defaultKind?: key
   // First Yol Haritası period per MASTER_PROMPT: 1 Haziran 2026 – 31 Ağustos 2026.
   const defaults = {
     YOL_HARITASI: { periodStart: "2026-06-01", periodEnd: "2026-08-31" },
-    IKI_AYLIK: { periodStart: "", periodEnd: "" },
+    DORT_AYLIK_1: { periodStart: "", periodEnd: "" },
+    DORT_AYLIK_2: { periodStart: "", periodEnd: "" },
+    DORT_AYLIK_3: { periodStart: "", periodEnd: "" },
     KAPANIS: { periodStart: "", periodEnd: "" },
-    ANLIK_NOT: { periodStart: "", periodEnd: "" },
   } as const;
   const pd = defaults[defaultKind];
 

@@ -84,9 +84,10 @@ enum ProjectIdeaStage {
 
 enum ReportKind {
   YOL_HARITASI
-  IKI_AYLIK
+  DORT_AYLIK_1
+  DORT_AYLIK_2
+  DORT_AYLIK_3
   KAPANIS
-  ANLIK_NOT
 }
 
 enum DocumentCategory {

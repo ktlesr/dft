@@ -208,12 +208,12 @@ describe("reportSchema", () => {
     expect(r.success).toBe(false);
   });
 
-  it("accepts an empty period (Anlık Not)", () => {
+  it("accepts an empty period (Kapanış Raporu)", () => {
     expect(
       reportSchema.safeParse({
-        kind: "ANLIK_NOT",
-        title: "Not",
-        body: "Gün içi güncelleme",
+        kind: "KAPANIS",
+        title: "Kapanış",
+        body: "Yıl sonu özet",
       }).success,
     ).toBe(true);
   });

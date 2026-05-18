@@ -46,7 +46,7 @@ export default async function DiscussionPage({ params }: { params: Params }) {
     discussion.author.name?.trim() || discussion.author.email.split("@")[0];
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-6xl">
       <PageHeader
         title={discussion.title}
         description={discussion.group ? `${discussion.group.code} · Forum` : "Forum"}

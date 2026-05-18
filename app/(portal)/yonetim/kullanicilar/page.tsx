@@ -15,30 +15,39 @@ import { avatarUrl, formatDate, initials } from "@/lib/utils";
 import { AdminPanelNav } from "@/components/app/admin-nav";
 import { approveUser, rejectUser } from "@/features/admin/user-actions";
 import { DeleteUserButton } from "@/features/admin/delete-user-button";
-import type { UserStatus } from "@prisma/client";
+import type { Role, UserStatus } from "@prisma/client";
 
 export const metadata = { title: "Kullanıcılar · Yönetim" };
 export const dynamic = "force-dynamic";
 
-type SearchParams = Promise<{ durum?: string; q?: string }>;
+type SearchParams = Promise<{ durum?: string; q?: string; rol?: string }>;
 
 function isStatus(v?: string): v is UserStatus {
   return !!v && v in USER_STATUS_LABELS;
 }
 
+function isRole(v?: string): v is Role {
+  return !!v && v in ROLE_LABELS;
+}
+
+const FILTER_ROLES: Role[] = ["USER", "MODERATOR", "RAPPORTEUR", "ADVISOR", "ADMIN"];
+
 export default async function AdminUsersPage({ searchParams }: { searchParams: SearchParams }) {
   const admin = await requireAdmin();
-  const { durum, q } = await searchParams;
+  const { durum, q, rol } = await searchParams;
   const status = isStatus(durum) ? durum : undefined;
+  const role = isRole(rol) ? rol : undefined;
 
   const users = await prisma.user.findMany({
     where: {
       ...(status ? { status } : {}),
+      ...(role ? { roles: { some: { role } } } : {}),
       ...(q
         ? {
             OR: [
               { name: { contains: q, mode: "insensitive" } },
               { email: { contains: q, mode: "insensitive" } },
+              { username: { contains: q, mode: "insensitive" } },
             ],
           }
         : {}),
@@ -76,30 +85,54 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
       />
       <AdminPanelNav />
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <StatusPill href={mkHref(undefined, q)} active={!status} label="Tümü" />
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          Durum
+        </span>
+        <StatusPill href={mkHref(undefined, q, role)} active={!status} label="Tümü" />
         {(Object.keys(USER_STATUS_LABELS) as UserStatus[]).map((s) => (
           <StatusPill
             key={s}
-            href={mkHref(s, q)}
+            href={mkHref(s, q, role)}
             active={status === s}
             label={USER_STATUS_LABELS[s]}
           />
         ))}
       </div>
 
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          Rol
+        </span>
+        <StatusPill href={mkHref(status, q, undefined)} active={!role} label="Tümü" />
+        {FILTER_ROLES.map((r) => (
+          <StatusPill
+            key={r}
+            href={mkHref(status, q, r)}
+            active={role === r}
+            label={ROLE_LABELS[r]}
+          />
+        ))}
+      </div>
+
       <form action="/yonetim/kullanicilar" className="mb-4 flex gap-2">
         {status ? <input type="hidden" name="durum" value={status} /> : null}
+        {role ? <input type="hidden" name="rol" value={role} /> : null}
         <div className="relative max-w-md flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input name="q" defaultValue={q ?? ""} placeholder="Ad veya e-posta…" className="pl-9" />
+          <Input
+            name="q"
+            defaultValue={q ?? ""}
+            placeholder="Ad, e-posta veya kullanıcı adı…"
+            className="pl-9"
+          />
         </div>
         <Button type="submit" variant="secondary">
           Ara
         </Button>
         {q ? (
           <Button asChild variant="ghost">
-            <Link href={mkHref(status, "")}>Temizle</Link>
+            <Link href={mkHref(status, "", role)}>Temizle</Link>
           </Button>
         ) : null}
       </form>
@@ -108,7 +141,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
         <CardContent className="p-0">
           {users.length === 0 ? (
             <EmptyState
-              title={q || status ? "Sonuç bulunamadı" : "Kullanıcı yok"}
+              title={q || status || role ? "Sonuç bulunamadı" : "Kullanıcı yok"}
               className="border-0"
             />
           ) : (
@@ -264,9 +297,14 @@ function StatusPill({
   );
 }
 
-function mkHref(status: UserStatus | undefined, q: string | undefined) {
+function mkHref(
+  status: UserStatus | undefined,
+  q: string | undefined,
+  role?: Role | undefined,
+) {
   const p = new URLSearchParams();
   if (status) p.set("durum", status);
+  if (role) p.set("rol", role);
   if (q) p.set("q", q);
   const qs = p.toString();
   return qs ? `/yonetim/kullanicilar?${qs}` : "/yonetim/kullanicilar";

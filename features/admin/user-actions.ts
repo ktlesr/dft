@@ -433,6 +433,69 @@ export async function updateUserProfileByAdmin(
  * Admin: kullanıcı hesabını silme (cascade)
  * ────────────────────────────────────────────────────────────── */
 
+/**
+ * Toplu silme — virgülle ayrılmış olmayan, çoklu `userId` FormData
+ * girdileri. Kendi hesabını ve admin'ler arasında yalnızca bir admin
+ * kalacak durumları otomatik atlar. Geri kalanlar cascade ile silinir.
+ */
+export async function bulkDeleteUsersByAdmin(formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
+  const rawIds = formData.getAll("userId").map(String).filter(Boolean);
+  const unique = Array.from(new Set(rawIds));
+
+  // Kendi hesabını filtrele.
+  const candidates = unique.filter((id) => id !== admin.id);
+  if (candidates.length === 0) {
+    redirect("/yonetim/kullanicilar?hata=secim-yok");
+  }
+
+  // Son admin koruması — silmeden önce kalan admin sayısını hesapla.
+  const adminRoleAssignments = await prisma.roleAssignment.findMany({
+    where: { role: "ADMIN" },
+    select: { userId: true },
+  });
+  const allAdminIds = new Set(adminRoleAssignments.map((r) => r.userId));
+  const willRemainAdmins = Array.from(allAdminIds).filter(
+    (id) => !candidates.includes(id),
+  ).length;
+
+  let toDelete = candidates;
+  if (willRemainAdmins === 0) {
+    // Kalan admin sıfıra düşmesin — listedeki admin'leri seçimden çıkar.
+    toDelete = candidates.filter((id) => !allAdminIds.has(id));
+    if (toDelete.length === 0) {
+      redirect("/yonetim/kullanicilar?hata=son-admin");
+    }
+  }
+
+  // Audit için adları + e-postaları silmeden önce çek.
+  const targets = await prisma.user.findMany({
+    where: { id: { in: toDelete } },
+    select: { id: true, email: true, name: true },
+  });
+
+  const result = await prisma.user.deleteMany({
+    where: { id: { in: toDelete } },
+  });
+
+  await audit({
+    action: "USER_DELETED",
+    actorId: admin.id,
+    targetType: "User",
+    metadata: {
+      bulk: true,
+      count: result.count,
+      requested: candidates.length,
+      protectedAdminCount: candidates.length - toDelete.length,
+      targets: targets.map((t) => ({ id: t.id, email: t.email, name: t.name })),
+    },
+  });
+
+  revalidatePath("/yonetim/kullanicilar");
+  revalidatePath("/yonetim");
+  redirect(`/yonetim/kullanicilar?silindi=${result.count}`);
+}
+
 export async function deleteUserByAdmin(formData: FormData): Promise<void> {
   const admin = await requireAdmin();
   const userId = idSchema.parse(formData.get("userId"));

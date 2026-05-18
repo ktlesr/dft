@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { CheckCircle2, Search, Upload, UserPlus, XCircle } from "lucide-react";
+import { Search, Upload, UserPlus } from "lucide-react";
 
 import { PageHeader } from "@/components/app/page-header";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,16 +10,20 @@ import { EmptyState } from "@/components/app/empty-state";
 import { requireAdmin } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { ROLE_LABELS, USER_STATUS_LABELS } from "@/lib/constants";
-import { avatarUrl, formatDate, initials } from "@/lib/utils";
 import { AdminPanelNav } from "@/components/app/admin-nav";
-import { approveUser, rejectUser } from "@/features/admin/user-actions";
-import { DeleteUserButton } from "@/features/admin/delete-user-button";
+import { UsersTableClient } from "@/features/admin/users-table";
 import type { Role, UserStatus } from "@prisma/client";
 
 export const metadata = { title: "Kullanıcılar · Yönetim" };
 export const dynamic = "force-dynamic";
 
-type SearchParams = Promise<{ durum?: string; q?: string; rol?: string }>;
+type SearchParams = Promise<{
+  durum?: string;
+  q?: string;
+  rol?: string;
+  silindi?: string;
+  hata?: string;
+}>;
 
 function isStatus(v?: string): v is UserStatus {
   return !!v && v in USER_STATUS_LABELS;
@@ -34,9 +37,16 @@ const FILTER_ROLES: Role[] = ["USER", "MODERATOR", "RAPPORTEUR", "ADVISOR", "ADM
 
 export default async function AdminUsersPage({ searchParams }: { searchParams: SearchParams }) {
   const admin = await requireAdmin();
-  const { durum, q, rol } = await searchParams;
+  const { durum, q, rol, silindi, hata } = await searchParams;
   const status = isStatus(durum) ? durum : undefined;
   const role = isRole(rol) ? rol : undefined;
+  const silindiCount = silindi ? Number(silindi) : 0;
+  const errorMessage =
+    hata === "secim-yok"
+      ? "Silinecek geçerli kullanıcı seçimi yok."
+      : hata === "son-admin"
+        ? "Seçim son yöneticiyi de içerdiği için bu hesap korunarak silinemedi."
+        : null;
 
   const users = await prisma.user.findMany({
     where: {
@@ -137,6 +147,19 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
         ) : null}
       </form>
 
+      {silindiCount > 0 ? (
+        <Alert className="mb-4">
+          <AlertDescription>
+            <strong>{silindiCount}</strong> kullanıcı kalıcı olarak silindi.
+          </AlertDescription>
+        </Alert>
+      ) : null}
+      {errorMessage ? (
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+      ) : null}
+
       <Card>
         <CardContent className="p-0">
           {users.length === 0 ? (
@@ -145,132 +168,14 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
               className="border-0"
             />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
-                  <tr>
-                    <th className="px-4 py-3 font-medium">Kullanıcı</th>
-                    <th className="px-4 py-3 font-medium">Durum</th>
-                    <th className="px-4 py-3 font-medium">Grup</th>
-                    <th className="px-4 py-3 font-medium">Roller</th>
-                    <th className="px-4 py-3 font-medium">Kaydoldu</th>
-                    <th className="px-4 py-3 text-right font-medium">İşlem</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {users.map((u) => (
-                    <tr key={u.id} className="transition-colors hover:bg-muted/20">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            {u.image ? (
-                              <AvatarImage src={avatarUrl(u.id, u.image)} alt={u.name ?? u.email} />
-                            ) : null}
-                            <AvatarFallback>{initials(u.name, u.email)}</AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0">
-                            <Link
-                              href={`/yonetim/kullanicilar/${u.id}`}
-                              className="truncate font-medium hover:text-primary"
-                            >
-                              {u.name ?? u.email}
-                            </Link>
-                            <p className="truncate text-xs text-muted-foreground">{u.email}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusBadge status={u.status} />
-                      </td>
-                      <td className="px-4 py-3">
-                        {u.group?.code ? (
-                          <span className="inline-flex items-center gap-1.5">
-                            <Badge variant="outline">{u.group.code}</Badge>
-                            {u.group.description ? (
-                              <span className="hidden text-[11px] text-muted-foreground sm:inline">
-                                {u.group.description}
-                              </span>
-                            ) : null}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-1">
-                          {u.roles
-                            .filter((r) => r.role !== "USER")
-                            .map((r) => (
-                              <Badge key={r.role} variant="secondary" className="text-[10px]">
-                                {ROLE_LABELS[r.role]}
-                              </Badge>
-                            ))}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">{formatDate(u.createdAt)}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex justify-end gap-1">
-                          {u.status === "PENDING_APPROVAL" ? (
-                            <>
-                              <form action={approveUser}>
-                                <input type="hidden" name="userId" value={u.id} />
-                                <Button
-                                  type="submit"
-                                  size="sm"
-                                  variant="accent"
-                                  className="h-8 px-2"
-                                >
-                                  <CheckCircle2 className="h-3.5 w-3.5" />
-                                  Onayla
-                                </Button>
-                              </form>
-                              <form action={rejectUser}>
-                                <input type="hidden" name="userId" value={u.id} />
-                                <Button
-                                  type="submit"
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-8 px-2 text-destructive hover:text-destructive"
-                                >
-                                  <XCircle className="h-3.5 w-3.5" />
-                                  Reddet
-                                </Button>
-                              </form>
-                            </>
-                          ) : (
-                            <Button asChild size="sm" variant="ghost" className="h-8 px-2">
-                              <Link href={`/yonetim/kullanicilar/${u.id}`}>Detay</Link>
-                            </Button>
-                          )}
-                          {u.id !== admin.id ? (
-                            <DeleteUserButton
-                              userId={u.id}
-                              userName={u.name ?? u.email}
-                              compact
-                            />
-                          ) : null}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="p-4">
+              <UsersTableClient users={users} adminId={admin.id} />
             </div>
           )}
         </CardContent>
       </Card>
     </div>
   );
-}
-
-function StatusBadge({ status }: { status: UserStatus }) {
-  const variant =
-    status === "ACTIVE"
-      ? "success"
-      : status === "PENDING_APPROVAL"
-        ? "warning"
-        : "muted";
-  return <Badge variant={variant as "success" | "warning" | "muted"}>{USER_STATUS_LABELS[status]}</Badge>;
 }
 
 function StatusPill({

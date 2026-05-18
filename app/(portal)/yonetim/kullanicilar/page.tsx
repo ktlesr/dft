@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle2, Search, UserPlus, XCircle } from "lucide-react";
+import { CheckCircle2, Search, Upload, UserPlus, XCircle } from "lucide-react";
 
 import { PageHeader } from "@/components/app/page-header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -57,12 +57,20 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
         description="Portal üyelerini görüntüleyin, oluşturun ve rollerini / gruplarını yönetin."
         breadcrumbs={[{ label: "Yönetim", href: "/yonetim" }, { label: "Kullanıcılar" }]}
         actions={
-          <Button asChild variant="brand">
-            <Link href="/yonetim/kullanicilar/yeni">
-              <UserPlus className="h-4 w-4" />
-              Yeni kullanıcı
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild variant="secondary">
+              <Link href="/yonetim/kullanicilar/toplu">
+                <Upload className="h-4 w-4" />
+                Toplu içe aktar
+              </Link>
+            </Button>
+            <Button asChild variant="brand">
+              <Link href="/yonetim/kullanicilar/yeni">
+                <UserPlus className="h-4 w-4" />
+                Yeni kullanıcı
+              </Link>
+            </Button>
+          </div>
         }
       />
       <AdminPanelNav />

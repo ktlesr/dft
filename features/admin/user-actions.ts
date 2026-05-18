@@ -43,6 +43,13 @@ const NEW_USER_GROUP = z
   .max(50)
   .refine((v) => v === "NONE" || /^[A-Z0-9_-]+$/i.test(v), "Geçersiz grup kodu.");
 
+const optionalShort = z
+  .string()
+  .trim()
+  .max(200)
+  .optional()
+  .transform((v) => (v && v !== "" ? v : undefined));
+
 const createUserSchema = z.object({
   name: z
     .string({ required_error: "Ad soyad zorunludur." })
@@ -64,6 +71,12 @@ const createUserSchema = z.object({
     .refine((v) => /[^A-Za-z0-9]/.test(v), "En az bir özel karakter içermeli."),
   groupCode: NEW_USER_GROUP,
   extraRoles: z.array(EXTRA_ROLE).default([]),
+  // Faz 9: profil alanları — CSV şablonuyla aynı sütunlar.
+  organization: optionalShort,
+  academicTitle: optionalShort, // Profile.title
+  position: optionalShort,
+  city: optionalShort,
+  phone: optionalShort,
 });
 
 function fieldErrors(err: z.ZodError): Record<string, string[]> {
@@ -88,6 +101,11 @@ export async function createUserByAdmin(
     password: fd.get("password"),
     groupCode: fd.get("groupCode") ?? "NONE",
     extraRoles: extraRolesRaw,
+    organization: fd.get("organization"),
+    academicTitle: fd.get("academicTitle"),
+    position: fd.get("position"),
+    city: fd.get("city"),
+    phone: fd.get("phone"),
   });
   if (!parsed.success) {
     return { ok: false, errors: fieldErrors(parsed.error) };
@@ -121,7 +139,15 @@ export async function createUserByAdmin(
       approvedById: admin.id,
       approvedAt: new Date(),
       groupId: group?.id ?? null,
-      profile: { create: {} },
+      profile: {
+        create: {
+          title: parsed.data.academicTitle ?? null,
+          position: parsed.data.position ?? null,
+          organization: parsed.data.organization ?? null,
+          phone: parsed.data.phone ?? null,
+          city: parsed.data.city ?? null,
+        },
+      },
       roles: {
         createMany: {
           data: roles.map((role) => ({ role, grantedById: admin.id })),

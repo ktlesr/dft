@@ -194,6 +194,8 @@ model Profile {
   position    String?  // job title
   organization String?
   phone       String?
+  // Faz 9: il / şehir bilgisi (üye toplu içe aktarma şablonu için).
+  city        String?
   bio         String?
   expertise   String[] @default([])
   themePref   String?  // "light" | "dark" | "system"

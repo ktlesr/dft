@@ -38,9 +38,9 @@ function generatePassword(): string {
   };
   const pick = (set: string) => set[randInt(set.length)]!;
 
-  // Guarantee one of each class, then fill to length 14.
+  // Guarantee one of each class, then fill to policy minimum (10 char).
   const out = [pick(lower), pick(upper), pick(digits), pick(symbols)];
-  while (out.length < 14) out.push(pick(all));
+  while (out.length < 10) out.push(pick(all));
   // Shuffle (Fisher-Yates)
   for (let i = out.length - 1; i > 0; i--) {
     const j = randInt(i + 1);
@@ -66,10 +66,10 @@ export function NewUserForm({ groups }: { groups: NewUserGroupOption[] }) {
           ) : null}
 
           <div className="grid gap-4 md:grid-cols-2">
-            <Field name="name" label="Ad Soyad" required error={state.errors?.name}>
+            <Field name="name" label="Adı Soyadı" required error={state.errors?.name}>
               <Input id="name" name="name" required autoComplete="name" maxLength={100} />
             </Field>
-            <Field name="email" label="E-posta (giriş)" required error={state.errors?.email}>
+            <Field name="email" label="E-Posta (giriş)" required error={state.errors?.email}>
               <Input
                 id="email"
                 name="email"
@@ -78,6 +78,29 @@ export function NewUserForm({ groups }: { groups: NewUserGroupOption[] }) {
                 autoComplete="off"
                 placeholder="ad.soyad@kurum.tr"
               />
+            </Field>
+
+            <Field name="organization" label="Kurum / Kuruluş" error={state.errors?.organization}>
+              <Input id="organization" name="organization" maxLength={200} />
+            </Field>
+            <Field
+              name="academicTitle"
+              label="Akademik Ünvan"
+              hint="Örn. Dr., Doç. Dr., Prof. Dr. — opsiyonel."
+              error={state.errors?.academicTitle}
+            >
+              <Input id="academicTitle" name="academicTitle" maxLength={50} />
+            </Field>
+
+            <Field name="position" label="Görevi" error={state.errors?.position} className="md:col-span-2">
+              <Input id="position" name="position" maxLength={200} placeholder="Örn. AB ve Dış İlişkiler Bürosu Koordinatörü" />
+            </Field>
+
+            <Field name="city" label="İl" error={state.errors?.city}>
+              <Input id="city" name="city" maxLength={80} />
+            </Field>
+            <Field name="phone" label="Cep Tel" error={state.errors?.phone}>
+              <Input id="phone" name="phone" type="tel" maxLength={40} placeholder="05XX XXX XX XX" />
             </Field>
           </div>
 

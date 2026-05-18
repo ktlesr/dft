@@ -79,6 +79,46 @@ async function main() {
 
     const passwordHash = await hash(password, ARGON2);
 
+    // Faz 9: username atama — eksikse `ad.soyad` üret.
+    const slugify = (raw) => {
+      const map = { ş: "s", Ş: "s", ı: "i", I: "i", İ: "i", ç: "c", Ç: "c", ğ: "g", Ğ: "g", ö: "o", Ö: "o", ü: "u", Ü: "u" };
+      const ascii = String(raw)
+        .split("")
+        .map((c) => map[c] ?? c)
+        .join("")
+        .normalize("NFKD")
+        .replace(/\p{M}/gu, "")
+        .toLowerCase();
+      const cleaned = ascii.replace(/[^a-z0-9\s]+/g, " ").trim();
+      if (!cleaned) return "";
+      const words = cleaned.split(/\s+/).filter(Boolean);
+      if (words.length === 0) return "";
+      if (words.length === 1) return words[0].slice(0, 50);
+      return `${words[0]}.${words[words.length - 1]}`.slice(0, 50);
+    };
+    const existing = await prisma.user.findUnique({
+      where: { email },
+      select: { username: true },
+    });
+    let usernameToSet = existing?.username ?? null;
+    if (!usernameToSet) {
+      const base = slugify(name);
+      let candidate = base;
+      let n = 1;
+      while (base && n < 50) {
+        const clash = await prisma.user.findUnique({
+          where: { username: candidate },
+          select: { id: true },
+        });
+        if (!clash) {
+          usernameToSet = candidate;
+          break;
+        }
+        n += 1;
+        candidate = `${base}.${n}`;
+      }
+    }
+
     console.log(`• Upserting admin ${email}…`);
     const admin = await prisma.user.upsert({
       where: { email },
@@ -90,9 +130,11 @@ async function main() {
         groupId: target.id,
         failedLoginCount: 0,
         lockedUntil: null,
+        ...(existing?.username ? {} : { username: usernameToSet }),
       },
       create: {
         email,
+        username: usernameToSet,
         name,
         passwordHash,
         status: "ACTIVE",
@@ -113,10 +155,11 @@ async function main() {
 
     console.log("");
     console.log("✓ Admin ready:");
-    console.log(`    email:  ${admin.email}`);
-    console.log(`    id:     ${admin.id}`);
-    console.log(`    group:  ${target.code}`);
-    console.log(`    roles:  ADMIN, USER`);
+    console.log(`    email:    ${admin.email}`);
+    console.log(`    username: ${admin.username ?? "(yok)"}`);
+    console.log(`    id:       ${admin.id}`);
+    console.log(`    group:    ${target.code}`);
+    console.log(`    roles:    ADMIN, USER`);
     console.log("");
     console.log("  Open https://<your-domain>/giris and sign in.");
   } finally {

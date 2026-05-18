@@ -9,28 +9,20 @@ const email = z
   .transform((v) => v.toLowerCase());
 
 /**
- * Login için "e-posta VEYA ad.soyad biçiminde kullanıcı adı" kabul eder.
- * Sunucu tarafında "@" varsa katı email doğrulamasından, yoksa
- * kullanıcı adı regex'inden geçer.
+ * Login: yalnızca `ad.soyad` biçiminde kullanıcı adı kabul edilir.
+ * E-posta ile giriş kapalıdır (Faz 9 sertleştirmesi).
  */
 const USERNAME_RE = /^[a-z0-9](?:[a-z0-9.]{1,48}[a-z0-9])?$/;
-const emailOrUsername = z
-  .string({ required_error: "E-posta veya kullanıcı adı zorunludur." })
+const usernameInput = z
+  .string({ required_error: "Kullanıcı adı zorunludur." })
   .trim()
   .min(3, "En az 3 karakter.")
-  .max(254, "Çok uzun.")
+  .max(50, "Çok uzun.")
   .transform((v) => v.toLowerCase())
-  .superRefine((v, ctx) => {
-    const ok = v.includes("@")
-      ? z.string().email().safeParse(v).success
-      : USERNAME_RE.test(v);
-    if (!ok) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Geçerli bir e-posta veya kullanıcı adı girin.",
-      });
-    }
-  });
+  .refine(
+    (v) => USERNAME_RE.test(v),
+    "Geçerli bir kullanıcı adı girin (ör. ad.soyad).",
+  );
 
 const password = z
   .string({ required_error: "Şifre zorunludur." })
@@ -42,9 +34,9 @@ const password = z
   .refine((v) => /[^A-Za-z0-9]/.test(v), "En az bir özel karakter içermeli.");
 
 export const loginSchema = z.object({
-  // İstemcide hala `email` adıyla taşınıyor (form alanı), ama içerik
-  // e-posta veya kullanıcı adı olabilir. Sunucu authorize tarafında ayrılır.
-  email: emailOrUsername,
+  // Form alan adı geriye dönük uyumluluk için `email` olarak kalır; içerik
+  // artık daima `ad.soyad` biçiminde kullanıcı adıdır.
+  email: usernameInput,
   password: z.string().min(1, "Şifre zorunludur."),
 });
 

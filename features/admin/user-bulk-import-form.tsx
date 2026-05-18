@@ -35,6 +35,7 @@ const TEMPLATE_HEADERS = [
   "E-Posta",
   "Çalışma Grubu",
   "Rolü",
+  "Şifre",
 ];
 
 function downloadBlob(filename: string, content: string, mime: string) {
@@ -68,6 +69,7 @@ function buildTemplateCsv(): string {
     "ornek@kurum.tr",
     "UAK",
     "Üye",
+    "", // Şifre — boş bırakırsanız otomatik üretilir
   ].map(csvEscape).join(",");
   return TEMPLATE_HEADERS.map(csvEscape).join(",") + "\n" + sampleRow + "\n";
 }
@@ -96,7 +98,11 @@ export function UserBulkImportForm() {
               Boş şablonu indir, doldur, yükle. Başlıklar sabit; sıra değişebilir.
               Zorunlu alanlar: <strong>Adı Soyadı</strong> ve <strong>E-Posta</strong>.
               Çalışma Grubu önceden tanımlı olmalı (Yönetim → Gruplar). Rolü
-              boşsa "Üye" varsayılır.
+              boşsa "Üye" varsayılır. <strong>Şifre</strong> sütunu opsiyoneldir
+              — boş bırakırsanız her üye için 10 karakterlik güçlü şifre
+              otomatik üretilir; doldurursanız en az 8 karakter olmalıdır.
+              Üyeler ilk girişten sonra şifrelerini Profil sayfasından
+              değiştirebilir; <strong>kullanıcı adı değiştirilemez</strong>.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">

@@ -14,17 +14,29 @@ import {
 /* ── Auth ──────────────────────────────────────────────────────── */
 
 describe("loginSchema", () => {
-  it("lowercases and trims email", () => {
-    const r = loginSchema.parse({ email: "  ADMIN@DFT.LOCAL ", password: "x" });
-    expect(r.email).toBe("admin@dft.local");
+  // Faz 9: login artık yalnızca `ad.soyad` biçiminde kullanıcı adı kabul eder;
+  // e-posta tabanlı giriş kapalıdır.
+
+  it("lowercases and trims username", () => {
+    const r = loginSchema.parse({ email: "  ALI.ERTURK ", password: "x" });
+    expect(r.email).toBe("ali.erturk");
   });
 
   it("rejects empty password", () => {
-    expect(loginSchema.safeParse({ email: "a@b.co", password: "" }).success).toBe(false);
+    expect(loginSchema.safeParse({ email: "ali.erturk", password: "" }).success).toBe(false);
   });
 
-  it("rejects malformed email", () => {
-    expect(loginSchema.safeParse({ email: "not-an-email", password: "x" }).success).toBe(false);
+  it("rejects email-style input (no @ allowed)", () => {
+    expect(loginSchema.safeParse({ email: "ali@erturk.tr", password: "x" }).success).toBe(false);
+  });
+
+  it("rejects whitespace in username", () => {
+    expect(loginSchema.safeParse({ email: "ali erturk", password: "x" }).success).toBe(false);
+  });
+
+  it("rejects leading / trailing dot", () => {
+    expect(loginSchema.safeParse({ email: ".ali.erturk", password: "x" }).success).toBe(false);
+    expect(loginSchema.safeParse({ email: "ali.erturk.", password: "x" }).success).toBe(false);
   });
 });
 

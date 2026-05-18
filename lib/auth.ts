@@ -51,8 +51,8 @@ const ACCOUNT_LOCK_MINUTES = 15;
 const TOKEN_REFRESH_MS = 5 * 60 * 1000;
 
 /**
- * Login identifier — e-posta (RFC) veya `ad.soyad` biçiminde kullanıcı adı.
- * Sunucu authorize() içinde "@" varlığına göre lookup yapar.
+ * Login: yalnızca `ad.soyad` biçiminde kullanıcı adı + şifre kabul edilir.
+ * Faz 9'da e-posta tabanlı giriş kapatıldı.
  */
 const USERNAME_RE = /^[a-z0-9](?:[a-z0-9.]{1,48}[a-z0-9])?$/;
 const loginInput = z.object({
@@ -60,14 +60,9 @@ const loginInput = z.object({
     .string()
     .trim()
     .min(3)
-    .max(254)
+    .max(50)
     .transform((v) => v.toLowerCase())
-    .superRefine((v, ctx) => {
-      const ok = v.includes("@")
-        ? z.string().email().safeParse(v).success
-        : USERNAME_RE.test(v);
-      if (!ok) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "invalid identifier" });
-    }),
+    .refine((v) => USERNAME_RE.test(v), "invalid identifier"),
   password: z.string().min(1),
 });
 
@@ -108,14 +103,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(raw) {
         const parsed = loginInput.safeParse(raw);
         if (!parsed.success) throw new InvalidCredentials();
-        const { email: identifier, password } = parsed.data;
+        const { email: username, password } = parsed.data;
 
-        // E-posta veya kullanıcı adı? "@" varlığı belirleyici.
-        const where = identifier.includes("@")
-          ? { email: identifier }
-          : { username: identifier };
         const user = await prisma.user.findUnique({
-          where,
+          where: { username },
           include: { roles: true, group: true },
         });
         if (!user || !user.passwordHash) throw new InvalidCredentials();

@@ -85,6 +85,7 @@ type HeaderKey =
   | "email"
   | "groupCode"
   | "role"
+  | "password"
   | "no";
 
 const HEADER_MAP: Record<string, HeaderKey> = {
@@ -118,6 +119,9 @@ const HEADER_MAP: Record<string, HeaderKey> = {
   "rolu": "role",
   "rol": "role",
   "role": "role",
+  "sifre": "password",
+  "parola": "password",
+  "password": "password",
   "id": "no",
   "no": "no",
   "sira": "no",
@@ -353,6 +357,7 @@ export async function bulkImportUsers(
       phone: "Cep Tel",
       groupCode: "Çalışma Grubu",
       role: "Rolü",
+      password: "Şifre",
       no: "No",
     };
     return {
@@ -377,6 +382,8 @@ export async function bulkImportUsers(
     phone?: string;
     groupId?: string | null;
     extraRole?: Role;
+    /** Admin tarafından CSV'de sağlanmış şifre; yoksa otomatik üretilir. */
+    suppliedPassword?: string;
   };
   const drafts: RowDraft[] = [];
   const seenEmails = new Set<string>();
@@ -447,6 +454,32 @@ export async function bulkImportUsers(
       if (code !== "USER") extraRole = code;
     }
 
+    // İsteğe bağlı Şifre sütunu — boş bırakılırsa otomatik üretilir.
+    // Sağlanmışsa min 8 karakter zorunludur (yalnız sayı / yalnız tek karakter
+    // gibi açık zayıflıkları engeller). Sınıf zorunluluğu yok — admin CSV'sini
+    // kendi belirlediği için politikaya bilinçli ekstra şart koymuyoruz.
+    let suppliedPassword: string | undefined;
+    const pwRaw = get("password");
+    if (pwRaw) {
+      if (pwRaw.length < 8) {
+        errors.push({
+          row: rowNum,
+          column: "Şifre",
+          message: "Şifre en az 8 karakter olmalı.",
+        });
+        continue;
+      }
+      if (pwRaw.length > 128) {
+        errors.push({
+          row: rowNum,
+          column: "Şifre",
+          message: "Şifre çok uzun (en fazla 128 karakter).",
+        });
+        continue;
+      }
+      suppliedPassword = pwRaw;
+    }
+
     drafts.push({
       rowNum,
       name,
@@ -458,6 +491,7 @@ export async function bulkImportUsers(
       phone: get("phone") || undefined,
       groupId,
       extraRole,
+      suppliedPassword,
     });
   }
 
@@ -495,8 +529,9 @@ export async function bulkImportUsers(
     };
   }
 
-  // Şifreleri üret + hashle (paralel)
-  const passwords = drafts.map(() => generatePassword());
+  // Şifreleri belirle: CSV'de verilmişse onu kullan, yoksa üret.
+  // hashleme paralel.
+  const passwords = drafts.map((d) => d.suppliedPassword ?? generatePassword());
   const hashes = await Promise.all(passwords.map((p) => hashPassword(p)));
 
   // Kullanıcı adlarını sırayla üret — `reserved` ile aynı dosya içindeki

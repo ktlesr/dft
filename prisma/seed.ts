@@ -26,6 +26,47 @@ const GROUPS: { code: string; name: string; description: string }[] = [
 
 const ARGON2 = { memoryCost: 19_456, timeCost: 2, parallelism: 1 };
 
+// Faz 9: seed kullanıcılarına da `ad.soyad` biçiminde username atanır;
+// re-run sırasında eksik olanlar doldurulur (login akışı artık username
+// tabanlı olduğu için backfill kritik).
+function slugifyName(rawName: string): string {
+  const translit: Record<string, string> = {
+    ş: "s", Ş: "s", ı: "i", I: "i", İ: "i",
+    ç: "c", Ç: "c", ğ: "g", Ğ: "g",
+    ö: "o", Ö: "o", ü: "u", Ü: "u",
+  };
+  const ascii = rawName
+    .split("")
+    .map((c) => translit[c] ?? c)
+    .join("")
+    .normalize("NFKD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase();
+  const cleaned = ascii.replace(/[^a-z0-9\s]+/g, " ").trim();
+  if (!cleaned) return "";
+  const words = cleaned.split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "";
+  if (words.length === 1) return words[0]!.slice(0, 50);
+  return `${words[0]}.${words[words.length - 1]}`.slice(0, 50);
+}
+
+async function uniqueUsername(name: string): Promise<string | null> {
+  const base = slugifyName(name);
+  if (!base) return null;
+  let candidate = base;
+  let n = 1;
+  while (n < 50) {
+    const existing = await prisma.user.findUnique({
+      where: { username: candidate },
+      select: { id: true },
+    });
+    if (!existing) return candidate;
+    n += 1;
+    candidate = `${base}.${n}`;
+  }
+  return null;
+}
+
 async function ensureUser(args: {
   email: string;
   name: string;
@@ -35,6 +76,14 @@ async function ensureUser(args: {
   organization?: string;
 }) {
   const passwordHash = await hash(args.password, ARGON2);
+  // Kullanıcı zaten varsa ve username eksikse, eksiği bu çağrı dolduracak.
+  const existing = await prisma.user.findUnique({
+    where: { email: args.email },
+    select: { id: true, username: true },
+  });
+  const usernameToSet =
+    existing?.username ?? (await uniqueUsername(args.name));
+
   const user = await prisma.user.upsert({
     where: { email: args.email },
     update: {
@@ -42,9 +91,12 @@ async function ensureUser(args: {
       status: "ACTIVE",
       emailVerified: new Date(),
       groupId: args.groupId,
+      // Yalnızca eksikse yaz — varsa dokunma (admin'in elle değiştirme ihtimalini koru).
+      ...(existing?.username ? {} : { username: usernameToSet }),
     },
     create: {
       email: args.email,
+      username: usernameToSet,
       name: args.name,
       passwordHash,
       status: "ACTIVE",

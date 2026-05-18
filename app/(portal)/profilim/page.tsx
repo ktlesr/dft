@@ -46,6 +46,18 @@ export default async function ProfilePage() {
           <CardTitle>Hesap bilgileri</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
+          <Field
+            label="Kullanıcı adı"
+            value={
+              userRow?.username ? (
+                <span className="font-mono">{userRow.username}</span>
+              ) : (
+                <span className="text-xs text-muted-foreground">
+                  Henüz atanmadı — yöneticinize bildirin.
+                </span>
+              )
+            }
+          />
           <Field label="E-posta" value={user.email} />
           <Field
             label="Durum"

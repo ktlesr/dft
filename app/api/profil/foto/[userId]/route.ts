@@ -43,17 +43,25 @@ export async function GET(
       },
     });
   } catch (e) {
-    // Dosya storage'da yoksa (ör. volume mount yok / upload klasörü
-    // sıfırlandı), DB'deki ölü referansı temizleyip 404 dön. Böylece
-    // browser <img> fallback'i (avatar baş harfleri) doğal görünür ve
-    // konsoldaki sürekli 500 gürültüsü biter.
-    const code = (e as NodeJS.ErrnoException)?.code;
-    if (code === "ENOENT") {
-      await prisma.user
-        .update({ where: { id: userId }, data: { image: null } })
-        .catch(() => undefined);
+    // ENOENT → 404 (browser <img> fallback'i / initials doğal tetiklenir).
+    // Burada DB'deki `User.image` referansına DOKUNMUYORUZ: deploy / volume
+    // remount sırasında dosya geçici görünmezse, DB temizlemek bütün
+    // referansları kalıcı yok eder ve volume düzeldikten sonra resimler
+    // geri gelmez. Geçici ENOENT'lerin kalıcı veri kaybına dönüşmemesi için
+    // bu route SADECE okur; ölü referans temizliği bir bakım işine bırakılır.
+    const e2 = e as NodeJS.ErrnoException;
+    if (e2?.code === "ENOENT") {
       return new NextResponse("Not found", { status: 404 });
     }
+    console.error(
+      "[api/profil/foto] storage.get failed",
+      JSON.stringify({
+        userId,
+        storageKey: key,
+        code: e2?.code,
+        message: e2?.message,
+      }),
+    );
     return new NextResponse("Storage error", { status: 500 });
   }
 }

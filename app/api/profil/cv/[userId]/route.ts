@@ -46,17 +46,22 @@ export async function GET(
       },
     });
   } catch (e) {
-    // Dosya storage'da yoksa DB referansını temizleyip 404 dön.
-    const code = (e as NodeJS.ErrnoException)?.code;
-    if (code === "ENOENT") {
-      await prisma.profile
-        .update({
-          where: { userId },
-          data: { cvStorageKey: null, cvOriginalName: null },
-        })
-        .catch(() => undefined);
+    // ENOENT → 404. DB'deki `Profile.cvStorageKey` referansına dokunmayız:
+    // geçici bir storage erişim hatası (deploy / volume remount) bütün
+    // CV referanslarını kalıcı yok etmesin diye bu route SADECE okur.
+    const e2 = e as NodeJS.ErrnoException;
+    if (e2?.code === "ENOENT") {
       return new NextResponse("Not found", { status: 404 });
     }
+    console.error(
+      "[api/profil/cv] storage.get failed",
+      JSON.stringify({
+        userId,
+        storageKey: row.cvStorageKey,
+        code: e2?.code,
+        message: e2?.message,
+      }),
+    );
     return new NextResponse("Storage error", { status: 500 });
   }
 }

@@ -15,6 +15,22 @@
 # --------------------------------------------------------------------
 set -eu
 
+# ─── Uploads volume tanı log'u ────────────────────────────────────
+# Her deploy başında `/app/storage/uploads` içindeki dosya sayısını ve
+# toplam boyutu logla. "Her deploy'dan sonra resimler kırılıyor"
+# semptomunun gerçek volume sıfırlanması mı yoksa başka bir sebep mi
+# olduğunu kesin tespit etmek için. İlk satır 0 görünüyorsa volume
+# gerçekten kalıcı değil; >0 görünüyorsa dosyalar boot anında oradaydı.
+UP_DIR="${UPLOAD_DIR:-/app/storage/uploads}"
+echo "➜ uploads volume check: dir=$UP_DIR"
+if [ -d "$UP_DIR" ]; then
+  FILE_COUNT=$(find "$UP_DIR" -type f 2>/dev/null | wc -l | tr -d ' ')
+  TOTAL_SIZE=$(du -sh "$UP_DIR" 2>/dev/null | awk '{print $1}' || echo "?")
+  echo "   files=$FILE_COUNT  size=$TOTAL_SIZE"
+else
+  echo "   WARNING: uploads dir does not exist — volume mount missing?"
+fi
+
 # ─── Faz 7 pre-migration: `GroupCode` enum → plain text ───────────
 #
 # `Group.code` used to be the Prisma `GroupCode` enum (5 fixed values).

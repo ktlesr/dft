@@ -124,7 +124,7 @@ export function PostCard({ post, caps }: { post: PostRow; caps: Caps }) {
             {post.assessment ? (
               <div className="mt-3 rounded-md border border-primary/20 bg-primary/5 p-3">
                 <p className="text-[11px] font-medium uppercase tracking-wider text-primary">
-                  TR33 BÖLGESİ AÇISINDAN DEĞERLENDİRME
+                  Değerlendirme/Yorum
                 </p>
                 <p className="mt-1 whitespace-pre-wrap text-sm">{post.assessment}</p>
               </div>

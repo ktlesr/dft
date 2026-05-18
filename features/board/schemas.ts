@@ -50,8 +50,16 @@ export const boardPostSchema = z.object({
     .string()
     .optional()
     .transform((v) => (v ?? "").split(",").map((t) => t.trim()).filter(Boolean).slice(0, 12)),
+  // HTML checkbox işaretli DEĞİLKEN FormData hiç bir değer yollamaz →
+  // `fd.get("pinned")` `null` döner. Zod union'a `null` literal eklenir.
   pinned: z
-    .union([z.literal("on"), z.literal("true"), z.literal("false"), z.literal("")])
+    .union([
+      z.literal("on"),
+      z.literal("true"),
+      z.literal("false"),
+      z.literal(""),
+      z.null(),
+    ])
     .optional()
     .transform((v) => v === "on" || v === "true"),
 });

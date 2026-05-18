@@ -82,10 +82,12 @@ export function NewBoardPostDialog({
         <form action={action} className="space-y-4">
           <input type="hidden" name="scope" value={scope} />
 
-          {!state.ok && state.message ? (
+          {!state.ok && (state.message || state.errors) ? (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{state.message}</AlertDescription>
+              <AlertDescription>
+                {state.message ?? "Formda eksik veya geçersiz alanlar var. Lütfen kontrol edin."}
+              </AlertDescription>
             </Alert>
           ) : null}
 

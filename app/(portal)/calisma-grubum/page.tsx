@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  ArrowUpRight,
   BarChart3,
   CalendarDays,
   FileText,
@@ -21,10 +20,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/app/empty-state";
 import { requireActiveUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
-import { REPORT_KIND_LABELS, ROLE_LABELS } from "@/lib/constants";
+import { BOARD_KIND_LABELS, REPORT_KIND_LABELS, ROLE_LABELS } from "@/lib/constants";
 import { avatarUrl, formatDate, formatDateTime, initials } from "@/lib/utils";
 import { listGroupDiscussions } from "@/features/forum/queries";
-import { listNotices } from "@/features/notice/queries";
 
 export const metadata = { title: "Çalışma Grubum" };
 export const dynamic = "force-dynamic";
@@ -48,14 +46,29 @@ export default async function MyGroupPage() {
     );
   }
 
-  const [group, members, notices, discussions, meetings, reports] = await Promise.all([
+  const [group, members, bildirimler, discussions, meetings, reports] = await Promise.all([
     prisma.group.findUnique({ where: { id: user.groupId } }),
     prisma.user.findMany({
       where: { groupId: user.groupId, status: "ACTIVE" },
       orderBy: { name: "asc" },
       include: { roles: { select: { role: true } } },
     }),
-    listNotices({ scope: "GROUP", groupId: user.groupId, take: 20 }),
+    // Grup bildirimleri = grup kapsamlı BoardPost'lar. Faz 10'da "Bildirim Ekle"
+    // formu bu modeli oluşturur; sekme de buradan okur.
+    prisma.boardPost.findMany({
+      where: {
+        scope: "GROUP",
+        groupId: user.groupId,
+        deletedAt: null,
+        status: "PUBLISHED",
+      },
+      orderBy: [{ pinned: "desc" }, { publishedAt: "desc" }],
+      take: 20,
+      include: {
+        author: { select: { name: true, email: true } },
+        attachments: { select: { id: true, originalName: true, size: true } },
+      },
+    }),
     listGroupDiscussions({ groupId: user.groupId, take: 50 }),
     prisma.meeting.findMany({
       where: { groupId: user.groupId, deletedAt: null },
@@ -227,33 +240,59 @@ export default async function MyGroupPage() {
             <p className="text-xs text-muted-foreground">
               Yöneticilerin ve grup moderatörünün bu gruba yayımladığı bildirimler.
             </p>
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/duyurular?kanal=grup">
-                Tümü
-                <ArrowUpRight className="h-3.5 w-3.5" />
+            <Button asChild variant="brand" size="sm">
+              <Link href="/bildirim/yeni">
+                <Megaphone className="h-4 w-4" />
+                Bildirim Ekle
               </Link>
             </Button>
           </div>
 
-          {notices.length === 0 ? (
+          {bildirimler.length === 0 ? (
             <EmptyState title="Grup bildirimi yok" icon={Megaphone} />
           ) : (
             <ul className="space-y-2">
-              {notices.map((n) => {
-                const authorName = n.author.name?.trim() || n.author.email.split("@")[0];
+              {bildirimler.map((b) => {
+                const authorName = b.author.name?.trim() || b.author.email.split("@")[0];
                 return (
-                  <li key={n.id} className="rounded-md border p-4">
+                  <li key={b.id} className="rounded-md border p-4">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          {n.pinned ? (
+                          {b.pinned ? (
                             <Pin className="h-3 w-3 shrink-0 text-amber-600" aria-label="Sabit" />
                           ) : null}
-                          <p className="font-medium">{n.title}</p>
+                          <p className="font-medium">{b.title}</p>
+                          <Badge variant="secondary" className="text-[10px]">
+                            {BOARD_KIND_LABELS[b.kind]}
+                          </Badge>
                         </div>
-                        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{n.body}</p>
+                        <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-xs text-muted-foreground">
+                          {b.body}
+                        </p>
+                        {b.tags.length > 0 ? (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {b.tags.map((t) => (
+                              <Badge key={t} variant="outline" className="text-[10px]">
+                                #{t}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : null}
+                        {b.externalUrl ? (
+                          <p className="mt-1.5 truncate text-[11px]">
+                            <a
+                              href={b.externalUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline"
+                            >
+                              {b.externalUrl}
+                            </a>
+                          </p>
+                        ) : null}
                         <p className="mt-1.5 text-[11px] text-muted-foreground">
-                          {authorName} · {formatDateTime(n.publishedAt)}
+                          {authorName} · {formatDateTime(b.publishedAt)}
                         </p>
                       </div>
                     </div>

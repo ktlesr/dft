@@ -50,8 +50,8 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: MessageSquarePlus,
       },
       {
-        href: "/toplanti-bildirimi/yeni",
-        label: "Toplantı Bildirimi Ekle",
+        href: "/bildirim/yeni",
+        label: "Bildirim Ekle",
         icon: CalendarDays,
         roles: ["MODERATOR", "ADMIN"],
       },

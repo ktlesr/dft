@@ -14,15 +14,27 @@ type CoverImageLightboxProps = {
   alt: string;
   /** Harici bağlantı varsa: lightbox yerine yeni sekmede o URL açılır. */
   externalUrl?: string | null;
+  /** "cover": karttaki büyük kapak. "thumb": kapak altındaki küçük ek resimler. */
+  size?: "cover" | "thumb";
 };
 
-export function CoverImageLightbox({ src, alt, externalUrl }: CoverImageLightboxProps) {
+const SIZE_CLASS: Record<NonNullable<CoverImageLightboxProps["size"]>, string> = {
+  cover: "h-44 w-44 sm:h-48 sm:w-48",
+  thumb: "h-20 w-20 sm:h-24 sm:w-24",
+};
+
+export function CoverImageLightbox({
+  src,
+  alt,
+  externalUrl,
+  size = "cover",
+}: CoverImageLightboxProps) {
   const thumb = (
     /* eslint-disable-next-line @next/next/no-img-element */
     <img
       src={src}
       alt={alt}
-      className="h-44 w-44 object-cover transition-transform group-hover:scale-[1.02] sm:h-48 sm:w-48"
+      className={`${SIZE_CLASS[size]} object-cover transition-transform group-hover:scale-[1.02]`}
       loading="lazy"
     />
   );

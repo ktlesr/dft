@@ -66,11 +66,14 @@ export function PostCard({ post, caps }: { post: PostRow; caps: Caps }) {
     await removeBoardPost(post.id);
   };
 
-  // İlk image-tipi ek dosyayı kapak olarak kullan; geri kalanı (varsa)
-  // dosya listesinde göster. Aynı ek hem kapak hem dosya listesinde
-  // tekrar etmesin diye filtrelenir.
-  const coverImage = post.attachments.find((a) => isImage(a.mimeType));
-  const nonImageAttachments = post.attachments.filter((a) => a.id !== coverImage?.id);
+  // Ek dosyaları üç gruba ayırırız:
+  //  - coverImage: ilk image (kart sol üstte büyük kapak)
+  //  - extraImages: kalan image'lar (kapak altında küçük thumbnail + lightbox)
+  //  - fileAttachments: image olmayan ekler (link listesi → indir)
+  const images = post.attachments.filter((a) => isImage(a.mimeType));
+  const coverImage = images[0];
+  const extraImages = images.slice(1);
+  const fileAttachments = post.attachments.filter((a) => !isImage(a.mimeType));
 
   return (
     <Card className={post.pinned ? "border-primary/40" : undefined}>
@@ -146,9 +149,22 @@ export function PostCard({ post, caps }: { post: PostRow; caps: Caps }) {
               </div>
             ) : null}
 
-            {nonImageAttachments.length > 0 ? (
+            {extraImages.length > 0 ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {extraImages.map((a) => (
+                  <CoverImageLightbox
+                    key={a.id}
+                    src={`/api/dosya/${a.id}`}
+                    alt={a.originalName}
+                    size="thumb"
+                  />
+                ))}
+              </div>
+            ) : null}
+
+            {fileAttachments.length > 0 ? (
               <ul className="mt-3 space-y-1">
-                {nonImageAttachments.map((a) => (
+                {fileAttachments.map((a) => (
                   <li key={a.id}>
                     <Link
                       href={`/api/dosya/${a.id}`}

@@ -75,7 +75,24 @@ export async function GET(
       "X-Content-Type-Options": "nosniff",
     });
     return new NextResponse(stream, { headers });
-  } catch {
+  } catch (err) {
+    // Tanılama: 500 dönüşünün neden tetiklendiğini sunucu loglarına düşürürüz.
+    // ENOENT → diskte dosya yok (storageKey ile UPLOAD_DIR uyuşmuyor / volume sıfırlanmış);
+    // invalid_storage_key → resolveSafe path-traversal koruması tetiklendi.
+    const e = err as NodeJS.ErrnoException;
+    console.error(
+      "[api/dosya] storage.get failed",
+      JSON.stringify({
+        attachmentId: att.id,
+        storageKey: att.storageKey,
+        mimeType: att.mimeType,
+        uploadDir: process.env.UPLOAD_DIR ?? "./storage/uploads",
+        code: e?.code,
+        errno: e?.errno,
+        path: e?.path,
+        message: e?.message,
+      }),
+    );
     return new NextResponse("Storage error", { status: 500 });
   }
 }

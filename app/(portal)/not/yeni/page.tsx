@@ -12,9 +12,15 @@ export const metadata = { title: "Not Ekle" };
 export const dynamic = "force-dynamic";
 
 type NoteKind = keyof typeof GROUP_NOTE_KIND_LABELS;
+type NoteSearchParams = Promise<{ kind?: string }>;
 
-export default async function NewGroupNotePage() {
+export default async function NewGroupNotePage({
+  searchParams,
+}: {
+  searchParams: NoteSearchParams;
+}) {
   const user = await requireActiveUser();
+  const { kind } = await searchParams;
   const hasAdvisor = user.roles.includes("ADVISOR");
   const hasKs = user.roles.includes("KS");
   const isAdmin = user.roles.includes("ADMIN");
@@ -23,35 +29,52 @@ export default async function NewGroupNotePage() {
     return (
       <div className="mx-auto max-w-7xl">
         <PageHeader title="Not Ekle" breadcrumbs={[{ label: "Notlar" }]} />
-        <EmptyState icon={Users} title="Bir çalışma grubuna atanmadınız" />
+        <EmptyState icon={Users} title="Bir calisma grubuna atanmadiniz" />
       </div>
     );
   }
 
-  const allowedKinds: NoteKind[] = [];
-  if (isAdmin || hasAdvisor) allowedKinds.push("ADVISOR_NOTE");
-  if (isAdmin || hasKs) allowedKinds.push("KS_NOTE");
-  if (allowedKinds.length === 0) redirect("/yetkisiz");
+  const roleAllowedKinds: NoteKind[] = [];
+  if (isAdmin || hasAdvisor) roleAllowedKinds.push("ADVISOR_NOTE");
+  if (isAdmin || hasKs) roleAllowedKinds.push("KS_NOTE");
+  if (roleAllowedKinds.length === 0) redirect("/yetkisiz");
 
+  const requestedKind: NoteKind | null =
+    kind === "ADVISOR_NOTE" || kind === "KS_NOTE" ? kind : null;
+  if (requestedKind && !roleAllowedKinds.includes(requestedKind)) {
+    redirect("/yetkisiz");
+  }
+
+  const allowedKinds: NoteKind[] = requestedKind ? [requestedKind] : roleAllowedKinds;
   const defaultKind = allowedKinds[0]!;
   const modeDescription =
-    allowedKinds.length > 1
-      ? "Danışman Notu veya Kalite Sistemi Notu oluşturabilirsiniz."
-      : allowedKinds[0] === "ADVISOR_NOTE"
-        ? "Danışman Notu oluşturabilirsiniz."
-        : "Kalite Sistemi Notu oluşturabilirsiniz.";
+    requestedKind === "ADVISOR_NOTE"
+      ? "Danisman Notu olusturabilirsiniz."
+      : requestedKind === "KS_NOTE"
+        ? "Kalite Sistemi Notu olusturabilirsiniz."
+        : allowedKinds.length > 1
+          ? "Danisman Notu veya Kalite Sistemi Notu olusturabilirsiniz."
+          : allowedKinds[0] === "ADVISOR_NOTE"
+            ? "Danisman Notu olusturabilirsiniz."
+            : "Kalite Sistemi Notu olusturabilirsiniz.";
+  const pageTitle =
+    requestedKind === "ADVISOR_NOTE"
+      ? "Danisman Notu Ekle"
+      : requestedKind === "KS_NOTE"
+        ? "KS Yonetici Notu Ekle"
+        : "Not Ekle";
 
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
-        title="Not Ekle"
+        title={pageTitle}
         description={modeDescription}
         breadcrumbs={[{ label: "Notlar" }]}
       />
 
       <Alert className="mb-4">
         <AlertDescription>
-          Oluşturduğunuz notlar çalışma grubunuzda <strong>Danışman / KS Notları</strong> sekmesinde görünür.
+          Olusturdugunuz notlar calisma grubunuzda <strong>Danisman / KS Notlari</strong> sekmesinde gorunur.
         </AlertDescription>
       </Alert>
 

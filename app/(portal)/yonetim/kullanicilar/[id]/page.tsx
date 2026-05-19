@@ -130,12 +130,18 @@ export default async function AdminUserDetail({
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardContent className="p-6">
-            <div className="flex items-start gap-4">
-              <Avatar className="h-14 w-14">
+            <div className="flex items-start gap-5">
+              <Avatar className="h-32 w-32 rounded-lg shadow-sm ring-4 ring-background sm:h-36 sm:w-36">
                 {user.image ? (
-                  <AvatarImage src={avatarUrl(user.id, user.image)} alt={user.name ?? user.email} />
+                  <AvatarImage
+                    src={avatarUrl(user.id, user.image)}
+                    alt={user.name ?? user.email}
+                    className="rounded-lg object-cover"
+                  />
                 ) : null}
-                <AvatarFallback className="text-lg">{initials(user.name, user.email)}</AvatarFallback>
+                <AvatarFallback className="rounded-lg text-2xl font-semibold">
+                  {initials(user.name, user.email)}
+                </AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
                 <h2 className="text-lg font-semibold">{user.name ?? "—"}</h2>

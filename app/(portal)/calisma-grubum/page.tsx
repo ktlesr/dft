@@ -123,8 +123,11 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
 
   const moderators = members.filter((m) => m.roles.some((r) => r.role === "MODERATOR"));
   const rapporteurs = members.filter((m) => m.roles.some((r) => r.role === "RAPPORTEUR"));
-  const canCreateNotes =
-    user.roles.includes("ADMIN") || user.roles.includes("ADVISOR") || user.roles.includes("KS");
+  const canCreateAdvisorNote = user.roles.includes("ADMIN") || user.roles.includes("ADVISOR");
+  const canCreateKsNote = user.roles.includes("ADMIN") || user.roles.includes("KS");
+  const canCreateNotes = canCreateAdvisorNote || canCreateKsNote;
+  const advisorNotes = notes.filter((n) => n.kind === "ADVISOR_NOTE");
+  const ksNotes = notes.filter((n) => n.kind === "KS_NOTE");
 
   return (
     <div className="mx-auto max-w-7xl">
@@ -391,69 +394,51 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
         </TabsContent>
 
         <TabsContent value="notlar">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex items-center justify-between gap-3">
             <p className="text-xs text-muted-foreground">
-              Danisman ve Kalite Sistemi yoneticisi notlari bu alanda listelenir.
+              Danisman ve Kalite Sistemi yoneticisi notlari ayri alanlarda listelenir.
             </p>
             {canCreateNotes ? (
-              <Button asChild variant="brand" size="sm">
-                <Link href="/not/yeni">
-                  <NotebookPen className="h-4 w-4" />
-                  Not Ekle
-                </Link>
-              </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                {canCreateAdvisorNote ? (
+                  <Button asChild variant="brand" size="sm">
+                    <Link href="/not/yeni?kind=ADVISOR_NOTE">
+                      <NotebookPen className="h-4 w-4" />
+                      Danisman Notu Ekle
+                    </Link>
+                  </Button>
+                ) : null}
+                {canCreateKsNote ? (
+                  <Button asChild variant="brand" size="sm">
+                    <Link href="/not/yeni?kind=KS_NOTE">
+                      <NotebookPen className="h-4 w-4" />
+                      KS Yonetici Notu Ekle
+                    </Link>
+                  </Button>
+                ) : null}
+              </div>
             ) : null}
           </div>
 
-          {notes.length === 0 ? (
+          {advisorNotes.length === 0 && ksNotes.length === 0 ? (
             <EmptyState
               title="Henuz not yok"
               description="Ilk notu eklediginizde burada gorunur."
               icon={NotebookPen}
             />
           ) : (
-            <ul className="space-y-2">
-              {notes.map((n) => {
-                const authorName = n.author.name?.trim() || n.author.email.split("@")[0];
-                return (
-                  <li key={n.id} className="rounded-md border p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-medium">{n.title}</p>
-                          <Badge variant="secondary" className="text-[10px]">
-                            {GROUP_NOTE_KIND_LABELS[n.kind]}
-                          </Badge>
-                        </div>
-
-                        <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">{n.body}</p>
-
-                        {n.attachments.length > 0 ? (
-                          <div className="mt-2 flex flex-wrap gap-1.5">
-                            {n.attachments.map((a) => (
-                              <a
-                                key={a.id}
-                                href={`/api/dosya/${a.id}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="rounded-full border px-2 py-0.5 text-[11px] hover:border-primary hover:text-primary"
-                              >
-                                {a.originalName}
-                                <span className="text-muted-foreground"> · {humanSize(a.size)}</span>
-                              </a>
-                            ))}
-                          </div>
-                        ) : null}
-
-                        <p className="mt-1.5 text-[11px] text-muted-foreground">
-                          {authorName} · {formatDateTime(n.createdAt)}
-                        </p>
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+            <div className="grid gap-4 md:grid-cols-2">
+              <NoteColumn
+                title={GROUP_NOTE_KIND_LABELS.ADVISOR_NOTE}
+                notes={advisorNotes}
+                emptyText="Danisman notu yok."
+              />
+              <NoteColumn
+                title={GROUP_NOTE_KIND_LABELS.KS_NOTE}
+                notes={ksNotes}
+                emptyText="KS notu yok."
+              />
+            </div>
           )}
         </TabsContent>
 
@@ -496,4 +481,74 @@ function humanSize(size: number) {
   if (size < 1024) return `${size} B`;
   if (size < 1024 * 1024) return `${Math.round(size / 1024)} KB`;
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+type NoteListItem = {
+  id: string;
+  title: string;
+  body: string;
+  createdAt: Date;
+  author: { name: string | null; email: string };
+  attachments: { id: string; originalName: string; size: number }[];
+};
+
+function NoteColumn({
+  title,
+  notes,
+  emptyText,
+}: {
+  title: string;
+  notes: NoteListItem[];
+  emptyText: string;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {notes.length === 0 ? (
+          <p className="text-xs text-muted-foreground">{emptyText}</p>
+        ) : (
+          <ul className="space-y-2">
+            {notes.map((n) => {
+              const authorName = n.author.name?.trim() || n.author.email.split("@")[0];
+              return (
+                <li key={n.id} className="rounded-md border p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium">{n.title}</p>
+
+                      <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">{n.body}</p>
+
+                      {n.attachments.length > 0 ? (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {n.attachments.map((a) => (
+                            <a
+                              key={a.id}
+                              href={`/api/dosya/${a.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="rounded-full border px-2 py-0.5 text-[11px] hover:border-primary hover:text-primary"
+                            >
+                              {a.originalName}
+                              <span className="text-muted-foreground"> · {humanSize(a.size)}</span>
+                            </a>
+                          ))}
+                        </div>
+                      ) : null}
+
+                      <p className="mt-1.5 text-[11px] text-muted-foreground">
+                        {authorName} · {formatDateTime(n.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
 }

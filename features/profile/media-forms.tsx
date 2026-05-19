@@ -32,6 +32,7 @@ export function ProfilePhotoUploader({
 }) {
   const [state, action, pending] = useActionState(uploadProfilePhoto, INITIAL);
   const formRef = React.useRef<HTMLFormElement>(null);
+  const isAdminTarget = !!targetUserId;
 
   React.useEffect(() => {
     if (pending) return;
@@ -48,12 +49,22 @@ export function ProfilePhotoUploader({
   return (
     <form ref={formRef} action={action} className="flex items-start gap-4">
       {targetUserId ? <input type="hidden" name="userId" value={targetUserId} /> : null}
-      <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border bg-muted text-lg font-medium text-muted-foreground">
+      <div
+        className={
+          isAdminTarget
+            ? "flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted text-2xl font-semibold text-muted-foreground shadow-sm ring-4 ring-background sm:h-36 sm:w-36"
+            : "flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border bg-muted text-lg font-medium text-muted-foreground"
+        }
+      >
         {currentPhotoUrl ? (
           // Intentional <img>: storage URL is private, unknown dimensions;
           // next/image would add build-time constraints that we don't need.
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={currentPhotoUrl} alt={label} className="h-full w-full object-cover" />
+          <img
+            src={currentPhotoUrl}
+            alt={label}
+            className={isAdminTarget ? "h-full w-full rounded-lg object-cover" : "h-full w-full object-cover"}
+          />
         ) : (
           fallback
         )}

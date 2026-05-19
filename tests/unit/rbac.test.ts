@@ -1,9 +1,13 @@
 import { describe, it, expect } from "vitest";
 
 import {
+  canAccessKpiModule,
+  canChangeKpiBaseline,
+  canCreateOrApproveKpi,
   canCreateMeeting,
   canCreateMinute,
   canCreateReport,
+  canReviseKpi,
   canEditOwnRecord,
   canSeeGroupResource,
   hasRole,
@@ -108,5 +112,35 @@ describe("canEditOwnRecord", () => {
 
   it("admin can edit anyone's record", () => {
     expect(canEditOwnRecord(user({ id: "u-2", roles: ["ADMIN"] }), "u-1")).toBe(true);
+  });
+});
+
+describe("KPI permissions", () => {
+  it("kpi module is visible to admin and moderator", () => {
+    expect(canAccessKpiModule(user({ roles: ["ADMIN"] }))).toBe(true);
+    expect(canAccessKpiModule(user({ roles: ["MODERATOR"] }))).toBe(true);
+    expect(canAccessKpiModule(user({ roles: ["USER"] }))).toBe(false);
+  });
+
+  it("moderator can create/approve KPI only in own group", () => {
+    const mod = user({ roles: ["MODERATOR"], groupId: "g-uak" });
+    expect(canCreateOrApproveKpi(mod, "g-uak")).toBe(true);
+    expect(canCreateOrApproveKpi(mod, "g-other")).toBe(false);
+    expect(canCreateOrApproveKpi(user({ roles: ["ADMIN"] }), "g-uak")).toBe(false);
+  });
+
+  it("admin and same-group moderator can revise", () => {
+    expect(canReviseKpi(user({ roles: ["ADMIN"] }), "g-other")).toBe(true);
+    expect(canReviseKpi(user({ roles: ["MODERATOR"], groupId: "g-uak" }), "g-uak")).toBe(
+      true,
+    );
+    expect(canReviseKpi(user({ roles: ["MODERATOR"], groupId: "g-uak" }), "g-other")).toBe(
+      false,
+    );
+  });
+
+  it("only admin can change baseline", () => {
+    expect(canChangeKpiBaseline(user({ roles: ["ADMIN"] }))).toBe(true);
+    expect(canChangeKpiBaseline(user({ roles: ["MODERATOR"] }))).toBe(false);
   });
 });

@@ -19,6 +19,8 @@ export const isModerator = (user: Pick<SessionUser, "roles">) => user.roles.incl
 export const isRapporteur = (user: Pick<SessionUser, "roles">) => user.roles.includes("RAPPORTEUR");
 export const isAdvisor = (user: Pick<SessionUser, "roles">) => user.roles.includes("ADVISOR");
 export const isKsManager = (user: Pick<SessionUser, "roles">) => user.roles.includes("KS");
+export const canAccessKpiModule = (user: Pick<SessionUser, "roles">) =>
+  isAdmin(user) || isModerator(user);
 
 export function canCreateMeeting(user: SessionUser, targetGroupId: string) {
   if (isAdmin(user)) return true;
@@ -73,6 +75,20 @@ export function canSeeGroupResource(user: SessionUser, targetGroupId: string | n
 
 export function canEditOwnRecord(user: SessionUser, ownerId: string) {
   return isAdmin(user) || user.id === ownerId;
+}
+
+export function canCreateOrApproveKpi(user: SessionUser, targetGroupId: string) {
+  if (!isModerator(user)) return false;
+  return user.groupId === targetGroupId;
+}
+
+export function canReviseKpi(user: SessionUser, targetGroupId: string) {
+  if (isAdmin(user)) return true;
+  return canCreateOrApproveKpi(user, targetGroupId);
+}
+
+export function canChangeKpiBaseline(user: Pick<SessionUser, "roles">) {
+  return isAdmin(user);
 }
 
 export class ForbiddenError extends Error {

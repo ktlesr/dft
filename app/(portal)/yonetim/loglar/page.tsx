@@ -55,6 +55,14 @@ const ACTION_LABELS: Record<AuditAction, string> = {
   RECORD_DELETED: "Kayıt silindi",
   RECORD_RESTORED: "Kayıt geri alındı",
   SETTINGS_CHANGED: "Ayar değişti",
+  KPI_CUSTOM_CREATED: "KPI oluşturuldu",
+  KPI_CUSTOM_UPDATED: "KPI güncellendi",
+  KPI_CUSTOM_APPROVED: "KPI onaylandı",
+  KPI_CUSTOM_REJECTED: "KPI reddedildi",
+  KPI_CUSTOM_REVISED: "KPI revize edildi",
+  KPI_BASELINE_CHANGED: "KPI baseline değişti",
+  KPI_EVIDENCE_ADDED: "KPI kanıtı eklendi",
+  KPI_METRIC_EVENT_CREATED: "KPI metriği işlendi",
 };
 
 type SearchParams = Promise<{ action?: string; actor?: string; target?: string }>;

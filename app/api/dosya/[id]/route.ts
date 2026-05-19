@@ -55,6 +55,16 @@ export async function GET(
       discussion: {
         select: { groupId: true, deletedAt: true },
       },
+      kpiCustomEvidence: {
+        select: {
+          kpi: {
+            select: {
+              groupId: true,
+              deletedAt: true,
+            },
+          },
+        },
+      },
     },
   });
   if (!att) return new NextResponse("Not found", { status: 404 });
@@ -120,6 +130,7 @@ function canView(
     content: { deletedAt: Date | null } | null;
     notice: { scope: "GENERAL" | "GROUP"; groupId: string | null; deletedAt: Date | null } | null;
     discussion: { groupId: string; deletedAt: Date | null } | null;
+    kpiCustomEvidence: { kpi: { groupId: string; deletedAt: Date | null } } | null;
   },
   viewerGroupId: string | null,
 ): boolean {
@@ -135,6 +146,9 @@ function canView(
     // Tartışma ekleri yalnızca aynı grubun üyelerine açıktır
     // (admin için caller'da `isAdmin` zaten true döner).
     return att.discussion.groupId === viewerGroupId;
+  }
+  if (att.kpiCustomEvidence && !att.kpiCustomEvidence.kpi.deletedAt) {
+    return att.kpiCustomEvidence.kpi.groupId === viewerGroupId;
   }
   if (att.meeting && !att.meeting.deletedAt) return att.meeting.groupId === viewerGroupId;
   if (att.minute && !att.minute.deletedAt) return att.minute.meeting?.groupId === viewerGroupId;

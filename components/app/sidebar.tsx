@@ -27,6 +27,7 @@ function isActive(pathname: string, item: NavItem) {
   if (item.exact) return pathname === item.href;
   if (item.href === "/kayit/yeni") return pathname === "/kayit/yeni";
   if (item.href === "/kayitlarim") return pathname.startsWith("/kayitlarim");
+  if (item.href === "/kpi/yeni") return pathname === "/kpi" || pathname === "/kpi/yeni";
   return pathname === item.href || pathname.startsWith(item.href + "/");
 }
 

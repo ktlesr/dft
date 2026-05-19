@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { Prisma } from "@prisma/client";
+import { Prisma, type KpiMetricCode, type KpiSourceType } from "@prisma/client";
 
 import { audit } from "@/lib/audit";
 import { redirectUnauthorized, requireActiveUser } from "@/lib/current-user";
@@ -10,6 +10,8 @@ import { prisma } from "@/lib/prisma";
 import { canEditOwnRecord } from "@/lib/rbac";
 import { MAX_ATTACHMENTS_PER_REQUEST, UploadError, storeAttachments } from "@/lib/upload";
 import { sendMail } from "@/lib/mail";
+import { writeKpiMetricEvent } from "@/lib/kpi/events";
+import { KPI_EVENT_ATTENDED_ROLE, KPI_EVENT_ORGANIZED_ROLE } from "@/lib/kpi/constants";
 import { z } from "zod";
 
 import {
@@ -77,6 +79,17 @@ function legacyKindForMemberFunction(
   fn: "BIREYSEL" | "DFT_ILE_BIRLIKTE" | "DANISMANLIK",
 ): "BIREYSEL" | "DFT_ILE_BIRLIKTE" {
   return fn === "DFT_ILE_BIRLIKTE" ? "DFT_ILE_BIRLIKTE" : "BIREYSEL";
+}
+
+async function trackKpiEvent(input: {
+  metricCode: KpiMetricCode;
+  sourceType: KpiSourceType;
+  sourceId: string;
+  actorUserId: string;
+  groupId: string | null;
+  delta: 1 | -1;
+}) {
+  await writeKpiMetricEvent(input);
 }
 
 /* ────────── owner-only helpers used by update/delete ────────── */
@@ -159,6 +172,14 @@ export async function createProjectApplication(
     throw e;
   }
 
+  await trackKpiEvent({
+    metricCode: "KPI_PROJECT_APPLICATION_TOTAL",
+    sourceType: "PROJECT_APPLICATION",
+    sourceId: row.id,
+    actorUserId: user.id,
+    groupId: user.groupId,
+    delta: 1,
+  });
   await audit({ action: "RECORD_CREATED", actorId: user.id, targetType: "ProjectApplicationRecord", targetId: row.id });
   revalidatePath("/kayitlarim");
   revalidatePath("/panel");
@@ -230,6 +251,14 @@ export async function createSuccessfulProject(
     throw e;
   }
 
+  await trackKpiEvent({
+    metricCode: "KPI_SUCCESSFUL_PROJECT_TOTAL",
+    sourceType: "SUCCESSFUL_PROJECT",
+    sourceId: row.id,
+    actorUserId: user.id,
+    groupId: user.groupId,
+    delta: 1,
+  });
   await audit({ action: "RECORD_CREATED", actorId: user.id, targetType: "SuccessfulProjectRecord", targetId: row.id });
   revalidatePath("/kayitlarim");
   revalidatePath("/panel");
@@ -278,6 +307,14 @@ export async function createProjectIdea(
     throw e;
   }
 
+  await trackKpiEvent({
+    metricCode: "KPI_PROJECT_IDEA_TOTAL",
+    sourceType: "PROJECT_IDEA",
+    sourceId: row.id,
+    actorUserId: user.id,
+    groupId: user.groupId,
+    delta: 1,
+  });
   await audit({ action: "RECORD_CREATED", actorId: user.id, targetType: "ProjectIdeaRecord", targetId: row.id });
   revalidatePath("/kayitlarim");
   revalidatePath("/panel");
@@ -334,6 +371,26 @@ export async function createEventRecord(
     throw e;
   }
 
+  if (parsed.data.role === KPI_EVENT_ATTENDED_ROLE) {
+    await trackKpiEvent({
+      metricCode: "KPI_EVENT_ATTENDED_TOTAL",
+      sourceType: "EVENT",
+      sourceId: row.id,
+      actorUserId: user.id,
+      groupId: user.groupId,
+      delta: 1,
+    });
+  }
+  if (parsed.data.role === KPI_EVENT_ORGANIZED_ROLE) {
+    await trackKpiEvent({
+      metricCode: "KPI_EVENT_ORGANIZED_TOTAL",
+      sourceType: "EVENT",
+      sourceId: row.id,
+      actorUserId: user.id,
+      groupId: user.groupId,
+      delta: 1,
+    });
+  }
   await audit({ action: "RECORD_CREATED", actorId: user.id, targetType: "EventRecord", targetId: row.id });
   revalidatePath("/kayitlarim");
   revalidatePath("/panel");
@@ -491,6 +548,14 @@ export async function createContentRecord(
     throw e;
   }
 
+  await trackKpiEvent({
+    metricCode: "KPI_CONTENT_TOTAL",
+    sourceType: "CONTENT",
+    sourceId: row.id,
+    actorUserId: user.id,
+    groupId: user.groupId,
+    delta: 1,
+  });
   await audit({ action: "RECORD_CREATED", actorId: user.id, targetType: "ContentRecord", targetId: row.id });
   revalidatePath("/kayitlarim");
   revalidatePath("/panel");
@@ -548,6 +613,14 @@ export async function createStakeholder(
     throw e;
   }
 
+  await trackKpiEvent({
+    metricCode: "KPI_STAKEHOLDER_TOTAL",
+    sourceType: "STAKEHOLDER",
+    sourceId: row.id,
+    actorUserId: user.id,
+    groupId: user.groupId,
+    delta: 1,
+  });
   await audit({ action: "RECORD_CREATED", actorId: user.id, targetType: "StakeholderRecord", targetId: row.id });
   revalidatePath("/kayitlarim");
   revalidatePath("/panel");
@@ -570,6 +643,14 @@ export async function softDeleteRecord(type: string, id: string): Promise<void> 
       if (!row || row.deletedAt) redirect("/kayitlarim?hata=bulunamadi");
       await mustOwnOr403(row, user.id, user.roles);
       await prisma.projectApplicationRecord.update({ where: { id }, data: { deletedAt: now } });
+      await trackKpiEvent({
+        metricCode: "KPI_PROJECT_APPLICATION_TOTAL",
+        sourceType: "PROJECT_APPLICATION",
+        sourceId: row.id,
+        actorUserId: user.id,
+        groupId: user.groupId,
+        delta: -1,
+      });
       return { ownerId: row.ownerId };
     },
     "basarili-proje": async () => {
@@ -577,6 +658,14 @@ export async function softDeleteRecord(type: string, id: string): Promise<void> 
       if (!row || row.deletedAt) redirect("/kayitlarim?hata=bulunamadi");
       await mustOwnOr403(row, user.id, user.roles);
       await prisma.successfulProjectRecord.update({ where: { id }, data: { deletedAt: now } });
+      await trackKpiEvent({
+        metricCode: "KPI_SUCCESSFUL_PROJECT_TOTAL",
+        sourceType: "SUCCESSFUL_PROJECT",
+        sourceId: row.id,
+        actorUserId: user.id,
+        groupId: user.groupId,
+        delta: -1,
+      });
       return { ownerId: row.ownerId };
     },
     "proje-fikri": async () => {
@@ -584,6 +673,14 @@ export async function softDeleteRecord(type: string, id: string): Promise<void> 
       if (!row || row.deletedAt) redirect("/kayitlarim?hata=bulunamadi");
       await mustOwnOr403(row, user.id, user.roles);
       await prisma.projectIdeaRecord.update({ where: { id }, data: { deletedAt: now } });
+      await trackKpiEvent({
+        metricCode: "KPI_PROJECT_IDEA_TOTAL",
+        sourceType: "PROJECT_IDEA",
+        sourceId: row.id,
+        actorUserId: user.id,
+        groupId: user.groupId,
+        delta: -1,
+      });
       return { ownerId: row.ownerId };
     },
     etkinlik: async () => {
@@ -591,6 +688,26 @@ export async function softDeleteRecord(type: string, id: string): Promise<void> 
       if (!row || row.deletedAt) redirect("/kayitlarim?hata=bulunamadi");
       await mustOwnOr403(row, user.id, user.roles);
       await prisma.eventRecord.update({ where: { id }, data: { deletedAt: now } });
+      if (row.role === KPI_EVENT_ATTENDED_ROLE) {
+        await trackKpiEvent({
+          metricCode: "KPI_EVENT_ATTENDED_TOTAL",
+          sourceType: "EVENT",
+          sourceId: row.id,
+          actorUserId: user.id,
+          groupId: user.groupId,
+          delta: -1,
+        });
+      }
+      if (row.role === KPI_EVENT_ORGANIZED_ROLE) {
+        await trackKpiEvent({
+          metricCode: "KPI_EVENT_ORGANIZED_TOTAL",
+          sourceType: "EVENT",
+          sourceId: row.id,
+          actorUserId: user.id,
+          groupId: user.groupId,
+          delta: -1,
+        });
+      }
       return { ownerId: row.ownerId };
     },
     "bilgi-cogaltimi": async () => {
@@ -612,6 +729,14 @@ export async function softDeleteRecord(type: string, id: string): Promise<void> 
       if (!row || row.deletedAt) redirect("/kayitlarim?hata=bulunamadi");
       await mustOwnOr403(row, user.id, user.roles);
       await prisma.contentRecord.update({ where: { id }, data: { deletedAt: now } });
+      await trackKpiEvent({
+        metricCode: "KPI_CONTENT_TOTAL",
+        sourceType: "CONTENT",
+        sourceId: row.id,
+        actorUserId: user.id,
+        groupId: user.groupId,
+        delta: -1,
+      });
       return { ownerId: row.ownerId };
     },
     paydas: async () => {
@@ -619,6 +744,14 @@ export async function softDeleteRecord(type: string, id: string): Promise<void> 
       if (!row || row.deletedAt) redirect("/kayitlarim?hata=bulunamadi");
       await mustOwnOr403(row, user.id, user.roles);
       await prisma.stakeholderRecord.update({ where: { id }, data: { deletedAt: now } });
+      await trackKpiEvent({
+        metricCode: "KPI_STAKEHOLDER_TOTAL",
+        sourceType: "STAKEHOLDER",
+        sourceId: row.id,
+        actorUserId: user.id,
+        groupId: user.groupId,
+        delta: -1,
+      });
       return { ownerId: row.ownerId };
     },
   };

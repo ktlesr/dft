@@ -151,6 +151,62 @@ enum AuditAction {
   RECORD_DELETED
   RECORD_RESTORED
   SETTINGS_CHANGED
+  KPI_CUSTOM_CREATED
+  KPI_CUSTOM_UPDATED
+  KPI_CUSTOM_APPROVED
+  KPI_CUSTOM_REJECTED
+  KPI_CUSTOM_REVISED
+  KPI_BASELINE_CHANGED
+  KPI_EVIDENCE_ADDED
+  KPI_METRIC_EVENT_CREATED
+}
+
+enum KpiMetricCode {
+  KPI_PROJECT_IDEA_TOTAL
+  KPI_PROJECT_APPLICATION_TOTAL
+  KPI_SUCCESSFUL_PROJECT_TOTAL
+  KPI_EVENT_ATTENDED_TOTAL
+  KPI_EVENT_ORGANIZED_TOTAL
+  KPI_CONTENT_TOTAL
+  KPI_STAKEHOLDER_TOTAL
+}
+
+enum KpiSourceType {
+  PROJECT_IDEA
+  PROJECT_APPLICATION
+  SUCCESSFUL_PROJECT
+  EVENT
+  CONTENT
+  STAKEHOLDER
+}
+
+enum KpiCustomStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  OVERACHIEVED
+}
+
+enum KpiApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum KpiAssigneeType {
+  USER_SINGLE
+  USER_MULTI
+  GROUP
+}
+
+enum KpiRevisionField {
+  TARGET_VALUE
+  TARGET_DATE
+}
+
+enum KpiEvidenceType {
+  COMPLETED
+  OVERACHIEVED
 }
 
 // ============================================================
@@ -192,6 +248,13 @@ model User {
   trainings       TrainingPresentationRecord[]
   contents        ContentRecord[]
   stakeholders    StakeholderRecord[]
+  kpiMetricEvents KpiMetricEvent[]     @relation("KpiMetricEventActor")
+  kpiCustomsCreated KpiCustom[]        @relation("KpiCustomCreator")
+  kpiCustomsApproved KpiCustom[]       @relation("KpiCustomApprover")
+  kpiCustomAssignees KpiCustomAssignee[] @relation("KpiCustomAssigneeUser")
+  kpiCustomRevisions KpiCustomRevision[] @relation("KpiCustomRevisionActor")
+  kpiBaselineChanges KpiBaselineHistory[] @relation("KpiBaselineActor")
+  kpiEvidenceUploads KpiCustomEvidence[] @relation("KpiEvidenceUploader")
   auditLogs       AuditLog[]
   notifications   Notification[]
   approvedById    String?
@@ -245,6 +308,9 @@ model Group {
   reports     GroupReport[]
   groupNotes  GroupNote[]
   documents   Document[]
+  kpiMetricEvents KpiMetricEvent[]
+  kpiCustoms  KpiCustom[]
+  kpiCustomAssignees KpiCustomAssignee[] @relation("KpiCustomAssigneeGroup")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
@@ -389,6 +455,7 @@ model Attachment {
 
   discussionId  String?
   discussion    Discussion? @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  kpiCustomEvidence KpiCustomEvidence?
 
   @@index([uploadedById])
   @@index([boardPostId])
@@ -841,6 +908,121 @@ model StakeholderRecord {
 
   @@index([ownerId])
   @@index([kind])
+}
+
+model KpiMetricEvent {
+  id          String        @id @default(cuid())
+  metricCode  KpiMetricCode
+  groupId     String
+  group       Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  actorUserId String
+  actorUser   User          @relation("KpiMetricEventActor", fields: [actorUserId], references: [id], onDelete: Cascade)
+  sourceType  KpiSourceType
+  sourceId    String
+  // +1: create, -1: soft delete
+  delta       Int
+  occurredAt  DateTime      @default(now())
+  createdAt   DateTime      @default(now())
+
+  @@index([groupId, metricCode, occurredAt])
+  @@index([actorUserId, occurredAt])
+  @@index([sourceType, sourceId])
+  @@unique([metricCode, sourceType, sourceId, delta])
+}
+
+model KpiCustom {
+  id              String             @id @default(cuid())
+  groupId         String
+  group           Group              @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  name            String
+  description     String?            @db.Text
+  baselineValue   Decimal?           @db.Decimal(18, 2)
+  baselineDate    DateTime?
+  targetValue     Decimal?           @db.Decimal(18, 2)
+  targetDate      DateTime?
+  actualValue     Decimal?           @db.Decimal(18, 2)
+  status          KpiCustomStatus    @default(DRAFT)
+  approvalStatus  KpiApprovalStatus  @default(PENDING)
+  createdById     String
+  createdBy       User               @relation("KpiCustomCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  approvedById    String?
+  approvedBy      User?              @relation("KpiCustomApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  approvedAt      DateTime?
+  completedAt     DateTime?
+  assignees       KpiCustomAssignee[]
+  revisions       KpiCustomRevision[]
+  baselineHistory KpiBaselineHistory[]
+  evidences       KpiCustomEvidence[]
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  deletedAt       DateTime?
+
+  @@index([groupId, createdAt])
+  @@index([status, approvalStatus])
+  @@index([createdById, createdAt])
+}
+
+model KpiCustomAssignee {
+  id           String          @id @default(cuid())
+  kpiId        String
+  kpi          KpiCustom       @relation(fields: [kpiId], references: [id], onDelete: Cascade)
+  assigneeType KpiAssigneeType
+  userId       String?
+  user         User?           @relation("KpiCustomAssigneeUser", fields: [userId], references: [id], onDelete: Cascade)
+  groupId      String?
+  group        Group?          @relation("KpiCustomAssigneeGroup", fields: [groupId], references: [id], onDelete: Cascade)
+  createdAt    DateTime        @default(now())
+
+  @@index([kpiId, assigneeType])
+  @@index([userId])
+  @@index([groupId])
+}
+
+model KpiCustomRevision {
+  id          String           @id @default(cuid())
+  kpiId       String
+  kpi         KpiCustom        @relation(fields: [kpiId], references: [id], onDelete: Cascade)
+  field       KpiRevisionField
+  oldValue    Json?
+  newValue    Json?
+  changedById String
+  changedBy   User             @relation("KpiCustomRevisionActor", fields: [changedById], references: [id], onDelete: Cascade)
+  reason      String?
+  createdAt   DateTime         @default(now())
+
+  @@index([kpiId, createdAt])
+  @@index([changedById, createdAt])
+}
+
+model KpiBaselineHistory {
+  id          String           @id @default(cuid())
+  kpiId       String
+  kpi         KpiCustom        @relation(fields: [kpiId], references: [id], onDelete: Cascade)
+  field       KpiRevisionField
+  oldValue    Json?
+  newValue    Json?
+  changedById String
+  changedBy   User             @relation("KpiBaselineActor", fields: [changedById], references: [id], onDelete: Cascade)
+  reason      String?
+  createdAt   DateTime         @default(now())
+
+  @@index([kpiId, createdAt])
+  @@index([changedById, createdAt])
+}
+
+model KpiCustomEvidence {
+  id           String          @id @default(cuid())
+  kpiId        String
+  kpi          KpiCustom       @relation(fields: [kpiId], references: [id], onDelete: Cascade)
+  attachmentId String          @unique
+  attachment   Attachment      @relation(fields: [attachmentId], references: [id], onDelete: Cascade)
+  evidenceType KpiEvidenceType
+  uploadedById String
+  uploadedBy   User            @relation("KpiEvidenceUploader", fields: [uploadedById], references: [id], onDelete: Cascade)
+  createdAt    DateTime        @default(now())
+
+  @@index([kpiId, evidenceType, createdAt])
+  @@index([uploadedById, createdAt])
 }
 
 // ============================================================

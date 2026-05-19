@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { audit } from "@/lib/audit";
-import { requireActiveUser } from "@/lib/current-user";
+import { redirectUnauthorized, requireActiveUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { canCreateMeeting, isAdmin } from "@/lib/rbac";
 import { formatDateTime } from "@/lib/utils";
@@ -141,7 +141,7 @@ export async function removeMeeting(id: string): Promise<void> {
   const canRemove =
     isAdmin(user) ||
     (meeting.createdById === user.id && meeting.groupId === user.groupId);
-  if (!canRemove) redirect("/yetkisiz");
+  if (!canRemove) await redirectUnauthorized();
 
   await prisma.meeting.update({
     where: { id },

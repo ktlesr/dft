@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { requireActiveUser } from "@/lib/current-user";
+import { redirectUnauthorized, requireActiveUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { canSeeGroupResource, isAdmin } from "@/lib/rbac";
 import { formatDate, formatDateTime } from "@/lib/utils";
@@ -37,7 +37,7 @@ export default async function MeetingDetailPage({ params }: { params: Params }) 
     },
   });
   if (!meeting || meeting.deletedAt) notFound();
-  if (!canSeeGroupResource(user, meeting.groupId)) redirect("/yetkisiz");
+  if (!canSeeGroupResource(user, meeting.groupId)) await redirectUnauthorized();
 
   const canRemove = isAdmin(user) || meeting.createdById === user.id;
   const canAddMinute =

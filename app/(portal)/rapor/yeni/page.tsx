@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/app/page-header";
 import { EmptyState } from "@/components/app/empty-state";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ReportForm } from "@/features/report/report-form";
-import { requireActiveUser } from "@/lib/current-user";
+import { redirectUnauthorized, requireActiveUser } from "@/lib/current-user";
 import { canCreateReport } from "@/lib/rbac";
 
 export const metadata = { title: "Rapor Ekle" };
@@ -21,7 +21,7 @@ export default async function NewReportPage() {
       </div>
     );
   }
-  if (!canCreateReport(user, user.groupId)) redirect("/yetkisiz");
+  if (!canCreateReport(user, user.groupId)) await redirectUnauthorized();
 
   return (
     <div className="mx-auto max-w-7xl">

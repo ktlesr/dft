@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
 
 import { audit } from "@/lib/audit";
-import { requireActiveUser } from "@/lib/current-user";
+import { redirectUnauthorized, requireActiveUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { canEditOwnRecord } from "@/lib/rbac";
 import { MAX_ATTACHMENTS_PER_REQUEST, UploadError, storeAttachments } from "@/lib/upload";
@@ -93,7 +93,7 @@ async function mustOwnOr403<T extends { ownerId: string; deletedAt: Date | null 
       row.ownerId,
     )
   ) {
-    redirect("/yetkisiz");
+    await redirectUnauthorized();
   }
 }
 
@@ -560,7 +560,8 @@ export async function createStakeholder(
 
 export async function softDeleteRecord(type: string, id: string): Promise<void> {
   const user = await requireActiveUser();
-  if (!isRecordType(type)) redirect("/yetkisiz");
+  if (!isRecordType(type)) await redirectUnauthorized();
+  const typedType = type as RecordTypeSlug;
   const now = new Date();
 
   const actions: Record<RecordTypeSlug, () => Promise<{ ownerId: string }>> = {
@@ -622,7 +623,7 @@ export async function softDeleteRecord(type: string, id: string): Promise<void> 
     },
   };
 
-  const res = await actions[type]();
+  const res = await actions[typedType]();
   await audit({
     action: "RECORD_DELETED",
     actorId: user.id,

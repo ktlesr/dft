@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/app/page-header";
 import { EmptyState } from "@/components/app/empty-state";
 import { MeetingForm } from "@/features/meeting/meeting-form";
-import { requireActiveUser } from "@/lib/current-user";
+import { redirectUnauthorized, requireActiveUser } from "@/lib/current-user";
 import { canCreateMeeting } from "@/lib/rbac";
 import { Users } from "lucide-react";
 
@@ -24,7 +24,7 @@ export default async function NewMeetingPage() {
       </div>
     );
   }
-  if (!canCreateMeeting(user, user.groupId)) redirect("/yetkisiz");
+  if (!canCreateMeeting(user, user.groupId)) await redirectUnauthorized();
 
   return (
     <div className="mx-auto max-w-7xl">

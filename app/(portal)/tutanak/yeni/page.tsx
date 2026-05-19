@@ -4,7 +4,7 @@ import { Users } from "lucide-react";
 import { PageHeader } from "@/components/app/page-header";
 import { EmptyState } from "@/components/app/empty-state";
 import { MinuteForm } from "@/features/minute/minute-form";
-import { requireActiveUser } from "@/lib/current-user";
+import { redirectUnauthorized, requireActiveUser } from "@/lib/current-user";
 import { canCreateMinute } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 
@@ -25,7 +25,7 @@ export default async function NewMinutePage({ searchParams }: { searchParams: Se
       </div>
     );
   }
-  if (!canCreateMinute(user, user.groupId)) redirect("/yetkisiz");
+  if (!canCreateMinute(user, user.groupId)) await redirectUnauthorized();
 
   const meetings = await prisma.meeting.findMany({
     where: { groupId: user.groupId, deletedAt: null },

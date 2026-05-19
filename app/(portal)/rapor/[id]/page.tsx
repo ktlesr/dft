@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { requireActiveUser } from "@/lib/current-user";
+import { redirectUnauthorized, requireActiveUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { canSeeGroupResource, isAdmin } from "@/lib/rbac";
 import { REPORT_KIND_LABELS } from "@/lib/constants";
@@ -30,7 +30,7 @@ export default async function ReportDetailPage({ params }: { params: Params }) {
     },
   });
   if (!report || report.deletedAt) notFound();
-  if (!canSeeGroupResource(user, report.groupId)) redirect("/yetkisiz");
+  if (!canSeeGroupResource(user, report.groupId)) await redirectUnauthorized();
 
   const canRemove = isAdmin(user) || report.authorId === user.id;
   const removeAction = async () => {

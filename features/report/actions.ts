@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { audit } from "@/lib/audit";
-import { requireActiveUser } from "@/lib/current-user";
+import { redirectUnauthorized, requireActiveUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { canCreateReport, isAdmin } from "@/lib/rbac";
 import { storeAttachments, UploadError } from "@/lib/upload";
@@ -112,7 +112,7 @@ export async function removeReport(id: string): Promise<void> {
   if (!row || row.deletedAt) redirect("/calisma-grubum");
   const canRemove =
     isAdmin(user) || (row.authorId === user.id && row.groupId === user.groupId);
-  if (!canRemove) redirect("/yetkisiz");
+  if (!canRemove) await redirectUnauthorized();
 
   await prisma.groupReport.update({ where: { id }, data: { deletedAt: new Date() } });
   await audit({ action: "REPORT_UPDATED", actorId: user.id, targetType: "GroupReport", targetId: id, metadata: { removed: true } });

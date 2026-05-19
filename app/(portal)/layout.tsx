@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { Header } from "@/components/app/header";
 import { Sidebar } from "@/components/app/sidebar";
+import { UnauthorizedModal } from "@/components/app/unauthorized-modal";
 import { getCurrentUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 
@@ -41,7 +42,10 @@ export default async function PortalLayout({ children }: { children: React.React
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <Header user={headerUser} unreadNotifications={unreadNotifications} />
-        <main className="flex-1 px-4 py-6 md:px-8 md:py-8">{children}</main>
+        <main className="flex-1 px-4 py-6 md:px-8 md:py-8">
+          <UnauthorizedModal />
+          {children}
+        </main>
       </div>
     </div>
   );

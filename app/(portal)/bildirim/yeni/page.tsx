@@ -3,7 +3,7 @@ import { Users } from "lucide-react";
 
 import { PageHeader } from "@/components/app/page-header";
 import { EmptyState } from "@/components/app/empty-state";
-import { requireActiveUser } from "@/lib/current-user";
+import { redirectUnauthorized, requireActiveUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { isAdmin, isModerator } from "@/lib/rbac";
 import { NoticePageForm } from "@/features/notice/notice-page-form";
@@ -16,7 +16,7 @@ export default async function NewBildirimPage() {
   const admin = isAdmin(user);
   const moderator = isModerator(user);
 
-  if (!admin && !moderator) redirect("/yetkisiz");
+  if (!admin && !moderator) await redirectUnauthorized();
 
   if (!user.groupId && !admin) {
     return (

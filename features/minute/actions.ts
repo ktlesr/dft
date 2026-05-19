@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { audit } from "@/lib/audit";
-import { requireActiveUser } from "@/lib/current-user";
+import { redirectUnauthorized, requireActiveUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { canCreateMinute, isAdmin } from "@/lib/rbac";
 import { storeAttachments, UploadError } from "@/lib/upload";
@@ -105,7 +105,7 @@ export async function removeMinute(id: string): Promise<void> {
   const canRemove =
     isAdmin(user) ||
     (minute.authorId === user.id && minute.meeting.groupId === user.groupId);
-  if (!canRemove) redirect("/yetkisiz");
+  if (!canRemove) await redirectUnauthorized();
 
   await prisma.meetingMinute.update({
     where: { id },

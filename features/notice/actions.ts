@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { audit } from "@/lib/audit";
-import { requireActiveUser } from "@/lib/current-user";
+import { redirectUnauthorized, requireActiveUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { canCreateNotice, isAdmin } from "@/lib/rbac";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
@@ -179,7 +179,7 @@ export async function removeNotice(id: string): Promise<void> {
     notice.scope === "GROUP" &&
     canCreateNotice(user, "GROUP", notice.groupId);
 
-  if (!isAuthor && !isAdmin(user) && !sameGroupMod) redirect("/yetkisiz");
+  if (!isAuthor && !isAdmin(user) && !sameGroupMod) await redirectUnauthorized();
 
   await prisma.notice.update({
     where: { id },
@@ -205,7 +205,7 @@ export async function toggleNoticePin(id: string): Promise<void> {
 
   // Pin/unpin yetkisi = oluşturma yetkisi ile aynı kapsama bağlı.
   if (!canCreateNotice(user, notice.scope, notice.groupId)) {
-    redirect("/yetkisiz");
+    await redirectUnauthorized();
   }
 
   const next = !notice.pinned;

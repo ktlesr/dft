@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { requireActiveUser } from "@/lib/current-user";
+import { redirectUnauthorized, requireActiveUser } from "@/lib/current-user";
 import { isAdmin, isModerator } from "@/lib/rbac";
 import { avatarUrl, formatDateTime, initials } from "@/lib/utils";
 import { getDiscussion } from "@/features/forum/queries";
@@ -29,7 +29,7 @@ export default async function DiscussionPage({ params }: { params: Params }) {
 
   // Aynı gruba aitlik kontrolü; admin tüm gruplar.
   if (!isAdmin(user) && discussion.groupId !== user.groupId) {
-    redirect("/yetkisiz");
+    await redirectUnauthorized();
   }
 
   const canDeleteTopic =

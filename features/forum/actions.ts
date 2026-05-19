@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { audit } from "@/lib/audit";
-import { requireActiveUser } from "@/lib/current-user";
+import { redirectUnauthorized, requireActiveUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { isAdmin, isModerator } from "@/lib/rbac";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
@@ -210,7 +210,7 @@ export async function removeDiscussion(formData: FormData): Promise<void> {
 
   const isAuthor = discussion.authorId === user.id;
   const sameGroupMod = isModerator(user) && discussion.groupId === user.groupId;
-  if (!isAuthor && !sameGroupMod && !isAdmin(user)) redirect("/yetkisiz");
+  if (!isAuthor && !sameGroupMod && !isAdmin(user)) await redirectUnauthorized();
 
   await prisma.discussion.update({
     where: { id },
@@ -240,7 +240,7 @@ export async function removeReply(formData: FormData): Promise<void> {
 
   const isAuthor = reply.authorId === user.id;
   const sameGroupMod = isModerator(user) && reply.discussion.groupId === user.groupId;
-  if (!isAuthor && !sameGroupMod && !isAdmin(user)) redirect("/yetkisiz");
+  if (!isAuthor && !sameGroupMod && !isAdmin(user)) await redirectUnauthorized();
 
   await prisma.discussionReply.update({
     where: { id },

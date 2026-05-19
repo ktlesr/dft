@@ -5,7 +5,7 @@ import { EmptyState } from "@/components/app/empty-state";
 import { PageHeader } from "@/components/app/page-header";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { GroupNoteForm } from "@/features/group-notes/note-form";
-import { requireActiveUser } from "@/lib/current-user";
+import { redirectUnauthorized, requireActiveUser } from "@/lib/current-user";
 import { GROUP_NOTE_KIND_LABELS } from "@/lib/constants";
 
 export const metadata = { title: "Not Ekle" };
@@ -37,12 +37,12 @@ export default async function NewGroupNotePage({
   const roleAllowedKinds: NoteKind[] = [];
   if (isAdmin || hasAdvisor) roleAllowedKinds.push("ADVISOR_NOTE");
   if (isAdmin || hasKs) roleAllowedKinds.push("KS_NOTE");
-  if (roleAllowedKinds.length === 0) redirect("/yetkisiz");
+  if (roleAllowedKinds.length === 0) await redirectUnauthorized();
 
   const requestedKind: NoteKind | null =
     kind === "ADVISOR_NOTE" || kind === "KS_NOTE" ? kind : null;
   if (requestedKind && !roleAllowedKinds.includes(requestedKind)) {
-    redirect("/yetkisiz");
+    await redirectUnauthorized();
   }
 
   const allowedKinds: NoteKind[] = requestedKind ? [requestedKind] : roleAllowedKinds;

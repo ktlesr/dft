@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { audit } from "@/lib/audit";
-import { requireActiveUser, requireAdmin } from "@/lib/current-user";
+import { redirectUnauthorized, requireActiveUser, requireAdmin } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { isAdmin, isModerator } from "@/lib/rbac";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
@@ -253,10 +253,10 @@ export async function togglePin(id: string): Promise<void> {
   const post = await prisma.boardPost.findUnique({ where: { id } });
   if (!post || post.deletedAt) redirect("/panolar");
 
-  if (post.scope === "GENERAL" && !isAdmin(user)) redirect("/yetkisiz");
+  if (post.scope === "GENERAL" && !isAdmin(user)) await redirectUnauthorized();
   if (post.scope === "GROUP") {
     const sameGroup = post.groupId && post.groupId === user.groupId;
-    if (!isAdmin(user) && !(isModerator(user) && sameGroup)) redirect("/yetkisiz");
+    if (!isAdmin(user) && !(isModerator(user) && sameGroup)) await redirectUnauthorized();
   }
 
   await prisma.boardPost.update({
@@ -284,7 +284,7 @@ export async function removeBoardPost(id: string): Promise<void> {
   const isAuthor = post.authorId === user.id;
   const isGroupMod =
     post.scope === "GROUP" && isModerator(user) && post.groupId === user.groupId;
-  if (!isAuthor && !isGroupMod && !isAdmin(user)) redirect("/yetkisiz");
+  if (!isAuthor && !isGroupMod && !isAdmin(user)) await redirectUnauthorized();
 
   await prisma.boardPost.update({
     where: { id },

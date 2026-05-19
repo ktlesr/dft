@@ -2,6 +2,7 @@ import "server-only";
 
 import { cache } from "react";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 
 import type { Role, UserStatus } from "@prisma/client";
 
@@ -67,10 +68,44 @@ export async function requireActiveUser(): Promise<CurrentUser> {
 
 export async function requireRole(...roles: Role[]): Promise<CurrentUser> {
   const user = await requireActiveUser();
-  if (!roles.some((r) => user.roles.includes(r))) redirect("/yetkisiz");
+  if (!roles.some((r) => user.roles.includes(r))) {
+    await redirectUnauthorized();
+  }
   return user;
 }
 
 export async function requireAdmin(): Promise<CurrentUser> {
   return requireRole("ADMIN");
+}
+
+function appendUnauthorizedFlag(pathWithQuery: string) {
+  const u = new URL(pathWithQuery, "http://local");
+  u.searchParams.set("yetkisiz", "1");
+  return `${u.pathname}${u.search}`;
+}
+
+function toPathWithQuery(raw: string | null) {
+  if (!raw) return null;
+  try {
+    const u = raw.startsWith("/") ? new URL(raw, "http://local") : new URL(raw);
+    return `${u.pathname}${u.search}`;
+  } catch {
+    return null;
+  }
+}
+
+export async function redirectUnauthorized(fallback = "/panel"): Promise<never> {
+  const h = await headers();
+  const refererPath = toPathWithQuery(h.get("referer"));
+  const currentPath = toPathWithQuery(h.get("next-url"));
+
+  if (
+    refererPath &&
+    refererPath !== currentPath &&
+    !refererPath.startsWith("/yetkisiz")
+  ) {
+    redirect(appendUnauthorizedFlag(refererPath));
+  }
+
+  redirect(appendUnauthorizedFlag(fallback));
 }

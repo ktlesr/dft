@@ -17,6 +17,7 @@ export type UserCardData = {
   createdAt?: Date;
   roles: { role: Role }[];
   group?: { code: string; description: string | null } | null;
+  groups?: { code: string; description: string | null }[] | null;
   profile?: {
     title: string | null;
     position: string | null;
@@ -42,6 +43,8 @@ const STATUS_VARIANT: Record<UserStatus, "success" | "warning" | "muted"> = {
   REJECTED: "muted",
 };
 
+const ROLE_ORDER: Role[] = ["USER", "ADVISOR", "KS", "MODERATOR", "RAPPORTEUR", "ADMIN"];
+
 export function UserCard({
   user,
   variant = "member",
@@ -55,7 +58,16 @@ export function UserCard({
     : displayName;
   const position = user.profile?.position?.trim() ?? "";
   const organization = user.profile?.organization?.trim() ?? "";
-  const visibleRoles = user.roles.filter((r) => r.role !== "USER");
+  const roleSet = new Set<Role>(["USER", ...user.roles.map((r) => r.role)]);
+  const visibleRoles = Array.from(roleSet).sort(
+    (a, b) => ROLE_ORDER.indexOf(a) - ROLE_ORDER.indexOf(b),
+  );
+  const visibleGroups =
+    user.groups && user.groups.length > 0
+      ? user.groups
+      : user.group
+        ? [user.group]
+        : [];
   const expertise = user.profile?.expertise ?? [];
 
   return (
@@ -149,18 +161,29 @@ export function UserCard({
           ) : null}
         </ul>
 
-        {visibleRoles.length > 0 || user.group?.code ? (
-          <div className="flex flex-wrap gap-1">
-            {user.group?.code ? (
-              <Badge variant="outline" className="text-[10px]">
-                {user.group.code}
-              </Badge>
+        {visibleRoles.length > 0 || visibleGroups.length > 0 ? (
+          <div className="space-y-1.5">
+            {visibleGroups.length > 0 ? (
+              <div className="flex flex-wrap gap-1">
+                {visibleGroups.map((g) => (
+                  <Badge key={g.code} variant="success" className="text-[10px]">
+                    {g.code}
+                  </Badge>
+                ))}
+              </div>
             ) : null}
-            {visibleRoles.map((r) => (
-              <Badge key={r.role} variant="secondary" className="text-[10px]">
-                {ROLE_LABELS[r.role]}
-              </Badge>
-            ))}
+
+            <div className="flex flex-wrap gap-1">
+              {visibleRoles.map((role) => (
+                <Badge
+                  key={role}
+                  variant={role === "USER" ? "outline" : "secondary"}
+                  className={cn("text-[10px]", role === "USER" && "border-primary/30 bg-primary/5 text-primary")}
+                >
+                  {ROLE_LABELS[role]}
+                </Badge>
+              ))}
+            </div>
           </div>
         ) : null}
 

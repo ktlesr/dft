@@ -27,7 +27,7 @@ export default async function NewReportPage() {
     <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Rapor Ekle"
-        description="T\u00fcrler \u2014 Yol Haritas\u0131, 1. 4 Ayl\u0131k Rapor, 2. 4 Ayl\u0131k Rapor, 3. 4 Ayl\u0131k Rapor, Kapan\u0131\u015f Raporu. Ba\u015fl\u0131k zorunludur; d\u00f6nem ba\u015flang\u0131c\u0131, d\u00f6nem biti\u015fi ve \u00f6zet alanlar\u0131 iste\u011fe ba\u011fl\u0131d\u0131r. Ek dosya y\u00fckleyebilirsiniz."
+        description="Tür: Yol Haritası, 1. 4 Aylık, 2. 4 Aylık, 3. 4 Aylık ve Kapanış Raporu. Başlık zorunludur; dönem tarihleri ve özet isteğe bağlıdır."
         breadcrumbs={[{ label: "Rapor" }]}
       />
       <Alert className="mb-4">

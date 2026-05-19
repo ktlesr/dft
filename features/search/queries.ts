@@ -18,6 +18,7 @@ import { formatDate, truncate } from "@/lib/utils";
  * want all hits for a category click through to the listing screen.
  */
 const PER_GROUP = 5;
+const DFT_ADMIN_EMAIL = "admin@dft.ktlsr.com";
 
 export type SearchItem = {
   id: string;
@@ -185,7 +186,12 @@ export async function globalSearch(user: CurrentUser, rawQuery: string): Promise
   /* ── Users (admin only) ──────────────────────────────────────── */
   const usersPromise = admin
     ? prisma.user.findMany({
-        where: { OR: [ci("name"), ci("email")] },
+        where: {
+          AND: [
+            { OR: [ci("name"), ci("email")] },
+            { NOT: { email: { equals: DFT_ADMIN_EMAIL, mode: "insensitive" } } },
+          ],
+        },
         orderBy: { createdAt: "desc" },
         take: PER_GROUP,
         include: { group: { select: { code: true } } },

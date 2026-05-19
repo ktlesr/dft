@@ -38,6 +38,7 @@ type Params = Promise<{ id: string }>;
 type SearchParams = Promise<{ olusturuldu?: string; hata?: string }>;
 
 const ALL_ROLES: Role[] = ["USER", "MODERATOR", "RAPPORTEUR", "ADVISOR", "KS", "ADMIN"];
+const DFT_ADMIN_EMAIL = "admin@dft.ktlsr.com";
 
 export default async function AdminUserDetail({
   params,
@@ -85,6 +86,7 @@ export default async function AdminUserDetail({
   if (!user) notFound();
 
   const userRoles = user.roles.map((r) => r.role);
+  const isDftAdminUser = user.email.toLowerCase() === DFT_ADMIN_EMAIL;
   const isSelf = user.id === admin.id;
   const adminCount = await prisma.roleAssignment.count({ where: { role: "ADMIN" } });
   const canRemoveAdmin = adminCount > 1;
@@ -308,18 +310,20 @@ export default async function AdminUserDetail({
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Çalışma grubu</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <UserGroupForm
-                userId={user.id}
-                defaultCode={user.group?.code ?? null}
-                groups={allGroups}
-              />
-            </CardContent>
-          </Card>
+          {!isDftAdminUser ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Çalışma grubu</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <UserGroupForm
+                  userId={user.id}
+                  defaultCode={user.group?.code ?? null}
+                  groups={allGroups}
+                />
+              </CardContent>
+            </Card>
+          ) : null}
 
           <Card>
             <CardHeader>
@@ -334,19 +338,21 @@ export default async function AdminUserDetail({
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Özgeçmiş (CV)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CvUploader
-                targetUserId={user.id}
-                hasCv={!!user.profile?.cvStorageKey}
-                cvOriginalName={user.profile?.cvOriginalName ?? null}
-                viewerIsSelf
-              />
-            </CardContent>
-          </Card>
+          {!isDftAdminUser ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Özgeçmiş (CV)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CvUploader
+                  targetUserId={user.id}
+                  hasCv={!!user.profile?.cvStorageKey}
+                  cvOriginalName={user.profile?.cvOriginalName ?? null}
+                  viewerIsSelf
+                />
+              </CardContent>
+            </Card>
+          ) : null}
         </div>
       </div>
 

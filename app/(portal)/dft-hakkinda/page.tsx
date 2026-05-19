@@ -13,6 +13,7 @@ import { UserCard } from "@/features/users/user-card";
 
 export const metadata = { title: "DFT Hakkında" };
 export const dynamic = "force-dynamic";
+const DFT_ADMIN_EMAIL = "admin@dft.ktlsr.com";
 
 export default async function DftAboutPage() {
   await requireActiveUser();
@@ -20,7 +21,10 @@ export default async function DftAboutPage() {
   const [groups, members, postCount, meetingCount, about] = await Promise.all([
     prisma.group.findMany({ orderBy: { code: "asc" } }),
     prisma.user.findMany({
-      where: { status: "ACTIVE" },
+      where: {
+        status: "ACTIVE",
+        NOT: { email: { equals: DFT_ADMIN_EMAIL, mode: "insensitive" } },
+      },
       orderBy: { name: "asc" },
       include: {
         roles: { select: { role: true } },

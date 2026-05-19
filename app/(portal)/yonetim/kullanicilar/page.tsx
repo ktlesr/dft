@@ -33,6 +33,7 @@ function isRole(v?: string): v is Role {
 }
 
 const FILTER_ROLES: Role[] = ["USER", "MODERATOR", "RAPPORTEUR", "ADVISOR", "KS", "ADMIN"];
+const DFT_ADMIN_EMAIL = "admin@dft.ktlsr.com";
 
 export default async function AdminUsersPage({ searchParams }: { searchParams: SearchParams }) {
   const admin = await requireAdmin();
@@ -51,6 +52,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
     where: {
       ...(status ? { status } : {}),
       ...(role ? { roles: { some: { role } } } : {}),
+      NOT: { email: { equals: DFT_ADMIN_EMAIL, mode: "insensitive" } },
       ...(q
         ? {
             OR: [

@@ -26,6 +26,7 @@ import { UserCard } from "@/features/users/user-card";
 
 export const metadata = { title: "Çalışma Grubum" };
 export const dynamic = "force-dynamic";
+const DFT_ADMIN_EMAIL = "admin@dft.ktlsr.com";
 
 const VALID_TABS = [
   "ozet",
@@ -67,7 +68,11 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
   const [group, members, bildirimler, discussions, meetings, reports, notes] = await Promise.all([
     prisma.group.findUnique({ where: { id: user.groupId } }),
     prisma.user.findMany({
-      where: { groupId: user.groupId, status: "ACTIVE" },
+      where: {
+        groupId: user.groupId,
+        status: "ACTIVE",
+        NOT: { email: { equals: DFT_ADMIN_EMAIL, mode: "insensitive" } },
+      },
       orderBy: { name: "asc" },
       include: {
         roles: { select: { role: true } },

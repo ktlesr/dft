@@ -41,7 +41,7 @@ const createSchema = z.object({
       "Geçersiz grup kodu.",
     ),
   roles: z
-    .array(z.enum(["USER", "MODERATOR", "RAPPORTEUR", "ADVISOR", "ADMIN"]))
+    .array(z.enum(["USER", "MODERATOR", "RAPPORTEUR", "ADVISOR", "KS", "ADMIN"]))
     .optional()
     .transform((v) => v ?? []),
   daysValid: z

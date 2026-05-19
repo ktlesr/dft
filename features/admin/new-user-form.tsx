@@ -190,7 +190,7 @@ export function NewUserForm({ groups }: { groups: NewUserGroupOption[] }) {
                   <span className="text-[10px] text-muted-foreground">Her zaman atanır</span>
                 </div>
               </label>
-              {(["MODERATOR", "RAPPORTEUR", "ADVISOR", "ADMIN"] as const).map((r) => (
+              {(["MODERATOR", "RAPPORTEUR", "ADVISOR", "KS", "ADMIN"] as const).map((r) => (
                 <label
                   key={r}
                   className="flex cursor-pointer items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm transition-colors hover:border-primary/40"
@@ -205,6 +205,7 @@ export function NewUserForm({ groups }: { groups: NewUserGroupOption[] }) {
               ihtiyaca göre <strong>Moderatör</strong> (grup panosu moderasyonu + toplantı
               bildirimi), <strong>Raportör</strong> (tutanak + rapor),{" "}
               <strong>Danışman</strong> (uzman danışmanlık) veya{" "}
+              <strong>Kalite Sistemi Yöneticisi</strong> (KS notları) ya da{" "}
               <strong>Yönetici</strong> (tam erişim) ekleyebilirsiniz.
             </p>
           </fieldset>

@@ -32,7 +32,7 @@ function isRole(v?: string): v is Role {
   return !!v && v in ROLE_LABELS;
 }
 
-const FILTER_ROLES: Role[] = ["USER", "MODERATOR", "RAPPORTEUR", "ADVISOR", "ADMIN"];
+const FILTER_ROLES: Role[] = ["USER", "MODERATOR", "RAPPORTEUR", "ADVISOR", "KS", "ADMIN"];
 
 export default async function AdminUsersPage({ searchParams }: { searchParams: SearchParams }) {
   const admin = await requireAdmin();

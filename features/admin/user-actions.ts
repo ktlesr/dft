@@ -30,10 +30,10 @@ export type CreateUserFormState = {
  * no invite acceptance or admin approval step required.
  *
  * `USER` is always included in the role set; any admin-selected elevated
- * roles (MODERATOR / RAPPORTEUR / ADVISOR / ADMIN) are added on top.
+ * roles (MODERATOR / RAPPORTEUR / ADVISOR / KS / ADMIN) are added on top.
  */
 
-const EXTRA_ROLE = z.enum(["MODERATOR", "RAPPORTEUR", "ADVISOR", "ADMIN"]);
+const EXTRA_ROLE = z.enum(["MODERATOR", "RAPPORTEUR", "ADVISOR", "KS", "ADMIN"]);
 
 // Faz 7: group codes are now free-form strings kept in the DB. Accept any
 // well-formed code string (validated against existence at use time) or the
@@ -254,7 +254,7 @@ export async function suspendUser(formData: FormData): Promise<void> {
   revalidatePath(`/yonetim/kullanicilar/${id}`);
 }
 
-const roleValues = ["USER", "MODERATOR", "RAPPORTEUR", "ADVISOR", "ADMIN"] as const;
+const roleValues = ["USER", "MODERATOR", "RAPPORTEUR", "ADVISOR", "KS", "ADMIN"] as const;
 const roleSchema = z.enum(roleValues);
 
 export async function addRole(formData: FormData): Promise<void> {

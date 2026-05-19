@@ -43,6 +43,7 @@ const PROTECTED_PREFIXES = [
   "/toplanti",
   "/tutanak",
   "/rapor",
+  "/not",
   "/bildirimler",
   "/ara",
   "/yonetim",

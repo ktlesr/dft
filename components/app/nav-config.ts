@@ -8,6 +8,7 @@ import {
   CalendarDays,
   FileSpreadsheet,
   MessageSquarePlus,
+  NotebookPen,
   Settings2,
   type LucideIcon,
 } from "lucide-react";
@@ -60,6 +61,12 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Rapor Ekle",
         icon: FileSpreadsheet,
         roles: ["RAPPORTEUR", "ADMIN"],
+      },
+      {
+        href: "/not/yeni",
+        label: "Not Ekle",
+        icon: NotebookPen,
+        roles: ["ADVISOR", "KS", "ADMIN"],
       },
     ],
   },

@@ -23,7 +23,7 @@ export function LoginForm({ banner }: { banner?: "dogrulandi" | "dogrulama-hata"
         <Alert variant="success">
           <CheckCircle2 className="h-4 w-4" />
           <AlertDescription>
-            E-posta adresiniz doğrulandı. Yönetici onayı sonrası portala erişebilirsiniz.
+            Hesap doğrulama işlemi tamamlandı. Yönetici onayı sonrasında portala erişebilirsiniz.
           </AlertDescription>
         </Alert>
       ) : null}

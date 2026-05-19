@@ -1,4 +1,4 @@
-import type { Role } from "@prisma/client";
+import type { GroupNoteKind, Role } from "@prisma/client";
 
 export type SessionUser = {
   id: string;
@@ -18,6 +18,7 @@ export const isAdmin = (user: Pick<SessionUser, "roles">) => user.roles.includes
 export const isModerator = (user: Pick<SessionUser, "roles">) => user.roles.includes("MODERATOR");
 export const isRapporteur = (user: Pick<SessionUser, "roles">) => user.roles.includes("RAPPORTEUR");
 export const isAdvisor = (user: Pick<SessionUser, "roles">) => user.roles.includes("ADVISOR");
+export const isKsManager = (user: Pick<SessionUser, "roles">) => user.roles.includes("KS");
 
 export function canCreateMeeting(user: SessionUser, targetGroupId: string) {
   if (isAdmin(user)) return true;
@@ -51,6 +52,17 @@ export function canCreateReport(user: SessionUser, targetGroupId: string) {
   if (isAdmin(user)) return true;
   if (!isRapporteur(user)) return false;
   return user.groupId === targetGroupId;
+}
+
+export function canCreateGroupNote(
+  user: SessionUser,
+  targetGroupId: string,
+  kind: GroupNoteKind,
+) {
+  if (isAdmin(user)) return true;
+  if (user.groupId !== targetGroupId) return false;
+  if (kind === "ADVISOR_NOTE") return isAdvisor(user);
+  return isKsManager(user);
 }
 
 export function canSeeGroupResource(user: SessionUser, targetGroupId: string | null) {

@@ -95,6 +95,7 @@ type AttachmentOwnerKey =
   | "meetingId"
   | "minuteId"
   | "reportId"
+  | "groupNoteId"
   | "documentId"
   | "projectAppId"
   | "successProjectId"

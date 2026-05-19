@@ -37,7 +37,7 @@ export const dynamic = "force-dynamic";
 type Params = Promise<{ id: string }>;
 type SearchParams = Promise<{ olusturuldu?: string; hata?: string }>;
 
-const ALL_ROLES: Role[] = ["USER", "MODERATOR", "RAPPORTEUR", "ADVISOR", "ADMIN"];
+const ALL_ROLES: Role[] = ["USER", "MODERATOR", "RAPPORTEUR", "ADVISOR", "KS", "ADMIN"];
 
 export default async function AdminUserDetail({
   params,

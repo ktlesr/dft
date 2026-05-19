@@ -146,6 +146,10 @@ const ROLE_LABEL_TO_ENUM: Record<string, Role> = {
   moderatör: "MODERATOR",
   danisman: "ADVISOR",
   advisor: "ADVISOR",
+  ks: "KS",
+  kalite: "KS",
+  "kalite sistem yoneticisi": "KS",
+  "kalite sistemi yoneticisi": "KS",
   yonetici: "ADMIN",
   admin: "ADMIN",
 };
@@ -461,7 +465,7 @@ export async function bulkImportUsers(
         errors.push({
           row: rowNum,
           column: "Rolü",
-          message: `Bilinmeyen rol: "${roleRaw}". İzinli: Üye / Raportör / Moderatör / Danışman / Yönetici.`,
+          message: `Bilinmeyen rol: "${roleRaw}". İzinli: Üye / Raportör / Moderatör / Danışman / KS / Yönetici.`,
         });
         continue;
       }

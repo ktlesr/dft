@@ -38,6 +38,7 @@ export async function GET(
         select: { deletedAt: true, meeting: { select: { groupId: true } } },
       },
       report: { select: { groupId: true, deletedAt: true } },
+      groupNote: { select: { groupId: true, deletedAt: true } },
       document: {
         select: { category: true, groupId: true, uploadedById: true, deletedAt: true },
       },
@@ -103,6 +104,7 @@ function canView(
     meeting: { groupId: string; deletedAt: Date | null } | null;
     minute: { meeting: { groupId: string } | null; deletedAt: Date | null } | null;
     report: { groupId: string; deletedAt: Date | null } | null;
+    groupNote: { groupId: string; deletedAt: Date | null } | null;
     document: {
       category: "ORTAK" | "GRUP" | "TUTANAK_EK" | "RAPOR_EK" | "UYE_YUKLEMESI";
       groupId: string | null;
@@ -137,6 +139,7 @@ function canView(
   if (att.meeting && !att.meeting.deletedAt) return att.meeting.groupId === viewerGroupId;
   if (att.minute && !att.minute.deletedAt) return att.minute.meeting?.groupId === viewerGroupId;
   if (att.report && !att.report.deletedAt) return att.report.groupId === viewerGroupId;
+  if (att.groupNote && !att.groupNote.deletedAt) return att.groupNote.groupId === viewerGroupId;
   if (att.document && !att.document.deletedAt) {
     const d = att.document;
     if (d.category === "ORTAK") return true;

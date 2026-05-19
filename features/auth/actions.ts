@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { signIn, signOut } from "@/lib/auth";
 import { audit } from "@/lib/audit";
+import { getCurrentUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
@@ -30,7 +31,7 @@ function fieldErrors(err: z.ZodError): Record<string, string[]> {
   return out;
 }
 
-// ─── LOGIN ────────────────────────────────────────────────────────────
+// --- LOGIN ---
 
 export async function loginAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const ip = await getClientIp();
@@ -49,42 +50,65 @@ export async function loginAction(_prev: FormState, formData: FormData): Promise
   if (!parsed.success) {
     return { ok: false, errors: fieldErrors(parsed.error) };
   }
+  const loginIdentifier = parsed.data.email;
 
   try {
     await signIn("credentials", {
-      email: parsed.data.email,
+      email: loginIdentifier,
       password: parsed.data.password,
       redirect: false,
     });
   } catch (e) {
     if (e instanceof AuthError) {
+      const actor = await prisma.user.findUnique({
+        where: { username: loginIdentifier },
+        select: { id: true },
+      });
       const code = (e as AuthError & { code?: string }).code;
       if (code === "locked") {
-        await audit({ action: "USER_LOGIN_FAILED", metadata: { reason: "locked", email: parsed.data.email } });
-        return { ok: false, message: "Hesap geçici olarak kilitli. Biraz sonra tekrar deneyin." };
+        await audit({
+          action: "USER_LOGIN_FAILED",
+          actorId: actor?.id,
+          metadata: { reason: "locked", loginIdentifier },
+        });
+        return { ok: false, message: "Hesap geçici olarak kilitli. Biraz sonra kullanıcı adınızla tekrar deneyin." };
       }
-      await audit({ action: "USER_LOGIN_FAILED", metadata: { email: parsed.data.email } });
-      return { ok: false, message: "E-posta veya şifre hatalı." };
+      await audit({
+        action: "USER_LOGIN_FAILED",
+        actorId: actor?.id,
+        metadata: { loginIdentifier },
+      });
+      return { ok: false, message: "Kullanıcı adı veya şifre hatalı." };
     }
     throw e;
   }
 
+  // Resolve actor for audit using the login identifier (username).
+  const loginActor = await prisma.user.findUnique({
+    where: { username: loginIdentifier },
+    select: { id: true },
+  });
+
   // Resolve user to decide where to land.
   const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
-  await audit({ action: "USER_LOGIN", actorId: user?.id, metadata: { email: parsed.data.email } });
+  await audit({
+    action: "USER_LOGIN",
+    actorId: loginActor?.id ?? user?.id,
+    metadata: { loginIdentifier },
+  });
 
   if (user?.status === "PENDING_APPROVAL") redirect("/onay-bekleniyor");
   if (user?.status === "SUSPENDED" || user?.status === "REJECTED") redirect("/yetkisiz");
   redirect("/panel");
 }
 
-// ─── SIGNUP ───────────────────────────────────────────────────────────
+// --- SIGNUP ---
 // Public signup was removed intentionally: DFT Portal is a closed system.
 // Users are provisioned by admins through the invite flow (see
-// `features/invites/actions.ts` → acceptInvite) or created directly from
+// `features/invites/actions.ts` -> acceptInvite) or created directly from
 // the admin panel.
 
-// ─── FORGOT PASSWORD ──────────────────────────────────────────────────
+// --- FORGOT PASSWORD ---
 
 export async function forgotAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const ip = await getClientIp();
@@ -111,14 +135,14 @@ export async function forgotAction(_prev: FormState, formData: FormData): Promis
     await sendMail({ to: parsed.data.email, subject, text });
   }
 
-  // Always return success — avoid leaking whether the email exists.
+  // Always return success - avoid leaking whether the email exists.
   return {
     ok: true,
     message: "Bu e-posta ile kayıtlı bir hesap varsa, sıfırlama bağlantısı gönderildi.",
   };
 }
 
-// ─── RESET PASSWORD ───────────────────────────────────────────────────
+// --- RESET PASSWORD ---
 
 export async function resetAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const ip = await getClientIp();
@@ -161,9 +185,11 @@ export async function resetAction(_prev: FormState, formData: FormData): Promise
   return { ok: true, message: "Şifreniz güncellendi. Artık giriş yapabilirsiniz." };
 }
 
-// ─── SIGN OUT ─────────────────────────────────────────────────────────
+// --- SIGN OUT ---
 
 export async function signOutAction(): Promise<void> {
-  await audit({ action: "USER_LOGOUT" });
+  const current = await getCurrentUser();
+  await audit({ action: "USER_LOGOUT", actorId: current?.id });
   await signOut({ redirectTo: "/giris" });
 }
+

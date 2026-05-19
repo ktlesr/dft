@@ -193,15 +193,19 @@ const MAX_CV_BYTES = 10 * 1024 * 1024; // 10 MB
  * Resolve the target user for an upload. Self-uploads are always allowed;
  * uploading to another user requires ADMIN. Returns the resolved user id.
  */
-async function resolveUploadTarget(fd: FormData): Promise<string> {
+async function resolveUploadTarget(
+  fd: FormData,
+): Promise<{ actorId: string; targetUserId: string }> {
   const current = await requireActiveUser();
   const raw = fd.get("userId");
   const requested = typeof raw === "string" && raw.length > 0 ? raw : null;
-  if (!requested || requested === current.id) return current.id;
+  if (!requested || requested === current.id) {
+    return { actorId: current.id, targetUserId: current.id };
+  }
   if (!isAdmin(current)) {
     throw new Error("Yalnızca yöneticiler başka kullanıcıya yükleme yapabilir.");
   }
-  return requested;
+  return { actorId: current.id, targetUserId: requested };
 }
 
 export async function uploadProfilePhoto(
@@ -209,8 +213,11 @@ export async function uploadProfilePhoto(
   fd: FormData,
 ): Promise<ProfileFormState> {
   let targetUserId: string;
+  let actorId: string;
   try {
-    targetUserId = await resolveUploadTarget(fd);
+    const resolved = await resolveUploadTarget(fd);
+    targetUserId = resolved.targetUserId;
+    actorId = resolved.actorId;
   } catch (e) {
     return { ok: false, message: (e as Error).message };
   }
@@ -258,6 +265,7 @@ export async function uploadProfilePhoto(
 
   await audit({
     action: "SETTINGS_CHANGED",
+    actorId,
     targetType: "User",
     targetId: targetUserId,
     metadata: { change: "photo" },
@@ -273,8 +281,11 @@ export async function uploadProfileCv(
   fd: FormData,
 ): Promise<ProfileFormState> {
   let targetUserId: string;
+  let actorId: string;
   try {
-    targetUserId = await resolveUploadTarget(fd);
+    const resolved = await resolveUploadTarget(fd);
+    targetUserId = resolved.targetUserId;
+    actorId = resolved.actorId;
   } catch (e) {
     return { ok: false, message: (e as Error).message };
   }
@@ -336,6 +347,7 @@ export async function uploadProfileCv(
 
   await audit({
     action: "SETTINGS_CHANGED",
+    actorId,
     targetType: "User",
     targetId: targetUserId,
     metadata: { change: "cv" },
@@ -365,6 +377,7 @@ export async function removeProfileCv(targetUserId?: string): Promise<void> {
   });
   await audit({
     action: "SETTINGS_CHANGED",
+    actorId: current.id,
     targetType: "User",
     targetId: target,
     metadata: { change: "cv_removed" },

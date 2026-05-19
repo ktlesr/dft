@@ -38,6 +38,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   MODERATOR: "Moderatör",
   RAPPORTEUR: "Raportör",
   ADVISOR: "Danışman",
+  KS: "Kalite Sistemi Yöneticisi",
   ADMIN: "Yönetici",
 };
 
@@ -86,6 +87,11 @@ export const REPORT_KIND_LABELS = {
   DORT_AYLIK_2: "2. 4 Aylık Rapor",
   DORT_AYLIK_3: "3. 4 Aylık Rapor",
   KAPANIS: "Kapanış Raporu",
+} as const;
+
+export const GROUP_NOTE_KIND_LABELS = {
+  ADVISOR_NOTE: "Danışman Notu",
+  KS_NOTE: "Kalite Sistemi Notu",
 } as const;
 
 export const DOCUMENT_CATEGORY_LABELS = {

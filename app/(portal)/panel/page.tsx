@@ -203,11 +203,11 @@ export default async function DashboardPage() {
       </section>
 
       <section className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Çağrı / Hibe / Etkinlik Duyuruları — admin yayını, herkese açık */}
+        {/* Çağrı/Hibe Duyurusu — admin yayını, herkese açık */}
         <Card>
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Çağrı / Hibe / Etkinlik Duyuruları
+              Çağrı/Hibe Duyurusu
             </CardTitle>
             <Button asChild size="sm" variant="ghost">
               <Link href="/panolar/genel?kategori=cagri-hibe-etkinlik">

@@ -84,7 +84,7 @@ export async function createGroupNote(
     select: { id: true },
   });
   if (members.length > 0) {
-    const kindLabel = parsed.data.kind === "ADVISOR_NOTE" ? "Danisman Notu" : "Kalite Sistemi Notu";
+    const kindLabel = parsed.data.kind === "ADVISOR_NOTE" ? "Danisman Notu" : "Kalite Sorumlusu Notu";
     await prisma.notification.createMany({
       data: members.map((m) => ({
         userId: m.id,

@@ -91,7 +91,7 @@ export const REPORT_KIND_LABELS = {
 
 export const GROUP_NOTE_KIND_LABELS = {
   ADVISOR_NOTE: "Danışman Notu",
-  KS_NOTE: "Kalite Sistemi Notu",
+  KS_NOTE: "Kalite Sorumlusu Notu",
 } as const;
 
 export const DOCUMENT_CATEGORY_LABELS = {

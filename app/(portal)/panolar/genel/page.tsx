@@ -20,9 +20,9 @@ type SearchParams = Promise<{ q?: string; tur?: string; kategori?: string }>;
 
 const CATEGORIES = {
   "cagri-hibe-etkinlik": {
-    title: "Çağrı / Hibe / Etkinlik Duyuruları",
+    title: "Çağrı/Hibe Duyurusu",
     description:
-      "Tüm DFT üyelerine açık paylaşımlar: haber/etkinlik, çağrı/hibe duyuruları, doküman paylaşımları.",
+      "Tüm DFT üyelerine açık çağrı ve hibe duyuruları ile ilgili paylaşımlar.",
     kinds: ["ANNOUNCEMENT", "RESOURCE"] as BoardPostKind[],
     authorIsAdmin: true,
     /** Yalnızca admin yeni paylaşım açabilir. */
@@ -73,6 +73,7 @@ export default async function GeneralBoardPage({ searchParams }: { searchParams:
   // Yeni paylaşım yetkisi: kategori "yalnızca admin" ise sadece admin'e
   // göster; aksi takdirde herkese (mevcut davranış).
   const canCreate = view?.creatorAdminOnly ? admin : true;
+  const isCallGrantCategory = kategoriKey === "cagri-hibe-etkinlik";
 
   const pageTitle = view?.title ?? "Genel Pano";
   const pageDescription =
@@ -97,7 +98,22 @@ export default async function GeneralBoardPage({ searchParams }: { searchParams:
                 </Link>
               </Button>
             ) : null}
-            {canCreate ? <NewBoardPostDialog scope="GENERAL" canPin={admin} /> : null}
+            {canCreate ? (
+              <NewBoardPostDialog
+                scope="GENERAL"
+                canPin={admin}
+                lockedKind={isCallGrantCategory ? "ANNOUNCEMENT" : undefined}
+                labels={
+                  isCallGrantCategory
+                    ? {
+                        publishedAt: "Son Başvuru Tarihi",
+                        title: "Çağrı/Hibe Adı",
+                        body: "Açıklama",
+                      }
+                    : undefined
+                }
+              />
+            ) : null}
           </>
         }
       />

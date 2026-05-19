@@ -24,6 +24,7 @@ import { AttachmentInput } from "@/features/shared/attachment-input";
 import { Field } from "@/features/shared/form-field";
 import { TagInput } from "@/features/shared/tag-input";
 import { BOARD_KIND_LABELS, BOARD_KIND_BY_SCOPE } from "@/lib/constants";
+import type { BoardPostKind } from "@prisma/client";
 import { createBoardPost, type BoardFormState } from "./actions";
 
 const INITIAL: BoardFormState = { ok: true };
@@ -32,15 +33,29 @@ export function NewBoardPostDialog({
   scope,
   canPin,
   disabled,
+  lockedKind,
+  labels,
 }: {
   scope: "GENERAL" | "GROUP";
   canPin: boolean;
   disabled?: boolean;
+  lockedKind?: BoardPostKind;
+  labels?: {
+    publishedAt?: string;
+    title?: string;
+    body?: string;
+  };
 }) {
   const [state, action, pending] = useActionState(createBoardPost, INITIAL);
   const [open, setOpen] = React.useState(false);
-  const allowedKinds = BOARD_KIND_BY_SCOPE[scope];
+  const allowedKinds = BOARD_KIND_BY_SCOPE[scope] as readonly BoardPostKind[];
   const defaultKind = allowedKinds[0];
+  const effectiveKind =
+    lockedKind && allowedKinds.includes(lockedKind) ? lockedKind : defaultKind;
+  const showKindField = !lockedKind;
+  const publishedAtLabel = labels?.publishedAt ?? "Paylaşım tarihi";
+  const titleLabel = labels?.title ?? "Paylaşım ismi";
+  const bodyLabel = labels?.body ?? "Paylaşımın içeriği";
 
   // Başarılı submit (pending: true → false geçişi + hata yok) sonrası
   // dialog'u kapat. İlk mount'ta yanlışlıkla kapanmasın diye bir ref ile
@@ -81,6 +96,7 @@ export function NewBoardPostDialog({
 
         <form action={action} className="space-y-4">
           <input type="hidden" name="scope" value={scope} />
+          {!showKindField ? <input type="hidden" name="kind" value={effectiveKind} /> : null}
 
           {!state.ok && (state.message || state.errors) ? (
             <Alert variant="destructive">
@@ -92,23 +108,25 @@ export function NewBoardPostDialog({
           ) : null}
 
           <div className="grid grid-cols-2 gap-4">
-            <Field name="kind" label="Tür" required error={state.errors?.kind}>
-              <Select name="kind" defaultValue={defaultKind}>
-                <SelectTrigger id="kind">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {allowedKinds.map((k) => (
-                    <SelectItem key={k} value={k}>
-                      {BOARD_KIND_LABELS[k]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
+            {showKindField ? (
+              <Field name="kind" label="Tür" required error={state.errors?.kind}>
+                <Select name="kind" defaultValue={effectiveKind}>
+                  <SelectTrigger id="kind">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allowedKinds.map((k) => (
+                      <SelectItem key={k} value={k}>
+                        {BOARD_KIND_LABELS[k]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            ) : null}
 
             {scope === "GENERAL" ? (
-              <Field name="publishedAt" label="Paylaşım tarihi" hint="Boş bırakırsanız bugün kaydedilir." error={state.errors?.publishedAt}>
+              <Field name="publishedAt" label={publishedAtLabel} hint="Boş bırakırsanız bugün kaydedilir." error={state.errors?.publishedAt}>
                 <Input id="publishedAt" name="publishedAt" type="date" />
               </Field>
             ) : (
@@ -118,7 +136,7 @@ export function NewBoardPostDialog({
             )}
           </div>
 
-          <Field name="title" label="Paylaşım ismi" required error={state.errors?.title}>
+          <Field name="title" label={titleLabel} required error={state.errors?.title}>
             <Input id="title" name="title" required maxLength={200} />
           </Field>
 
@@ -128,7 +146,7 @@ export function NewBoardPostDialog({
             </Field>
           ) : null}
 
-          <Field name="body" label="Paylaşımın içeriği" required error={state.errors?.body}>
+          <Field name="body" label={bodyLabel} required error={state.errors?.body}>
             <Textarea id="body" name="body" rows={5} required maxLength={10_000} />
           </Field>
 

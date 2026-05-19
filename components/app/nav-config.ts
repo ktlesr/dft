@@ -47,7 +47,7 @@ export const NAV_GROUPS: NavGroup[] = [
       {
         // Tüm aktif üyeler tartışma başlatabilir; rol kısıtı yok.
         href: "/forum/yeni",
-        label: "Konu/Tartışma Başlat",
+        label: "Konu Başlat",
         icon: MessageSquarePlus,
       },
       {

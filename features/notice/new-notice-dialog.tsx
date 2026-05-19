@@ -22,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field } from "@/features/shared/form-field";
 import { AttachmentInput } from "@/features/shared/attachment-input";
+import { BOARD_KIND_LABELS } from "@/lib/constants";
 import { createNotice, type NoticeFormState } from "./actions";
 
 const INITIAL: NoticeFormState = { ok: true };
@@ -61,6 +62,7 @@ export function NewNoticeDialog({ kanal, caps, fixedGroupId }: Props) {
         : (allowedScopes[0] ?? "GENERAL");
 
   const [scope, setScope] = React.useState<"GENERAL" | "GROUP">(defaultScope);
+  const [kind, setKind] = React.useState<"MEETING" | "EVENT" | "NEWS" | "OTHER">("NEWS");
 
   React.useEffect(() => {
     if (!pending && state.ok && !state.errors && !state.message) {
@@ -156,6 +158,40 @@ export function NewNoticeDialog({ kanal, caps, fixedGroupId }: Props) {
 
           <Field name="title" label="Başlık" required error={state.errors?.title}>
             <Input id="title" name="title" required maxLength={200} />
+          </Field>
+
+          <Field name="kind" label="Bildirim tipi" required error={state.errors?.kind}>
+            <Select
+              name="kind"
+              value={kind}
+              onValueChange={(v) => setKind(v as "MEETING" | "EVENT" | "NEWS" | "OTHER")}
+            >
+              <SelectTrigger id="kind">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="MEETING">{BOARD_KIND_LABELS.MEETING}</SelectItem>
+                <SelectItem value="EVENT">{BOARD_KIND_LABELS.EVENT}</SelectItem>
+                <SelectItem value="NEWS">{BOARD_KIND_LABELS.NEWS}</SelectItem>
+                <SelectItem value="OTHER">{BOARD_KIND_LABELS.OTHER}</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+
+          <Field
+            name="externalUrl"
+            label={
+              kind === "MEETING"
+                ? "Toplanti baglantisi (opsiyonel)"
+                : kind === "EVENT"
+                  ? "Etkinlik baglantisi (opsiyonel)"
+                  : kind === "NEWS"
+                    ? "Haber baglantisi (opsiyonel)"
+                    : "Ilgili baglanti (opsiyonel)"
+            }
+            error={state.errors?.externalUrl}
+          >
+            <Input id="externalUrl" name="externalUrl" type="url" placeholder="https://..." />
           </Field>
 
           <Field

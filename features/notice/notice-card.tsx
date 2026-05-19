@@ -1,8 +1,9 @@
-import { CalendarClock, Paperclip, Pin, Trash2 } from "lucide-react";
+import { CalendarClock, ExternalLink, Paperclip, Pin, Trash2 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { BOARD_KIND_LABELS } from "@/lib/constants";
 import { formatDateTime } from "@/lib/utils";
 import type { NoticeWithAuthor } from "./queries";
 import { removeNotice, toggleNoticePin } from "./actions";
@@ -39,6 +40,9 @@ export function NoticeCard({ notice, caps }: Props) {
             <Pin className="h-3.5 w-3.5 text-amber-600" aria-label="Sabit" />
           ) : null}
           <h3 className="text-sm font-semibold">{notice.title}</h3>
+          <Badge variant="secondary" className="text-[10px]">
+            {BOARD_KIND_LABELS[notice.kind]}
+          </Badge>
           {notice.scope === "GROUP" && notice.group ? (
             <Badge variant="outline" className="text-[10px]">
               {notice.group.code}
@@ -61,6 +65,18 @@ export function NoticeCard({ notice, caps }: Props) {
         <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
           {notice.body}
         </p>
+
+        {notice.externalUrl ? (
+          <a
+            href={notice.externalUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            {notice.externalUrl}
+          </a>
+        ) : null}
 
         {notice.attachments.length > 0 ? (
           <ul className="space-y-1 pt-1">

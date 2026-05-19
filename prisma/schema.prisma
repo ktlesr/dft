@@ -439,8 +439,10 @@ model BoardPost {
 model Notice {
   id          String      @id @default(cuid())
   scope       NoticeScope
+  kind        BoardPostKind @default(NEWS)
   title       String
   body        String      @db.Text
+  externalUrl String?
   pinned      Boolean     @default(false)
   authorId    String
   author      User        @relation(fields: [authorId], references: [id], onDelete: Cascade)

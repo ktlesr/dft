@@ -45,9 +45,11 @@ export async function createNotice(
 
   const parsed = noticeCreateSchema.safeParse({
     scope: fd.get("scope"),
+    kind: fd.get("kind"),
     groupId: fd.get("groupId"),
     title: fd.get("title"),
     body: fd.get("body"),
+    externalUrl: fd.get("externalUrl"),
     eventAt: fd.get("eventAt"),
     pinned: fd.get("pinned"),
   });
@@ -72,8 +74,10 @@ export async function createNotice(
   const row = await prisma.notice.create({
     data: {
       scope: parsed.data.scope,
+      kind: parsed.data.kind,
       title: parsed.data.title,
       body: parsed.data.body,
+      externalUrl: parsed.data.externalUrl ?? null,
       eventAt: parsed.data.eventAt ?? null,
       pinned,
       authorId: user.id,
@@ -133,7 +137,14 @@ export async function createNotice(
     actorId: user.id,
     targetType: "Notice",
     targetId: row.id,
-    metadata: { scope: row.scope, groupId: row.groupId, pinned: row.pinned, eventAt: row.eventAt },
+    metadata: {
+      scope: row.scope,
+      kind: row.kind,
+      groupId: row.groupId,
+      pinned: row.pinned,
+      eventAt: row.eventAt,
+      externalUrl: row.externalUrl,
+    },
   });
 
   revalidatePath("/duyurular");

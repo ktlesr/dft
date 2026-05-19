@@ -25,7 +25,7 @@ import { formatDate, formatDateTime } from "@/lib/utils";
 import { listGroupDiscussions } from "@/features/forum/queries";
 import { UserCard } from "@/features/users/user-card";
 
-export const metadata = { title: "Ã‡alÄ±ÅŸma Grubum" };
+export const metadata = { title: "Çalışma Grubum" };
 export const dynamic = "force-dynamic";
 const DFT_ADMIN_EMAIL = "admin@dft.ktlsr.com";
 
@@ -54,13 +54,13 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
     return (
       <div className="mx-auto max-w-7xl">
         <PageHeader
-          title="Ã‡alÄ±ÅŸma Grubum"
-          breadcrumbs={[{ label: "Ã‡alÄ±ÅŸma Grubum" }]}
+          title="Çalışma Grubum"
+          breadcrumbs={[{ label: "Çalışma Grubum" }]}
         />
         <EmptyState
           icon={Users}
-          title="HenÃ¼z bir Ã§alÄ±ÅŸma grubuna atanmadÄ±nÄ±z"
-          description="YÃ¶neticiniz grubu atadÄ±ktan sonra bu alan aktif olur."
+          title="Henüz bir çalışma grubuna atanmadınız"
+          description="Yöneticiniz grubu atadıktan sonra bu alan aktif olur."
         />
       </div>
     );
@@ -89,8 +89,8 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
         },
       },
     }),
-    // Grup bildirimleri = grup kapsamlÄ± BoardPost'lar. Faz 10'da "Bildirim Ekle"
-    // formu bu modeli oluÅŸturur; sekme de buradan okur.
+    // Grup bildirimleri = grup kapsamlı BoardPost'lar. Faz 10'da "Bildirim Ekle"
+    // formu bu modeli oluşturur; sekme de buradan okur.
     prisma.boardPost.findMany({
       where: {
         scope: "GROUP",
@@ -139,9 +139,9 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
-        title={`Ã‡alÄ±ÅŸma Grubum Â· ${user.groupCode}`}
+        title={`Çalışma Grubum · ${user.groupCode}`}
         description={user.groupDescription ?? undefined}
-        breadcrumbs={[{ label: "Ã‡alÄ±ÅŸma Grubum" }]}
+        breadcrumbs={[{ label: "Çalışma Grubum" }]}
         actions={
           <Button asChild variant="secondary">
             <Link href="/panolar/grup">
@@ -154,26 +154,26 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
 
       <Tabs defaultValue={activeTab}>
         <TabsList>
-          <TabsTrigger value="ozet">Ã–zet</TabsTrigger>
+          <TabsTrigger value="ozet">Özet</TabsTrigger>
           <TabsTrigger value="forum">Forum</TabsTrigger>
           <TabsTrigger value="bildirimler">Bildirimler</TabsTrigger>
-          <TabsTrigger value="toplantilar">ToplantÄ±lar</TabsTrigger>
+          <TabsTrigger value="toplantilar">Toplantılar</TabsTrigger>
           <TabsTrigger value="raporlar">Raporlar</TabsTrigger>
           <TabsTrigger value="kpi">KPI</TabsTrigger>
-          <TabsTrigger value="notlar">DanÄ±ÅŸman / KS NotlarÄ±</TabsTrigger>
-          <TabsTrigger value="uyeler">Ãœyeler</TabsTrigger>
+          <TabsTrigger value="notlar">Danışman / KS Notları</TabsTrigger>
+          <TabsTrigger value="uyeler">Üyeler</TabsTrigger>
         </TabsList>
 
         <TabsContent value="ozet" className="space-y-4">
           <Card>
             <CardContent className="grid gap-4 p-6 md:grid-cols-4">
               <Field label="Grup kodu" value={<Badge variant="success">{user.groupCode}</Badge>} />
-              <Field label="Ãœye sayÄ±sÄ±" value={`${members.length} kiÅŸi`} />
-              <Field label="ModeratÃ¶r" value={moderators[0]?.name ?? moderators[0]?.email ?? "â€”"} />
-              <Field label="RaportÃ¶r" value={rapporteurs[0]?.name ?? rapporteurs[0]?.email ?? "â€”"} />
+              <Field label="Üye sayısı" value={`${members.length} kişi`} />
+              <Field label="Moderatör" value={moderators[0]?.name ?? moderators[0]?.email ?? "—"} />
+              <Field label="Raportör" value={rapporteurs[0]?.name ?? rapporteurs[0]?.email ?? "—"} />
               {group?.description ? (
                 <div className="md:col-span-4">
-                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">AÃ§Ä±klama</p>
+                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Açıklama</p>
                   <p className="mt-1 text-sm">{group.description}</p>
                 </div>
               ) : null}
@@ -183,7 +183,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Son paylaÅŸÄ±mlar</CardTitle>
+                <CardTitle className="text-base">Son paylaşımlar</CardTitle>
               </CardHeader>
               <CardContent>
                 {discussions.length === 0 ? (
@@ -207,11 +207,11 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Son toplantÄ±lar</CardTitle>
+                <CardTitle className="text-base">Son toplantılar</CardTitle>
               </CardHeader>
               <CardContent>
                 {meetings.length === 0 ? (
-                  <EmptyState className="border-0 py-6" title="ToplantÄ± yok" icon={CalendarDays} />
+                  <EmptyState className="border-0 py-6" title="Toplantı yok" icon={CalendarDays} />
                 ) : (
                   <ul className="space-y-2">
                     {meetings.slice(0, 4).map((m) => (
@@ -232,7 +232,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
         <TabsContent value="forum">
           <div className="mb-4 flex items-center justify-between">
             <p className="text-xs text-muted-foreground">
-              Grup Ã¼yelerinin baÅŸlattÄ±ÄŸÄ± konular â€” en son yanÄ±tlananlar Ã¼stte.
+              Grup üyelerinin başlattığı konular — en son yanıtlananlar üstte.
             </p>
             <Button asChild variant="brand" size="sm">
               <Link href="/forum/yeni">
@@ -244,8 +244,8 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
 
           {discussions.length === 0 ? (
             <EmptyState
-              title="HenÃ¼z konu aÃ§Ä±lmadÄ±"
-              description="Ä°lk konuyu siz baÅŸlatÄ±n â€” tÃ¼m grup Ã¼yeleri gÃ¶rÃ¼r ve yanÄ±t verebilir."
+              title="Henüz konu açılmadı"
+              description="İlk konuyu siz başlatın — tüm grup üyeleri görür ve yanıt verebilir."
               icon={MessageSquare}
             />
           ) : (
@@ -270,7 +270,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
                             {d.body}
                           </p>
                           <p className="mt-1.5 text-[11px] text-muted-foreground">
-                            {authorName} Â· {formatDateTime(d.updatedAt)}
+                            {authorName} · {formatDateTime(d.updatedAt)}
                           </p>
                         </div>
                         <div className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
@@ -289,7 +289,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
         <TabsContent value="bildirimler">
           <div className="mb-4 flex items-center justify-between">
             <p className="text-xs text-muted-foreground">
-              YÃ¶neticilerin ve grup moderatÃ¶rÃ¼nÃ¼n bu gruba yayÄ±mladÄ±ÄŸÄ± bildirimler.
+              Yöneticilerin ve grup moderatörünün bu gruba yayımladığı bildirimler.
             </p>
             <Button asChild variant="brand" size="sm">
               <Link href="/bildirim/yeni">
@@ -343,7 +343,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
                           </p>
                         ) : null}
                         <p className="mt-1.5 text-[11px] text-muted-foreground">
-                          {authorName} Â· {formatDateTime(b.publishedAt)}
+                          {authorName} · {formatDateTime(b.publishedAt)}
                         </p>
                       </div>
                     </div>
@@ -356,7 +356,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
 
         <TabsContent value="toplantilar">
           {meetings.length === 0 ? (
-            <EmptyState title="HenÃ¼z toplantÄ± yok" icon={CalendarDays} />
+            <EmptyState title="Henüz toplantı yok" icon={CalendarDays} />
           ) : (
             <ul className="space-y-2">
               {meetings.map((m) => (
@@ -364,7 +364,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
                   <p className="font-medium">{m.title}</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">{formatDateTime(m.startAt)}</p>
                   {m.location ? (
-                    <p className="text-xs text-muted-foreground">ğŸ“ {m.location}</p>
+                    <p className="text-xs text-muted-foreground">📍 {m.location}</p>
                   ) : null}
                 </li>
               ))}
@@ -374,7 +374,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
 
         <TabsContent value="raporlar">
           {reports.length === 0 ? (
-            <EmptyState title="HenÃ¼z rapor yok" icon={FileText} />
+            <EmptyState title="Henüz rapor yok" icon={FileText} />
           ) : (
             <ul className="space-y-2">
               {reports.map((r) => (
@@ -384,7 +384,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
                     <Badge variant="secondary">{REPORT_KIND_LABELS[r.kind]}</Badge>
                   </div>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    {formatDate(r.periodStart)} â€“ {formatDate(r.periodEnd)}
+                    {formatDate(r.periodStart)} – {formatDate(r.periodEnd)}
                   </p>
                 </li>
               ))}
@@ -518,7 +518,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
 
         <TabsContent value="uyeler">
           {members.length === 0 ? (
-            <EmptyState title="Ãœye yok" icon={Users} />
+            <EmptyState title="Üye yok" icon={Users} />
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {members.map((m) => (
@@ -606,14 +606,14 @@ function NoteColumn({
                               className="rounded-full border px-2 py-0.5 text-[11px] hover:border-primary hover:text-primary"
                             >
                               {a.originalName}
-                              <span className="text-muted-foreground"> Â· {humanSize(a.size)}</span>
+                              <span className="text-muted-foreground"> · {humanSize(a.size)}</span>
                             </a>
                           ))}
                         </div>
                       ) : null}
 
                       <p className="mt-1.5 text-[11px] text-muted-foreground">
-                        {authorName} Â· {formatDateTime(n.createdAt)}
+                        {authorName} · {formatDateTime(n.createdAt)}
                       </p>
                     </div>
                   </div>

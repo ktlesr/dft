@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import {
   BarChart3,
   CalendarDays,
@@ -18,13 +18,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/app/empty-state";
 import { requireActiveUser } from "@/lib/current-user";
+import { getFixedKpiOverview } from "@/lib/kpi/queries";
 import { prisma } from "@/lib/prisma";
 import { BOARD_KIND_LABELS, GROUP_NOTE_KIND_LABELS, REPORT_KIND_LABELS } from "@/lib/constants";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { listGroupDiscussions } from "@/features/forum/queries";
 import { UserCard } from "@/features/users/user-card";
 
-export const metadata = { title: "Çalışma Grubum" };
+export const metadata = { title: "Ã‡alÄ±ÅŸma Grubum" };
 export const dynamic = "force-dynamic";
 const DFT_ADMIN_EMAIL = "admin@dft.ktlsr.com";
 
@@ -53,19 +54,19 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
     return (
       <div className="mx-auto max-w-7xl">
         <PageHeader
-          title="Çalışma Grubum"
-          breadcrumbs={[{ label: "Çalışma Grubum" }]}
+          title="Ã‡alÄ±ÅŸma Grubum"
+          breadcrumbs={[{ label: "Ã‡alÄ±ÅŸma Grubum" }]}
         />
         <EmptyState
           icon={Users}
-          title="Henüz bir çalışma grubuna atanmadınız"
-          description="Yöneticiniz grubu atadıktan sonra bu alan aktif olur."
+          title="HenÃ¼z bir Ã§alÄ±ÅŸma grubuna atanmadÄ±nÄ±z"
+          description="YÃ¶neticiniz grubu atadÄ±ktan sonra bu alan aktif olur."
         />
       </div>
     );
   }
 
-  const [group, members, bildirimler, discussions, meetings, reports, notes] = await Promise.all([
+  const [group, members, bildirimler, discussions, meetings, reports, notes, kpiOverview] = await Promise.all([
     prisma.group.findUnique({ where: { id: user.groupId } }),
     prisma.user.findMany({
       where: {
@@ -88,8 +89,8 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
         },
       },
     }),
-    // Grup bildirimleri = grup kapsamlı BoardPost'lar. Faz 10'da "Bildirim Ekle"
-    // formu bu modeli oluşturur; sekme de buradan okur.
+    // Grup bildirimleri = grup kapsamlÄ± BoardPost'lar. Faz 10'da "Bildirim Ekle"
+    // formu bu modeli oluÅŸturur; sekme de buradan okur.
     prisma.boardPost.findMany({
       where: {
         scope: "GROUP",
@@ -124,6 +125,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
         attachments: { select: { id: true, originalName: true, size: true } },
       },
     }),
+    getFixedKpiOverview(user, user.groupId),
   ]);
 
   const moderators = members.filter((m) => m.roles.some((r) => r.role === "MODERATOR"));
@@ -137,9 +139,9 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
-        title={`Çalışma Grubum · ${user.groupCode}`}
+        title={`Ã‡alÄ±ÅŸma Grubum Â· ${user.groupCode}`}
         description={user.groupDescription ?? undefined}
-        breadcrumbs={[{ label: "Çalışma Grubum" }]}
+        breadcrumbs={[{ label: "Ã‡alÄ±ÅŸma Grubum" }]}
         actions={
           <Button asChild variant="secondary">
             <Link href="/panolar/grup">
@@ -152,26 +154,26 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
 
       <Tabs defaultValue={activeTab}>
         <TabsList>
-          <TabsTrigger value="ozet">Özet</TabsTrigger>
+          <TabsTrigger value="ozet">Ã–zet</TabsTrigger>
           <TabsTrigger value="forum">Forum</TabsTrigger>
           <TabsTrigger value="bildirimler">Bildirimler</TabsTrigger>
-          <TabsTrigger value="toplantilar">Toplantılar</TabsTrigger>
+          <TabsTrigger value="toplantilar">ToplantÄ±lar</TabsTrigger>
           <TabsTrigger value="raporlar">Raporlar</TabsTrigger>
           <TabsTrigger value="kpi">KPI</TabsTrigger>
-          <TabsTrigger value="notlar">Danışman / KS Notları</TabsTrigger>
-          <TabsTrigger value="uyeler">Üyeler</TabsTrigger>
+          <TabsTrigger value="notlar">DanÄ±ÅŸman / KS NotlarÄ±</TabsTrigger>
+          <TabsTrigger value="uyeler">Ãœyeler</TabsTrigger>
         </TabsList>
 
         <TabsContent value="ozet" className="space-y-4">
           <Card>
             <CardContent className="grid gap-4 p-6 md:grid-cols-4">
               <Field label="Grup kodu" value={<Badge variant="success">{user.groupCode}</Badge>} />
-              <Field label="Üye sayısı" value={`${members.length} kişi`} />
-              <Field label="Moderatör" value={moderators[0]?.name ?? moderators[0]?.email ?? "—"} />
-              <Field label="Raportör" value={rapporteurs[0]?.name ?? rapporteurs[0]?.email ?? "—"} />
+              <Field label="Ãœye sayÄ±sÄ±" value={`${members.length} kiÅŸi`} />
+              <Field label="ModeratÃ¶r" value={moderators[0]?.name ?? moderators[0]?.email ?? "â€”"} />
+              <Field label="RaportÃ¶r" value={rapporteurs[0]?.name ?? rapporteurs[0]?.email ?? "â€”"} />
               {group?.description ? (
                 <div className="md:col-span-4">
-                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Açıklama</p>
+                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">AÃ§Ä±klama</p>
                   <p className="mt-1 text-sm">{group.description}</p>
                 </div>
               ) : null}
@@ -181,7 +183,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Son paylaşımlar</CardTitle>
+                <CardTitle className="text-base">Son paylaÅŸÄ±mlar</CardTitle>
               </CardHeader>
               <CardContent>
                 {discussions.length === 0 ? (
@@ -205,11 +207,11 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Son toplantılar</CardTitle>
+                <CardTitle className="text-base">Son toplantÄ±lar</CardTitle>
               </CardHeader>
               <CardContent>
                 {meetings.length === 0 ? (
-                  <EmptyState className="border-0 py-6" title="Toplantı yok" icon={CalendarDays} />
+                  <EmptyState className="border-0 py-6" title="ToplantÄ± yok" icon={CalendarDays} />
                 ) : (
                   <ul className="space-y-2">
                     {meetings.slice(0, 4).map((m) => (
@@ -230,7 +232,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
         <TabsContent value="forum">
           <div className="mb-4 flex items-center justify-between">
             <p className="text-xs text-muted-foreground">
-              Grup üyelerinin başlattığı konular — en son yanıtlananlar üstte.
+              Grup Ã¼yelerinin baÅŸlattÄ±ÄŸÄ± konular â€” en son yanÄ±tlananlar Ã¼stte.
             </p>
             <Button asChild variant="brand" size="sm">
               <Link href="/forum/yeni">
@@ -242,8 +244,8 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
 
           {discussions.length === 0 ? (
             <EmptyState
-              title="Henüz konu açılmadı"
-              description="İlk konuyu siz başlatın — tüm grup üyeleri görür ve yanıt verebilir."
+              title="HenÃ¼z konu aÃ§Ä±lmadÄ±"
+              description="Ä°lk konuyu siz baÅŸlatÄ±n â€” tÃ¼m grup Ã¼yeleri gÃ¶rÃ¼r ve yanÄ±t verebilir."
               icon={MessageSquare}
             />
           ) : (
@@ -268,7 +270,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
                             {d.body}
                           </p>
                           <p className="mt-1.5 text-[11px] text-muted-foreground">
-                            {authorName} · {formatDateTime(d.updatedAt)}
+                            {authorName} Â· {formatDateTime(d.updatedAt)}
                           </p>
                         </div>
                         <div className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
@@ -287,7 +289,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
         <TabsContent value="bildirimler">
           <div className="mb-4 flex items-center justify-between">
             <p className="text-xs text-muted-foreground">
-              Yöneticilerin ve grup moderatörünün bu gruba yayımladığı bildirimler.
+              YÃ¶neticilerin ve grup moderatÃ¶rÃ¼nÃ¼n bu gruba yayÄ±mladÄ±ÄŸÄ± bildirimler.
             </p>
             <Button asChild variant="brand" size="sm">
               <Link href="/bildirim/yeni">
@@ -341,7 +343,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
                           </p>
                         ) : null}
                         <p className="mt-1.5 text-[11px] text-muted-foreground">
-                          {authorName} · {formatDateTime(b.publishedAt)}
+                          {authorName} Â· {formatDateTime(b.publishedAt)}
                         </p>
                       </div>
                     </div>
@@ -354,7 +356,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
 
         <TabsContent value="toplantilar">
           {meetings.length === 0 ? (
-            <EmptyState title="Henüz toplantı yok" icon={CalendarDays} />
+            <EmptyState title="HenÃ¼z toplantÄ± yok" icon={CalendarDays} />
           ) : (
             <ul className="space-y-2">
               {meetings.map((m) => (
@@ -362,7 +364,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
                   <p className="font-medium">{m.title}</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">{formatDateTime(m.startAt)}</p>
                   {m.location ? (
-                    <p className="text-xs text-muted-foreground">📍 {m.location}</p>
+                    <p className="text-xs text-muted-foreground">ğŸ“ {m.location}</p>
                   ) : null}
                 </li>
               ))}
@@ -372,7 +374,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
 
         <TabsContent value="raporlar">
           {reports.length === 0 ? (
-            <EmptyState title="Henüz rapor yok" icon={FileText} />
+            <EmptyState title="HenÃ¼z rapor yok" icon={FileText} />
           ) : (
             <ul className="space-y-2">
               {reports.map((r) => (
@@ -382,7 +384,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
                     <Badge variant="secondary">{REPORT_KIND_LABELS[r.kind]}</Badge>
                   </div>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    {formatDate(r.periodStart)} – {formatDate(r.periodEnd)}
+                    {formatDate(r.periodStart)} â€“ {formatDate(r.periodEnd)}
                   </p>
                 </li>
               ))}
@@ -390,12 +392,79 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
           )}
         </TabsContent>
 
-        <TabsContent value="kpi">
-          <EmptyState
-            title="KPI modülü hazırlık aşamasında"
-            description="Grubun performans göstergeleri (toplantı düzenliliği, rapor sayısı, üye katılımı vb.) yakında bu sekmede yayımlanacak."
-            icon={BarChart3}
-          />
+        <TabsContent value="kpi" className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">
+              Bu sekmedeki KPI metrikleri grup uyelerinin girdigi kayitlardan otomatik hesaplanir.
+            </p>
+            <div className="flex items-center gap-2">
+              <Button asChild variant="outline" size="sm">
+                <Link href="/kpi">KPI Takip</Link>
+              </Button>
+              <Button asChild variant="brand" size="sm">
+                <Link href="/kpi/yeni">KPI Ekle</Link>
+              </Button>
+            </div>
+          </div>
+
+          {kpiOverview.summaries.every((item) => item.value === 0) ? (
+            <EmptyState
+              title="KPI verisi yok"
+              description="Yeni kayitlar girildikce KPI metrikleri bu sekmede otomatik gosterilir."
+              icon={BarChart3}
+            />
+          ) : (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {kpiOverview.summaries.map((item) => (
+                  <Card key={item.code}>
+                    <CardContent className="p-4">
+                      <p className="line-clamp-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        {item.label}
+                      </p>
+                      <p className="mt-2 text-2xl font-semibold tracking-tight">{item.value}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Grup KPI Ozeti</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[940px] text-sm">
+                      <thead>
+                        <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
+                          <th className="px-2 py-2">Grup</th>
+                          {kpiOverview.summaries.map((item) => (
+                            <th key={item.code} className="px-2 py-2">
+                              {item.label}
+                            </th>
+                          ))}
+                          <th className="px-2 py-2">Toplam</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {kpiOverview.groupRows.map((row) => (
+                          <tr key={row.groupId} className="border-b last:border-0">
+                            <td className="px-2 py-2 font-medium">{row.groupCode}</td>
+                            {kpiOverview.summaries.map((item) => (
+                              <td key={`${row.groupId}-${item.code}`} className="px-2 py-2">
+                                {row.values[item.code]}
+                              </td>
+                            ))}
+                            <td className="px-2 py-2 font-semibold">{row.total}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </TabsContent>
 
         <TabsContent value="notlar">
@@ -449,7 +518,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
 
         <TabsContent value="uyeler">
           {members.length === 0 ? (
-            <EmptyState title="Üye yok" icon={Users} />
+            <EmptyState title="Ãœye yok" icon={Users} />
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {members.map((m) => (
@@ -537,14 +606,14 @@ function NoteColumn({
                               className="rounded-full border px-2 py-0.5 text-[11px] hover:border-primary hover:text-primary"
                             >
                               {a.originalName}
-                              <span className="text-muted-foreground"> · {humanSize(a.size)}</span>
+                              <span className="text-muted-foreground"> Â· {humanSize(a.size)}</span>
                             </a>
                           ))}
                         </div>
                       ) : null}
 
                       <p className="mt-1.5 text-[11px] text-muted-foreground">
-                        {authorName} · {formatDateTime(n.createdAt)}
+                        {authorName} Â· {formatDateTime(n.createdAt)}
                       </p>
                     </div>
                   </div>

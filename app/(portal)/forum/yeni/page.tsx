@@ -6,7 +6,7 @@ import { requireActiveUser } from "@/lib/current-user";
 import { isAdmin, isModerator } from "@/lib/rbac";
 import { NewDiscussionForm } from "@/features/forum/new-discussion-form";
 
-export const metadata = { title: "Konu / Tartışma Başlat" };
+export const metadata = { title: "Konu Başlat" };
 
 export default async function NewDiscussionPage() {
   const user = await requireActiveUser();
@@ -16,13 +16,13 @@ export default async function NewDiscussionPage() {
     return (
       <div className="mx-auto max-w-7xl">
         <PageHeader
-          title="Konu / Tartışma Başlat"
-          breadcrumbs={[{ label: "Konu / Tartışma Başlat" }]}
+          title="Konu Başlat"
+          breadcrumbs={[{ label: "Konu Başlat" }]}
         />
         <EmptyState
           icon={Users}
           title="Henüz bir çalışma grubuna atanmadınız"
-          description="Tartışma başlatabilmek için yöneticinizin sizi bir gruba atamasını bekleyin."
+          description="Konu başlatabilmek için yöneticinizin sizi bir gruba atamasını bekleyin."
         />
       </div>
     );
@@ -31,7 +31,7 @@ export default async function NewDiscussionPage() {
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
-        title="Konu / Tartışma Başlat"
+        title="Konu Başlat"
         description={
           user.groupCode
             ? `${user.groupCode} grubunun tüm üyeleri bu konuyu görür ve yanıt verebilir.`
@@ -39,7 +39,7 @@ export default async function NewDiscussionPage() {
         }
         breadcrumbs={[
           { label: "Çalışma Grubum", href: "/calisma-grubum" },
-          { label: "Konu / Tartışma Başlat" },
+          { label: "Konu Başlat" },
         ]}
       />
       <NewDiscussionForm canPin={isAdmin(user) || isModerator(user)} />

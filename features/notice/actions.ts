@@ -106,6 +106,28 @@ export async function createNotice(
     throw e;
   }
 
+  // Notify recipients by scope.
+  const recipients = await prisma.user.findMany({
+    where: {
+      status: "ACTIVE",
+      id: { not: user.id },
+      ...(row.scope === "GROUP" && row.groupId ? { groupId: row.groupId } : {}),
+    },
+    select: { id: true },
+  });
+  if (recipients.length > 0) {
+    const channelLink = row.scope === "GENERAL" ? "/duyurular?kanal=genel" : "/duyurular?kanal=grup";
+    await prisma.notification.createMany({
+      data: recipients.map((r) => ({
+        userId: r.id,
+        kind: "notice",
+        title: row.scope === "GENERAL" ? "Yeni genel bildirim" : "Yeni grup bildirimi",
+        body: row.title,
+        link: channelLink,
+      })),
+    });
+  }
+
   await audit({
     action: "NOTICE_CREATED",
     actorId: user.id,
@@ -117,6 +139,22 @@ export async function createNotice(
   revalidatePath("/duyurular");
   revalidatePath("/panel");
   return OK;
+}
+
+/**
+ * Page-form variant for /bildirim/yeni.
+ * On successful create, redirects to the matching duyurular channel.
+ */
+export async function createNoticeFromPage(
+  _prev: NoticeFormState,
+  fd: FormData,
+): Promise<NoticeFormState> {
+  const result = await createNotice(_prev, fd);
+  if (result.ok && !result.errors && !result.message) {
+    const scope = String(fd.get("scope") ?? "GROUP");
+    redirect(scope === "GENERAL" ? "/duyurular?kanal=genel" : "/duyurular?kanal=grup");
+  }
+  return result;
 }
 
 /** Soft-delete a notice. Author, admin, or — for GROUP scope — same-group moderator. */

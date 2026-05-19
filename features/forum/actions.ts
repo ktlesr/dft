@@ -97,6 +97,23 @@ export async function createDiscussion(
     throw e;
   }
 
+  // Notify group members.
+  const members = await prisma.user.findMany({
+    where: { groupId: user.groupId, status: "ACTIVE", id: { not: user.id } },
+    select: { id: true },
+  });
+  if (members.length > 0) {
+    await prisma.notification.createMany({
+      data: members.map((m) => ({
+        userId: m.id,
+        kind: "discussion",
+        title: "Yeni forum konusu",
+        body: parsed.data.title,
+        link: `/forum/${row.id}`,
+      })),
+    });
+  }
+
   await audit({
     action: "DISCUSSION_CREATED",
     actorId: user.id,

@@ -78,6 +78,24 @@ export async function createGroupNote(
     throw e;
   }
 
+  // Notify group members.
+  const members = await prisma.user.findMany({
+    where: { groupId: user.groupId, status: "ACTIVE", id: { not: user.id } },
+    select: { id: true },
+  });
+  if (members.length > 0) {
+    const kindLabel = parsed.data.kind === "ADVISOR_NOTE" ? "Danisman Notu" : "Kalite Sistemi Notu";
+    await prisma.notification.createMany({
+      data: members.map((m) => ({
+        userId: m.id,
+        kind: "group_note",
+        title: `Yeni ${kindLabel}`,
+        body: parsed.data.title,
+        link: "/calisma-grubum?tab=notlar",
+      })),
+    });
+  }
+
   await audit({
     action: "RECORD_CREATED",
     actorId: user.id,

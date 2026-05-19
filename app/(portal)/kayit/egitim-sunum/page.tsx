@@ -9,7 +9,7 @@ export default function Page() {
       <PageHeader
         title="Eğitim / Sunum Kaydı"
         description="Verdiğiniz eğitim, sunum ve akademik paylaşımlar."
-        breadcrumbs={[{ label: "Yeni Kayıt", href: "/kayit/yeni" }, { label: "Eğitim / Sunum" }]}
+        breadcrumbs={[{ label: "Yeni Kayıt Ekle", href: "/kayit/yeni" }, { label: "Eğitim / Sunum" }]}
       />
       <TrainingForm />
     </div>

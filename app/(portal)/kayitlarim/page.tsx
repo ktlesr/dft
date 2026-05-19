@@ -62,7 +62,7 @@ export default async function PaylasimlarPage({ searchParams }: { searchParams: 
           <Button asChild variant="brand">
             <Link href="/kayit/yeni">
               <PlusCircle className="h-4 w-4" />
-              Yeni Kayıt
+              Yeni Kayıt Ekle
             </Link>
           </Button>
         }
@@ -119,7 +119,7 @@ export default async function PaylasimlarPage({ searchParams }: { searchParams: 
                 q
                   ? "Farklı bir anahtar kelime deneyin."
                   : scopeMode === "mine"
-                    ? "Sağ üstteki Yeni Kayıt düğmesi ile başlayın."
+                    ? "Sağ üstteki Yeni Kayıt Ekle düğmesi ile başlayın."
                     : "Henüz hiçbir üye bu türde kayıt eklemedi."
               }
               className="border-0"

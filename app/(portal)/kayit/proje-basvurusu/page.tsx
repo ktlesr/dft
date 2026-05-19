@@ -9,7 +9,7 @@ export default function Page() {
       <PageHeader
         title="Proje Başvurusu"
         description="Başvurusu yapılmış ancak henüz sonuçlanmamış projeler."
-        breadcrumbs={[{ label: "Yeni Kayıt", href: "/kayit/yeni" }, { label: "Proje Başvurusu" }]}
+        breadcrumbs={[{ label: "Yeni Kayıt Ekle", href: "/kayit/yeni" }, { label: "Proje Başvurusu" }]}
       />
       <ProjectApplicationForm />
     </div>

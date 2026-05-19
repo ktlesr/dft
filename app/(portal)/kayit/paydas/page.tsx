@@ -9,7 +9,7 @@ export default function Page() {
       <PageHeader
         title="Paydaş"
         description="DFT'nin ağ oluşturma çalışmaları kapsamında faydalı olabilecek ulusal / uluslararası paydaşlar."
-        breadcrumbs={[{ label: "Yeni Kayıt", href: "/kayit/yeni" }, { label: "Paydaş" }]}
+        breadcrumbs={[{ label: "Yeni Kayıt Ekle", href: "/kayit/yeni" }, { label: "Paydaş" }]}
       />
       <StakeholderForm />
     </div>

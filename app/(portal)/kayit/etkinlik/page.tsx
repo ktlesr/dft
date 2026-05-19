@@ -9,7 +9,7 @@ export default function Page() {
       <PageHeader
         title="Etkinlik"
         description="Düzenlediğiniz ya da yer aldığınız toplantı, çalıştay ve ağ kurma etkinlikleri."
-        breadcrumbs={[{ label: "Yeni Kayıt", href: "/kayit/yeni" }, { label: "Etkinlik" }]}
+        breadcrumbs={[{ label: "Yeni Kayıt Ekle", href: "/kayit/yeni" }, { label: "Etkinlik" }]}
       />
       <EventForm />
     </div>

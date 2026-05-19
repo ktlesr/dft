@@ -9,7 +9,7 @@ export default function Page() {
       <PageHeader
         title="Bilgi Çoğaltımı Kaydı"
         description="Sunum, seminer, çalıştay veya yayın yoluyla yaydığınız bilgi faaliyetleri."
-        breadcrumbs={[{ label: "Yeni Kayıt", href: "/kayit/yeni" }, { label: "Bilgi Çoğaltımı" }]}
+        breadcrumbs={[{ label: "Yeni Kayıt Ekle", href: "/kayit/yeni" }, { label: "Bilgi Çoğaltımı" }]}
       />
       <DisseminationForm />
     </div>

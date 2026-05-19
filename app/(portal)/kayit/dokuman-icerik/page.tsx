@@ -9,7 +9,7 @@ export default function Page() {
       <PageHeader
         title="Dijital İçerik"
         description="DFT çalışmaları kapsamında faydalı olabilecek dijital içerikler (rapor, makale, strateji belgesi, eğitim videosu vb.)."
-        breadcrumbs={[{ label: "Yeni Kayıt", href: "/kayit/yeni" }, { label: "Dijital İçerik" }]}
+        breadcrumbs={[{ label: "Yeni Kayıt Ekle", href: "/kayit/yeni" }, { label: "Dijital İçerik" }]}
       />
       <ContentForm />
     </div>

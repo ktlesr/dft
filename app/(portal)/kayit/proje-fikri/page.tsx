@@ -9,7 +9,7 @@ export default function Page() {
       <PageHeader
         title="Proje Fikri"
         description="Herhangi bir çağrıya sunulmamış proje fikirleri."
-        breadcrumbs={[{ label: "Yeni Kayıt", href: "/kayit/yeni" }, { label: "Proje Fikri" }]}
+        breadcrumbs={[{ label: "Yeni Kayıt Ekle", href: "/kayit/yeni" }, { label: "Proje Fikri" }]}
       />
       <ProjectIdeaForm />
     </div>

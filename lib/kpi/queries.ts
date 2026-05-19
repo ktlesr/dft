@@ -139,8 +139,12 @@ export async function getFixedKpiOverview(
     };
   });
 
+  const rowSeedGroups = scope.selectedGroupId
+    ? scope.availableGroups.filter((g) => g.id === scope.selectedGroupId)
+    : scope.availableGroups;
+
   const baseByGroup = new Map<string, FixedKpiGroupRow>();
-  for (const g of scope.availableGroups) {
+  for (const g of rowSeedGroups) {
     baseByGroup.set(g.id, {
       groupId: g.id,
       groupCode: g.code,

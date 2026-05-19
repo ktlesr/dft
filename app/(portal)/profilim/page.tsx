@@ -13,9 +13,11 @@ import { ProfilePhotoUploader, CvUploader } from "@/features/profile/media-forms
 
 export const metadata = { title: "Profilim" };
 export const dynamic = "force-dynamic";
+const DFT_ADMIN_EMAIL = "admin@dft.ktlsr.com";
 
 export default async function ProfilePage() {
   const user = await requireActiveUser();
+  const isDftSuperAdmin = user.email.toLowerCase() === DFT_ADMIN_EMAIL;
   const userRow = await prisma.user.findUnique({
     where: { id: user.id },
     include: { profile: true },
@@ -70,7 +72,12 @@ export default async function ProfilePage() {
           <Field
             label="Çalışma Grubu"
             value={
-              user.groupCode ? (
+              isDftSuperAdmin ? (
+                <span className="inline-flex items-center gap-2">
+                  <Badge variant="success">Süper Admin</Badge>
+                  <span className="text-xs text-muted-foreground">Sistem Yöneticisi</span>
+                </span>
+              ) : user.groupCode ? (
                 <span className="inline-flex items-center gap-2">
                   <Badge variant="outline">{user.groupCode}</Badge>
                   {user.groupDescription ? (

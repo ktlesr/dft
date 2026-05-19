@@ -21,6 +21,8 @@ type SidebarProps = {
   className?: string;
 };
 
+const DFT_ADMIN_EMAIL = "admin@dft.ktlsr.com";
+
 function isActive(pathname: string, item: NavItem) {
   if (item.exact) return pathname === item.href;
   if (item.href === "/kayit/yeni") return pathname === "/kayit/yeni";
@@ -32,6 +34,7 @@ export function Sidebar({ user, className }: SidebarProps) {
   const pathname = usePathname();
   const roles = user?.roles ?? ["USER" as Role];
   const groups = user ? filterNavForRoles(roles) : NAV_GROUPS;
+  const isDftSuperAdmin = user?.email.toLowerCase() === DFT_ADMIN_EMAIL;
 
   return (
     <aside
@@ -46,7 +49,19 @@ export function Sidebar({ user, className }: SidebarProps) {
         </Link>
       </div>
 
-      {user?.groupCode ? (
+      {isDftSuperAdmin ? (
+        <div className="border-b px-5 py-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+              Yetki Düzeyi
+            </span>
+            <Badge variant="success" className="font-medium">
+              Süper Admin
+            </Badge>
+          </div>
+          <p className="mt-1 truncate text-xs text-muted-foreground">Sistem Yöneticisi</p>
+        </div>
+      ) : user?.groupCode ? (
         <div className="border-b px-5 py-3">
           <div className="flex items-center justify-between">
             <span className="text-[11px] uppercase tracking-wider text-muted-foreground">

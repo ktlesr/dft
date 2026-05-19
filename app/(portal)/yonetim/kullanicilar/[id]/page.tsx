@@ -154,7 +154,12 @@ export default async function AdminUserDetail({
                   >
                     {USER_STATUS_LABELS[user.status]}
                   </Badge>
-                  {user.group?.code ? (
+                  {isDftAdminUser ? (
+                    <>
+                      <Badge variant="success">Süper Admin</Badge>
+                      <Badge variant="secondary">Sistem Yöneticisi</Badge>
+                    </>
+                  ) : user.group?.code ? (
                     <Badge variant="outline">{user.group.code}</Badge>
                   ) : null}
                   {userRoles

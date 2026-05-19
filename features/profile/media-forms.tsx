@@ -32,7 +32,6 @@ export function ProfilePhotoUploader({
 }) {
   const [state, action, pending] = useActionState(uploadProfilePhoto, INITIAL);
   const formRef = React.useRef<HTMLFormElement>(null);
-  const isAdminTarget = !!targetUserId;
 
   React.useEffect(() => {
     if (pending) return;
@@ -50,11 +49,7 @@ export function ProfilePhotoUploader({
     <form ref={formRef} action={action} className="flex items-start gap-4">
       {targetUserId ? <input type="hidden" name="userId" value={targetUserId} /> : null}
       <div
-        className={
-          isAdminTarget
-            ? "flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted text-2xl font-semibold text-muted-foreground shadow-sm ring-4 ring-background sm:h-36 sm:w-36"
-            : "flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border bg-muted text-lg font-medium text-muted-foreground"
-        }
+        className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted text-2xl font-semibold text-muted-foreground shadow-sm ring-4 ring-background sm:h-36 sm:w-36"
       >
         {currentPhotoUrl ? (
           // Intentional <img>: storage URL is private, unknown dimensions;
@@ -63,7 +58,7 @@ export function ProfilePhotoUploader({
           <img
             src={currentPhotoUrl}
             alt={label}
-            className={isAdminTarget ? "h-full w-full rounded-lg object-cover" : "h-full w-full object-cover"}
+            className="h-full w-full rounded-lg object-cover"
           />
         ) : (
           fallback

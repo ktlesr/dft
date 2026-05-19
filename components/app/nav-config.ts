@@ -69,7 +69,7 @@ export const NAV_GROUPS: NavGroup[] = [
       },
       {
         href: "/not/yeni?kind=KS_NOTE",
-        label: "KS Yönetici Notu Ekle",
+        label: "Kalite Sorumlusu Notu Ekle",
         icon: NotebookPen,
         roles: ["KS", "ADMIN"],
       },

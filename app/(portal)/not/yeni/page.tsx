@@ -51,17 +51,17 @@ export default async function NewGroupNotePage({
     requestedKind === "ADVISOR_NOTE"
       ? "Danisman Notu olusturabilirsiniz."
       : requestedKind === "KS_NOTE"
-        ? "Kalite Sistemi Notu olusturabilirsiniz."
+        ? "Kalite Sorumlusu Notu olusturabilirsiniz."
         : allowedKinds.length > 1
-          ? "Danisman Notu veya Kalite Sistemi Notu olusturabilirsiniz."
+          ? "Danisman Notu veya Kalite Sorumlusu Notu olusturabilirsiniz."
           : allowedKinds[0] === "ADVISOR_NOTE"
             ? "Danisman Notu olusturabilirsiniz."
-            : "Kalite Sistemi Notu olusturabilirsiniz.";
+            : "Kalite Sorumlusu Notu olusturabilirsiniz.";
   const pageTitle =
     requestedKind === "ADVISOR_NOTE"
       ? "Danisman Notu Ekle"
       : requestedKind === "KS_NOTE"
-        ? "KS Yonetici Notu Ekle"
+        ? "Kalite Sorumlusu Notu Ekle"
         : "Not Ekle";
 
   return (

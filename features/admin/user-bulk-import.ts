@@ -148,6 +148,8 @@ const ROLE_LABEL_TO_ENUM: Record<string, Role> = {
   advisor: "ADVISOR",
   ks: "KS",
   kalite: "KS",
+  "kalite sorumlusu": "KS",
+  "kalite sorumlusu ks": "KS",
   "kalite sistem yoneticisi": "KS",
   "kalite sistemi yoneticisi": "KS",
   yonetici: "ADMIN",

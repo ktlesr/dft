@@ -205,7 +205,7 @@ export function NewUserForm({ groups }: { groups: NewUserGroupOption[] }) {
               ihtiyaca göre <strong>Moderatör</strong> (grup panosu moderasyonu + toplantı
               bildirimi), <strong>Raportör</strong> (tutanak + rapor),{" "}
               <strong>Danışman</strong> (uzman danışmanlık) veya{" "}
-              <strong>Kalite Sistemi Yöneticisi</strong> (KS notları) ya da{" "}
+              <strong>Kalite Sorumlusu (KS)</strong> (KS notları) ya da{" "}
               <strong>Yönetici</strong> (tam erişim) ekleyebilirsiniz.
             </p>
           </fieldset>

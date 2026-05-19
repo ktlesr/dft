@@ -401,7 +401,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
         <TabsContent value="notlar">
           <div className="mb-4 flex items-center justify-between gap-3">
             <p className="text-xs text-muted-foreground">
-              Danisman ve Kalite Sistemi yoneticisi notlari ayri alanlarda listelenir.
+              Danisman ve Kalite Sorumlusu notlari ayri alanlarda listelenir.
             </p>
             {canCreateNotes ? (
               <div className="flex flex-wrap items-center gap-2">
@@ -417,7 +417,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
                   <Button asChild variant="brand" size="sm">
                     <Link href="/not/yeni?kind=KS_NOTE">
                       <NotebookPen className="h-4 w-4" />
-                      KS Yonetici Notu Ekle
+                      Kalite Sorumlusu Notu Ekle
                     </Link>
                   </Button>
                 ) : null}

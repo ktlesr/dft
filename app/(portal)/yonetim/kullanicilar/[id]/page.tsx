@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { requireAdmin } from "@/lib/current-user";
+import { groupBadgeClass } from "@/lib/group-badge";
 import { prisma } from "@/lib/prisma";
 import { ROLE_LABELS, USER_STATUS_LABELS } from "@/lib/constants";
 import { avatarUrl, formatDateTime, initials } from "@/lib/utils";
@@ -160,7 +161,9 @@ export default async function AdminUserDetail({
                       <Badge variant="secondary">Sistem Yöneticisi</Badge>
                     </>
                   ) : user.group?.code ? (
-                    <Badge variant="outline">{user.group.code}</Badge>
+                    <Badge variant="outline" className={groupBadgeClass(user.group.code)}>
+                      {user.group.code}
+                    </Badge>
                   ) : null}
                   {userRoles
                     .filter((r) => r !== "USER")

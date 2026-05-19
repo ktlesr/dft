@@ -32,24 +32,19 @@ export type NavGroup = {
 
 export const NAV_GROUPS: NavGroup[] = [
   {
-    label: "Ana menü",
+    label: "Ana Menü",
     items: [
       { href: "/panel", label: "Ana Panel", icon: LayoutDashboard, exact: true },
       { href: "/dft-hakkinda", label: "DFT Hakkında", icon: Building2 },
       { href: "/kayit/yeni", label: "Yeni Kayıt Ekle", icon: PlusCircle },
       { href: "/kayitlarim", label: "Paylaşımlar", icon: FileText },
-      { href: "/profilim", label: "Profilim", icon: User },
     ],
   },
   {
     label: "Grup İşlemleri",
     items: [
       { href: "/calisma-grubum", label: "Çalışma Grubum", icon: Users },
-      {
-        href: "/forum/yeni",
-        label: "Konu Başlat",
-        icon: MessageSquarePlus,
-      },
+      { href: "/forum/yeni", label: "Konu Başlat", icon: MessageSquarePlus },
       {
         href: "/bildirim/yeni",
         label: "Bildirim Ekle",
@@ -81,6 +76,10 @@ export const NAV_GROUPS: NavGroup[] = [
         roles: ["MODERATOR", "ADMIN"],
       },
     ],
+  },
+  {
+    label: "Ayarlar",
+    items: [{ href: "/profilim", label: "Profilim", icon: User }],
   },
   {
     label: "Yönetim",

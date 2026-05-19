@@ -5,8 +5,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { BrandLockup } from "@/components/brand/logo";
-import { Badge } from "@/components/ui/badge";
 import { filterNavForRoles, NAV_GROUPS, type NavItem } from "@/components/app/nav-config";
+import { Badge } from "@/components/ui/badge";
+import { groupBadgeClass } from "@/lib/group-badge";
 import { cn } from "@/lib/utils";
 import type { Role } from "@prisma/client";
 
@@ -68,7 +69,7 @@ export function Sidebar({ user, className }: SidebarProps) {
             <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
               Çalışma Grubu
             </span>
-            <Badge variant="success" className="font-medium">
+            <Badge variant="outline" className={groupBadgeClass(user.groupCode)}>
               {user.groupCode}
             </Badge>
           </div>
@@ -119,9 +120,7 @@ export function Sidebar({ user, className }: SidebarProps) {
       </nav>
 
       <div className="border-t px-5 py-3">
-        <p className="text-[10px] text-muted-foreground">
-          DFT Kapalı Portal · v0.1
-        </p>
+        <p className="text-[10px] text-muted-foreground">DFT Kapalı Portal · v0.1</p>
       </div>
     </aside>
   );

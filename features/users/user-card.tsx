@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { ROLE_LABELS, USER_STATUS_LABELS } from "@/lib/constants";
+import { groupBadgeClass } from "@/lib/group-badge";
 import { avatarUrl, cn, formatDate, initials } from "@/lib/utils";
 import type { Role, UserStatus } from "@prisma/client";
 
@@ -166,7 +167,7 @@ export function UserCard({
             {visibleGroups.length > 0 ? (
               <div className="flex flex-wrap gap-1">
                 {visibleGroups.map((g) => (
-                  <Badge key={g.code} variant="success" className="text-[10px]">
+                  <Badge key={g.code} variant="outline" className={groupBadgeClass(g.code, "text-[10px]")}>
                     {g.code}
                   </Badge>
                 ))}

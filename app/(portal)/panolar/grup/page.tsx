@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/app/empty-state";
 import { FilterSelect } from "@/components/app/filter-select";
 import { requireActiveUser } from "@/lib/current-user";
+import { groupBadgeClass } from "@/lib/group-badge";
 import { listBoardPosts } from "@/features/board/queries";
 import { NewBoardPostDialog } from "@/features/board/new-post-dialog";
 import { PostCard } from "@/features/board/post-card";
@@ -61,7 +62,9 @@ export default async function GroupBoardPage({ searchParams }: { searchParams: S
         breadcrumbs={[{ label: "Panolar", href: "/panolar" }, { label: "Grup" }]}
         actions={
           <div className="flex items-center gap-2">
-            <Badge variant="success">{user.groupCode}</Badge>
+            <Badge variant="outline" className={groupBadgeClass(user.groupCode)}>
+              {user.groupCode}
+            </Badge>
             <NewBoardPostDialog scope="GROUP" canPin={admin || groupMod} />
           </div>
         }

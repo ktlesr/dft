@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { requireActiveUser } from "@/lib/current-user";
+import { groupBadgeClass } from "@/lib/group-badge";
 import { prisma } from "@/lib/prisma";
 import { ROLE_LABELS, USER_STATUS_LABELS } from "@/lib/constants";
 import { formatDateTime, initials } from "@/lib/utils";
@@ -79,7 +80,9 @@ export default async function ProfilePage() {
                 </span>
               ) : user.groupCode ? (
                 <span className="inline-flex items-center gap-2">
-                  <Badge variant="outline">{user.groupCode}</Badge>
+                  <Badge variant="outline" className={groupBadgeClass(user.groupCode)}>
+                    {user.groupCode}
+                  </Badge>
                   {user.groupDescription ? (
                     <span className="text-xs text-muted-foreground">
                       {user.groupDescription}

@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/app/empty-state";
 import { requireActiveUser } from "@/lib/current-user";
+import { groupBadgeClass } from "@/lib/group-badge";
 import { getFixedKpiOverview } from "@/lib/kpi/queries";
 import { prisma } from "@/lib/prisma";
 import { BOARD_KIND_LABELS, GROUP_NOTE_KIND_LABELS, REPORT_KIND_LABELS } from "@/lib/constants";
@@ -167,7 +168,14 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
         <TabsContent value="ozet" className="space-y-4">
           <Card>
             <CardContent className="grid gap-4 p-6 md:grid-cols-4">
-              <Field label="Grup kodu" value={<Badge variant="success">{user.groupCode}</Badge>} />
+              <Field
+                label="Grup kodu"
+                value={
+                  <Badge variant="outline" className={groupBadgeClass(user.groupCode)}>
+                    {user.groupCode}
+                  </Badge>
+                }
+              />
               <Field label="Üye sayısı" value={`${members.length} kişi`} />
               <Field label="Moderatör" value={moderators[0]?.name ?? moderators[0]?.email ?? "—"} />
               <Field label="Raportör" value={rapporteurs[0]?.name ?? rapporteurs[0]?.email ?? "—"} />

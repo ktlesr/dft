@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BOARD_KIND_LABELS } from "@/lib/constants";
+import { groupBadgeClass } from "@/lib/group-badge";
 import { formatDateTime } from "@/lib/utils";
 import type { NoticeWithAuthor } from "./queries";
 import { removeNotice, toggleNoticePin } from "./actions";
@@ -44,7 +45,7 @@ export function NoticeCard({ notice, caps }: Props) {
             {BOARD_KIND_LABELS[notice.kind]}
           </Badge>
           {notice.scope === "GROUP" && notice.group ? (
-            <Badge variant="outline" className="text-[10px]">
+            <Badge variant="outline" className={groupBadgeClass(notice.group.code, "text-[10px]")}>
               {notice.group.code}
             </Badge>
           ) : null}

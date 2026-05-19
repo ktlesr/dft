@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/app/empty-state";
 import { requireActiveUser } from "@/lib/current-user";
+import { groupBadgeClass } from "@/lib/group-badge";
 import { prisma } from "@/lib/prisma";
 import { DOCUMENT_CATEGORY_LABELS } from "@/lib/constants";
 import { isAdmin, isModerator } from "@/lib/rbac";
@@ -133,7 +134,11 @@ export default async function DocumentsPage({ searchParams }: { searchParams: Se
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="truncate text-sm font-semibold">{d.title}</p>
                       <Badge variant="outline">{DOCUMENT_CATEGORY_LABELS[d.category]}</Badge>
-                      {d.group?.code ? <Badge variant="secondary">{d.group.code}</Badge> : null}
+                      {d.group?.code ? (
+                        <Badge variant="outline" className={groupBadgeClass(d.group.code)}>
+                          {d.group.code}
+                        </Badge>
+                      ) : null}
                     </div>
                     {d.description ? (
                       <p className="mt-1 text-sm text-muted-foreground">{d.description}</p>

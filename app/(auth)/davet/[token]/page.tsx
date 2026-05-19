@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { prisma } from "@/lib/prisma";
 import { hashToken } from "@/lib/tokens";
 import { ROLE_LABELS } from "@/lib/constants";
+import { groupBadgeClass } from "@/lib/group-badge";
 import { AcceptInviteForm } from "@/features/invites/accept-form";
 
 export const metadata = { title: "Davet kabul" };
@@ -47,7 +48,7 @@ export default async function AcceptInvitePage({ params }: { params: Params }) {
             <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/30 p-3">
               <span className="text-sm font-medium">{invite.email}</span>
               {groupCode ? (
-                <Badge variant="outline">
+                <Badge variant="outline" className={groupBadgeClass(groupCode, "text-[10px]")}>
                   {groupCode}
                   {groupDescription ? ` · ${groupDescription}` : ""}
                 </Badge>

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/app/empty-state";
 import { requireActiveUser } from "@/lib/current-user";
+import { groupBadgeClass } from "@/lib/group-badge";
 import {
   countsByType,
   countsByTypeForAll,
@@ -157,7 +158,7 @@ export default async function PaylasimlarPage({ searchParams }: { searchParams: 
                           <div className="flex items-center gap-1.5">
                             <span className="text-foreground">{r.owner?.name ?? "—"}</span>
                             {r.owner?.groupCode ? (
-                              <Badge variant="outline" className="text-[10px]">
+                              <Badge variant="outline" className={groupBadgeClass(r.owner.groupCode, "text-[10px]")}>
                                 {r.owner.groupCode}
                               </Badge>
                             ) : null}

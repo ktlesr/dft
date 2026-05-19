@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/app/empty-state";
 import { requireActiveUser } from "@/lib/current-user";
+import { groupBadgeClass } from "@/lib/group-badge";
 import { prisma } from "@/lib/prisma";
 import { BOARD_KIND_LABELS } from "@/lib/constants";
 import { formatDateTime, truncate } from "@/lib/utils";
@@ -318,7 +319,7 @@ export default async function DashboardPage() {
             </CardTitle>
             <div className="flex items-center gap-1">
               {user.groupCode ? (
-                <Badge variant="outline">{user.groupCode}</Badge>
+                <Badge variant="outline" className={groupBadgeClass(user.groupCode)}>{user.groupCode}</Badge>
               ) : admin ? (
                 <Badge variant="outline">Tüm gruplar</Badge>
               ) : null}
@@ -359,9 +360,7 @@ export default async function DashboardPage() {
                         {n.title}
                       </Link>
                       {n.group ? (
-                        <Badge variant="secondary" className="shrink-0 text-[10px]">
-                          {n.group.code}
-                        </Badge>
+                        <Badge variant="outline" className={groupBadgeClass(n.group.code, "shrink-0 text-[10px]")}>{n.group.code}</Badge>
                       ) : null}
                     </div>
                     {n.eventAt ? (
@@ -406,3 +405,4 @@ export default async function DashboardPage() {
     </div>
   );
 }
+

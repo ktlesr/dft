@@ -1,32 +1,49 @@
-import { Building2, Globe2, Mail, MessageSquare, Sparkles, Target, Users } from "lucide-react";
+import { Building2, Mail, MessageSquare, Sparkles, Users } from "lucide-react";
 
 import { PageHeader } from "@/components/app/page-header";
 import { BrandVertical } from "@/components/brand/logo";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/app/empty-state";
 import { prisma } from "@/lib/prisma";
 import { requireActiveUser } from "@/lib/current-user";
 import { getAboutContent } from "@/features/about/queries";
 import { AboutModal } from "@/features/about/about-modal";
+import { UserCard } from "@/features/users/user-card";
 
 export const metadata = { title: "DFT Hakkında" };
 export const dynamic = "force-dynamic";
 
 export default async function DftAboutPage() {
-  // Yetkili kullanıcı gereksinimi — portal layout zaten sağlıyor; çağrı
-  // burada da garantiye alınıyor (defence-in-depth).
   await requireActiveUser();
 
-  const [groups, memberCount, postCount, meetingCount, about] = await Promise.all([
+  const [groups, members, postCount, meetingCount, about] = await Promise.all([
     prisma.group.findMany({ orderBy: { code: "asc" } }),
-    prisma.user.count({ where: { status: "ACTIVE" } }),
+    prisma.user.findMany({
+      where: { status: "ACTIVE" },
+      orderBy: { name: "asc" },
+      include: {
+        roles: { select: { role: true } },
+        group: { select: { code: true, description: true } },
+        profile: {
+          select: {
+            title: true,
+            position: true,
+            organization: true,
+            phone: true,
+            city: true,
+            expertise: true,
+          },
+        },
+      },
+    }),
     prisma.boardPost.count({ where: { status: "PUBLISHED", deletedAt: null } }),
     prisma.meeting.count({ where: { deletedAt: null } }),
     getAboutContent(),
   ]);
 
   const stats: Array<{ label: string; value: number; icon: typeof Users }> = [
-    { label: "Aktif Üye", value: memberCount, icon: Users },
+    { label: "Aktif Üye", value: members.length, icon: Users },
     { label: "Çalışma Grubu", value: groups.length, icon: Building2 },
     { label: "Toplantı", value: meetingCount, icon: Sparkles },
     { label: "Paylaşım", value: postCount, icon: MessageSquare },
@@ -36,11 +53,10 @@ export default async function DftAboutPage() {
     <div className="mx-auto max-w-7xl">
       <PageHeader
         title="DFT Hakkında"
-        description="DFT topluluğu, çalışma grupları ve kurumsal kimliği hakkında genel bilgi."
+        description="DFT topluluğu, çalışma grupları ve üyeler hakkında genel bilgi."
         breadcrumbs={[{ label: "DFT Hakkında" }]}
       />
 
-      {/* Hero — marka kimliği + dinamik tanıtım + Devamı modali */}
       <Card className="overflow-hidden">
         <CardContent className="bg-gradient-to-br from-primary/5 via-background to-accent/5 p-8">
           <div className="flex flex-col items-start gap-6 md:flex-row md:items-center md:gap-10">
@@ -64,7 +80,6 @@ export default async function DftAboutPage() {
         </CardContent>
       </Card>
 
-      {/* Kurumsal istatistikler */}
       <section className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
         {stats.map((s) => (
           <Card key={s.label}>
@@ -83,38 +98,33 @@ export default async function DftAboutPage() {
         ))}
       </section>
 
-      {/* Misyon / Vizyon */}
-      <section className="mt-8 grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader className="flex-row items-center justify-between">
-            <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Misyon
-            </CardTitle>
-            <Target className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent className="text-sm leading-relaxed text-foreground">
-            Üyelerin proje, faaliyet ve çalışma grubu süreçlerini güvenli, sade
-            ve sürdürülebilir bir kapalı portal aracılığıyla yönetmesini
-            sağlamak; bireysel bilgiyi ortak kurumsal hafızaya dönüştürmek.
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex-row items-center justify-between">
-            <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Vizyon
-            </CardTitle>
-            <Globe2 className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent className="text-sm leading-relaxed text-foreground">
-            Ulusal ve uluslararası fon programları, projeler, etkinlikler ve
-            paydaş ağı arasında köprü kuran; bilgiyi ve iş birliğini tek bir
-            kurumsal omurgada birleştiren referans bir koordinasyon merkezi
-            olmak.
-          </CardContent>
-        </Card>
+      <section className="mt-8">
+        <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Üyeler
+        </h2>
+        {members.length === 0 ? (
+          <EmptyState title="Henüz üye yok" icon={Users} />
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {members.map((m) => (
+              <UserCard
+                key={m.id}
+                variant="member"
+                user={{
+                  id: m.id,
+                  name: m.name,
+                  email: m.email,
+                  image: m.image,
+                  roles: m.roles,
+                  group: m.group,
+                  profile: m.profile,
+                }}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
-      {/* Çalışma grupları — DB'den dinamik */}
       <section className="mt-8">
         <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
           Çalışma Grupları
@@ -148,7 +158,6 @@ export default async function DftAboutPage() {
         )}
       </section>
 
-      {/* İletişim */}
       <section className="mt-8">
         <Card>
           <CardHeader>
@@ -164,8 +173,7 @@ export default async function DftAboutPage() {
               </a>
             </p>
             <p className="text-xs text-muted-foreground">
-              Portal erişimi, hesap yönetimi ve içerik onayları için yönetim
-              ekibine yukarıdaki adresten ulaşabilirsiniz.
+              Portal erişimi, hesap yönetimi ve içerik onayları için yönetim ekibine ulaşabilirsiniz.
             </p>
           </CardContent>
         </Card>

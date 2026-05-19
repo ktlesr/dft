@@ -29,13 +29,9 @@ export type UserCardData = {
 
 type UserCardProps = {
   user: UserCardData;
-  /** "admin" → status + üyelik tarihi + aksiyonlar. "member" → sade. */
   variant?: "admin" | "member";
-  /** Üst köşe slot'u — admin'de toplu seçim checkbox'ı için. */
   topLeftSlot?: React.ReactNode;
-  /** Alt aksiyon barı — admin'de Onayla/Reddet/Detay/Sil. */
   actions?: React.ReactNode;
-  /** Kart kendisi seçili durumdaysa hafif vurgu. */
   selected?: boolean;
 };
 
@@ -57,9 +53,8 @@ export function UserCard({
   const titledName = user.profile?.title
     ? `${user.profile.title} ${displayName}`
     : displayName;
-  const positionLine = [user.profile?.position, user.profile?.organization]
-    .filter(Boolean)
-    .join(" · ");
+  const position = user.profile?.position?.trim() ?? "";
+  const organization = user.profile?.organization?.trim() ?? "";
   const visibleRoles = user.roles.filter((r) => r.role !== "USER");
   const expertise = user.profile?.expertise ?? [];
 
@@ -70,12 +65,10 @@ export function UserCard({
         selected && "ring-2 ring-primary/60",
       )}
     >
-      {/* Üst köşe slot'u — checkbox vs. */}
       {topLeftSlot ? (
         <div className="absolute left-3 top-3 z-10">{topLeftSlot}</div>
       ) : null}
 
-      {/* Status badge sağ üstte (admin) */}
       {variant === "admin" && user.status ? (
         <div className="absolute right-3 top-3 z-10">
           <Badge variant={STATUS_VARIANT[user.status]}>
@@ -84,7 +77,6 @@ export function UserCard({
         </div>
       ) : null}
 
-      {/* Üst banner — büyük kare profil fotoğrafı */}
       <div className="flex items-center justify-center bg-gradient-to-b from-muted/40 to-muted/10 p-5">
         <Avatar className="h-32 w-32 rounded-lg shadow-sm ring-4 ring-background sm:h-36 sm:w-36">
           {user.image ? (
@@ -100,7 +92,6 @@ export function UserCard({
         </Avatar>
       </div>
 
-      {/* Gövde — ad, pozisyon, kurum, iletişim */}
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="min-w-0">
           <Link
@@ -110,14 +101,18 @@ export function UserCard({
           >
             {titledName}
           </Link>
-          {positionLine ? (
-            <p className="mt-0.5 truncate text-xs text-muted-foreground" title={positionLine}>
-              {positionLine}
+          {position ? (
+            <p className="mt-0.5 truncate text-xs text-muted-foreground" title={position}>
+              {position}
+            </p>
+          ) : null}
+          {organization ? (
+            <p className="mt-0.5 truncate text-xs text-muted-foreground" title={organization}>
+              {organization}
             </p>
           ) : null}
         </div>
 
-        {/* İletişim satırı */}
         <ul className="space-y-1 text-xs text-muted-foreground">
           <li className="flex items-center gap-1.5">
             <Mail className="h-3.5 w-3.5 shrink-0" />
@@ -154,8 +149,7 @@ export function UserCard({
           ) : null}
         </ul>
 
-        {/* Rol + grup badge'leri */}
-        {(visibleRoles.length > 0 || user.group?.code) ? (
+        {visibleRoles.length > 0 || user.group?.code ? (
           <div className="flex flex-wrap gap-1">
             {user.group?.code ? (
               <Badge variant="outline" className="text-[10px]">
@@ -170,7 +164,6 @@ export function UserCard({
           </div>
         ) : null}
 
-        {/* Uzmanlık alanları */}
         {expertise.length > 0 ? (
           <div className="flex flex-wrap gap-1">
             {expertise.slice(0, 6).map((tag) => (
@@ -186,7 +179,6 @@ export function UserCard({
           </div>
         ) : null}
 
-        {/* Üyelik tarihi (admin) */}
         {variant === "admin" && user.createdAt ? (
           <p className="mt-auto text-[11px] text-muted-foreground">
             Üyelik: {formatDate(user.createdAt)}
@@ -194,7 +186,6 @@ export function UserCard({
         ) : null}
       </div>
 
-      {/* Aksiyon barı */}
       {actions ? (
         <div className="flex items-center justify-end gap-1 border-t bg-muted/20 px-3 py-2">
           {actions}

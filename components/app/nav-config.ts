@@ -20,7 +20,7 @@ export type NavItem = {
   label: string;
   icon: LucideIcon;
   description?: string;
-  roles?: Role[]; // if undefined → visible to every authenticated user
+  roles?: Role[];
   exact?: boolean;
 };
 
@@ -37,15 +37,14 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/dft-hakkinda", label: "DFT Hakkında", icon: Building2 },
       { href: "/kayit/yeni", label: "Yeni Kayıt Ekle", icon: PlusCircle },
       { href: "/kayitlarim", label: "Paylaşımlar", icon: FileText },
-      { href: "/calisma-grubum", label: "Çalışma Grubum", icon: Users },
       { href: "/profilim", label: "Profilim", icon: User },
     ],
   },
   {
-    label: "Grup işlemleri",
+    label: "Grup İşlemleri",
     items: [
+      { href: "/calisma-grubum", label: "Çalışma Grubum", icon: Users },
       {
-        // Tüm aktif üyeler tartışma başlatabilir; rol kısıtı yok.
         href: "/forum/yeni",
         label: "Konu Başlat",
         icon: MessageSquarePlus,

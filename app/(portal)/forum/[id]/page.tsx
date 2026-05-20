@@ -4,13 +4,14 @@ import { ArrowLeft, Lock, MessageCircle, Paperclip, Pin, Trash2 } from "lucide-r
 
 import { PageHeader } from "@/components/app/page-header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AvatarLightbox } from "@/components/app/avatar-lightbox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { redirectUnauthorized, requireActiveUser } from "@/lib/current-user";
 import { isAdmin, isModerator } from "@/lib/rbac";
-import { avatarUrl, formatDateTime, initials } from "@/lib/utils";
+import { avatarUrl, avatarUrlLarge, formatDateTime, initials } from "@/lib/utils";
 import { getDiscussion } from "@/features/forum/queries";
 import { ReplyForm } from "@/features/forum/reply-form";
 import { removeDiscussion, removeReply } from "@/features/forum/actions";
@@ -43,7 +44,7 @@ export default async function DiscussionPage({ params }: { params: Params }) {
     (isModerator(user) && discussion.groupId === user.groupId);
 
   const topicAuthorName =
-    discussion.author.name?.trim() || discussion.author.email.split("@")[0];
+    discussion.author.name?.trim() || discussion.author.email.split("@")[0] || discussion.author.email;
 
   return (
     <div className="mx-auto max-w-7xl">
@@ -69,17 +70,22 @@ export default async function DiscussionPage({ params }: { params: Params }) {
       <Card>
         <CardContent className="space-y-3 p-6">
           <div className="flex items-start gap-3">
-            <Avatar className="h-10 w-10">
-              {discussion.author.image ? (
-                <AvatarImage
-                  src={avatarUrl(discussion.author.id, discussion.author.image)}
-                  alt={topicAuthorName}
-                />
-              ) : null}
-              <AvatarFallback>
-                {initials(discussion.author.name, discussion.author.email)}
-              </AvatarFallback>
-            </Avatar>
+            <AvatarLightbox
+              largeSrc={avatarUrlLarge(discussion.author.id, discussion.author.image)}
+              alt={topicAuthorName}
+            >
+              <Avatar className="h-10 w-10">
+                {discussion.author.image ? (
+                  <AvatarImage
+                    src={avatarUrl(discussion.author.id, discussion.author.image)}
+                    alt={topicAuthorName}
+                  />
+                ) : null}
+                <AvatarFallback>
+                  {initials(discussion.author.name, discussion.author.email)}
+                </AvatarFallback>
+              </Avatar>
+            </AvatarLightbox>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-sm font-semibold">{topicAuthorName}</p>
@@ -162,7 +168,8 @@ export default async function DiscussionPage({ params }: { params: Params }) {
         ) : (
           <ul className="space-y-3">
             {discussion.replies.map((r) => {
-              const replyAuthorName = r.author.name?.trim() || r.author.email.split("@")[0];
+              const replyAuthorName =
+                r.author.name?.trim() || r.author.email.split("@")[0] || r.author.email;
               const canDeleteReply =
                 r.authorId === user.id ||
                 isAdmin(user) ||
@@ -172,17 +179,22 @@ export default async function DiscussionPage({ params }: { params: Params }) {
                   <Card>
                     <CardContent className="space-y-2 p-4">
                       <div className="flex items-start gap-3">
-                        <Avatar className="h-8 w-8">
-                          {r.author.image ? (
-                            <AvatarImage
-                              src={avatarUrl(r.author.id, r.author.image)}
-                              alt={replyAuthorName}
-                            />
-                          ) : null}
-                          <AvatarFallback>
-                            {initials(r.author.name, r.author.email)}
-                          </AvatarFallback>
-                        </Avatar>
+                        <AvatarLightbox
+                          largeSrc={avatarUrlLarge(r.author.id, r.author.image)}
+                          alt={replyAuthorName}
+                        >
+                          <Avatar className="h-8 w-8">
+                            {r.author.image ? (
+                              <AvatarImage
+                                src={avatarUrl(r.author.id, r.author.image)}
+                                alt={replyAuthorName}
+                              />
+                            ) : null}
+                            <AvatarFallback>
+                              {initials(r.author.name, r.author.email)}
+                            </AvatarFallback>
+                          </Avatar>
+                        </AvatarLightbox>
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <p className="text-sm font-medium">{replyAuthorName}</p>

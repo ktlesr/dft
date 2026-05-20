@@ -2,11 +2,12 @@ import Link from "next/link";
 import { ExternalLink, Paperclip, Pin, Trash2 } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AvatarLightbox } from "@/components/app/avatar-lightbox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { BOARD_KIND_LABELS } from "@/lib/constants";
-import { avatarUrl, formatDateTime, initials } from "@/lib/utils";
+import { avatarUrl, avatarUrlLarge, formatDateTime, initials } from "@/lib/utils";
 import { removeBoardPost, togglePin } from "./actions";
 import { CoverImageLightbox } from "./cover-image-lightbox";
 import { EditBoardPostDialog } from "./edit-post-dialog";
@@ -80,17 +81,22 @@ export function PostCard({ post, caps }: { post: PostRow; caps: Caps }) {
       <CardContent className="p-5">
         {/* Üst meta — avatar + yazar + tarih + rozetler */}
         <div className="mb-3 flex flex-wrap items-center gap-2">
-          <Avatar className="h-7 w-7 shrink-0">
-            {post.author.image ? (
-              <AvatarImage
-                src={avatarUrl(post.author.id, post.author.image)}
-                alt={post.author.name ?? post.author.email}
-              />
-            ) : null}
-            <AvatarFallback className="text-[10px]">
-              {initials(post.author.name, post.author.email)}
-            </AvatarFallback>
-          </Avatar>
+          <AvatarLightbox
+            largeSrc={avatarUrlLarge(post.author.id, post.author.image)}
+            alt={post.author.name ?? post.author.email}
+          >
+            <Avatar className="h-7 w-7 shrink-0">
+              {post.author.image ? (
+                <AvatarImage
+                  src={avatarUrl(post.author.id, post.author.image)}
+                  alt={post.author.name ?? post.author.email}
+                />
+              ) : null}
+              <AvatarFallback className="text-[10px]">
+                {initials(post.author.name, post.author.email)}
+              </AvatarFallback>
+            </Avatar>
+          </AvatarLightbox>
           <span className="text-sm font-medium">{post.author.name ?? post.author.email}</span>
           <span className="text-[11px] text-muted-foreground">
             · {formatDateTime(post.publishedAt)}

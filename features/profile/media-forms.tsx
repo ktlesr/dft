@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import { Camera, FileText, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { AvatarLightbox } from "@/components/app/avatar-lightbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { uploadProfilePhoto, uploadProfileCv, removeProfileCv, type ProfileFormState } from "./actions";
@@ -22,11 +23,14 @@ const INITIAL: ProfileFormState = { ok: true };
 export function ProfilePhotoUploader({
   targetUserId,
   currentPhotoUrl,
+  largePhotoUrl,
   fallback,
   label = "Profil fotoğrafı",
 }: {
   targetUserId?: string;
   currentPhotoUrl: string | null;
+  /** 1024px lightbox sürümü; undefined ise resme tıklamak hiçbir şey yapmaz. */
+  largePhotoUrl?: string | null;
   fallback: string;
   label?: string;
 }) {
@@ -48,22 +52,24 @@ export function ProfilePhotoUploader({
   return (
     <form ref={formRef} action={action} className="flex items-start gap-4">
       {targetUserId ? <input type="hidden" name="userId" value={targetUserId} /> : null}
-      <div
-        className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted text-2xl font-semibold text-muted-foreground shadow-sm ring-4 ring-background sm:h-36 sm:w-36"
-      >
-        {currentPhotoUrl ? (
-          // Intentional <img>: storage URL is private, unknown dimensions;
-          // next/image would add build-time constraints that we don't need.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={currentPhotoUrl}
-            alt={label}
-            className="h-full w-full rounded-lg object-cover"
-          />
-        ) : (
-          fallback
-        )}
-      </div>
+      <AvatarLightbox largeSrc={largePhotoUrl ?? undefined} alt={label} className="rounded-lg">
+        <div
+          className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted text-2xl font-semibold text-muted-foreground shadow-sm ring-4 ring-background sm:h-36 sm:w-36"
+        >
+          {currentPhotoUrl ? (
+            // Intentional <img>: storage URL is private, unknown dimensions;
+            // next/image would add build-time constraints that we don't need.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={currentPhotoUrl}
+              alt={label}
+              className="h-full w-full rounded-lg object-cover"
+            />
+          ) : (
+            fallback
+          )}
+        </div>
+      </AvatarLightbox>
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <label className="text-sm font-medium">{label}</label>
         <p className="text-[11px] text-muted-foreground">

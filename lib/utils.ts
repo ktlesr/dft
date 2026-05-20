@@ -54,3 +54,16 @@ export function avatarUrl(userId: string, image: string | null | undefined): str
   }
   return image;
 }
+
+/**
+ * Lightbox sürümü için 1024px webp URL'i. Eski uploads'larda backend
+ * otomatik küçük resme düşer. Cache-bust için `image` (avatar key) yeterli
+ * çünkü ikiz yüklemede her iki dosya da aynı anda yenilenir.
+ */
+export function avatarUrlLarge(userId: string, image: string | null | undefined): string | undefined {
+  if (!image) return undefined;
+  if (image.startsWith("storage:")) {
+    return `/api/profil/foto/${userId}?size=lg&v=${encodeURIComponent(image.slice("storage:".length))}`;
+  }
+  return image;
+}

@@ -241,26 +241,62 @@ export async function uploadProfilePhoto(
     return { ok: false, message: "Dosya içeriği geçersiz." };
   }
 
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  const stored = await storage.put({
-    bytes,
-    mimeType: detected.mime,
-    originalName: file.name,
-  });
+  // Sharp ile iki webp türevi üretiyoruz:
+  //   - `image`      → 256x256 avatar (listelerde hızlı yükler)
+  //   - `imageLarge` → 1024x1024 lightbox (tıklanınca büyük modal)
+  // Orijinal dosya saklanmaz; böylece 5MB'lık bir yükleme bile depoda
+  // ~50KB + ~200KB civarı yer tutar.
+  const sharpMod = (await import("sharp")).default;
+  const inputBytes = new Uint8Array(await file.arrayBuffer());
 
-  // Remove previous photo if any (best-effort cleanup).
+  let smallWebp: Buffer;
+  let largeWebp: Buffer;
+  try {
+    smallWebp = await sharpMod(inputBytes, { failOn: "error" })
+      .rotate() // EXIF orientation'u uygula
+      .resize(256, 256, { fit: "cover", position: "centre" })
+      .webp({ quality: 82 })
+      .toBuffer();
+    largeWebp = await sharpMod(inputBytes, { failOn: "error" })
+      .rotate()
+      .resize(1024, 1024, { fit: "inside", withoutEnlargement: true })
+      .webp({ quality: 85 })
+      .toBuffer();
+  } catch {
+    return { ok: false, message: "Görüntü işlenemedi. Farklı bir dosya deneyin." };
+  }
+
+  const [storedSmall, storedLarge] = await Promise.all([
+    storage.put({
+      bytes: new Uint8Array(smallWebp),
+      mimeType: "image/webp",
+      originalName: file.name,
+    }),
+    storage.put({
+      bytes: new Uint8Array(largeWebp),
+      mimeType: "image/webp",
+      originalName: file.name,
+    }),
+  ]);
+
+  // Remove previous photos if any (best-effort cleanup).
   const prev = await prisma.user.findUnique({
     where: { id: targetUserId },
-    select: { image: true },
+    select: { image: true, imageLarge: true },
   });
-  const prevKey = prev?.image?.startsWith("storage:") ? prev.image.slice("storage:".length) : null;
+  const prevKeys = [prev?.image, prev?.imageLarge]
+    .filter((v): v is string => !!v && v.startsWith("storage:"))
+    .map((v) => v.slice("storage:".length));
 
   await prisma.user.update({
     where: { id: targetUserId },
-    data: { image: `storage:${stored.storageKey}` },
+    data: {
+      image: `storage:${storedSmall.storageKey}`,
+      imageLarge: `storage:${storedLarge.storageKey}`,
+    },
   });
-  if (prevKey) {
-    await storage.remove(prevKey).catch(() => undefined);
+  for (const k of prevKeys) {
+    await storage.remove(k).catch(() => undefined);
   }
 
   await audit({

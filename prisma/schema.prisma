@@ -227,7 +227,8 @@ model User {
   emailVerified   DateTime?
   passwordHash    String?     // null for Google-only users
   name            String?
-  image           String?
+  image           String?     // 256x256 webp avatar (storage:<key>)
+  imageLarge      String?     // 1024x1024 webp lightbox (storage:<key>)
   status          UserStatus  @default(PENDING_APPROVAL)
   groupId         String?
   group           Group?      @relation(fields: [groupId], references: [id], onDelete: SetNull)

@@ -16,10 +16,13 @@ export const dynamic = "force-dynamic";
  * `User.image = storage:<storageKey>`.
  */
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   ctx: { params: Promise<{ userId: string }> },
 ) {
   const { userId } = await ctx.params;
+  // `?size=lg` → 1024px lightbox sürümü; default ise 256px avatar.
+  // Eski uploads'larda `imageLarge` yoktur → küçük resme düşeriz.
+  const wantLarge = req.nextUrl.searchParams.get("size") === "lg";
 
   const viewer = await getCurrentUser();
   if (!viewer) return new NextResponse("Unauthorized", { status: 401 });
@@ -27,10 +30,11 @@ export async function GET(
 
   const row = await prisma.user.findUnique({
     where: { id: userId },
-    select: { image: true },
+    select: { image: true, imageLarge: true },
   });
-  if (!row?.image?.startsWith("storage:")) return new NextResponse("Not found", { status: 404 });
-  const key = row.image.slice("storage:".length);
+  const candidate = (wantLarge ? row?.imageLarge : null) ?? row?.image ?? null;
+  if (!candidate?.startsWith("storage:")) return new NextResponse("Not found", { status: 404 });
+  const key = candidate.slice("storage:".length);
 
   try {
     const { stream, size, mimeType } = await storage.get(key);

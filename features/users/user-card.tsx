@@ -2,11 +2,12 @@ import Link from "next/link";
 import { Building2, Mail, MapPin, Phone } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AvatarLightbox } from "@/components/app/avatar-lightbox";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { ROLE_LABELS, USER_STATUS_LABELS } from "@/lib/constants";
 import { groupBadgeClass } from "@/lib/group-badge";
-import { avatarUrl, cn, formatDate, initials } from "@/lib/utils";
+import { avatarUrl, avatarUrlLarge, cn, formatDate, initials } from "@/lib/utils";
 import type { Role, UserStatus } from "@prisma/client";
 
 export type UserCardData = {
@@ -91,18 +92,24 @@ export function UserCard({
       ) : null}
 
       <div className="flex items-center justify-center bg-gradient-to-b from-muted/40 to-muted/10 p-5">
-        <Avatar className="h-32 w-32 rounded-lg shadow-sm ring-4 ring-background sm:h-36 sm:w-36">
-          {user.image ? (
-            <AvatarImage
-              src={avatarUrl(user.id, user.image)}
-              alt={displayName}
-              className="rounded-lg object-cover"
-            />
-          ) : null}
-          <AvatarFallback className="rounded-lg text-2xl font-semibold">
-            {initials(user.name, user.email)}
-          </AvatarFallback>
-        </Avatar>
+        <AvatarLightbox
+          largeSrc={avatarUrlLarge(user.id, user.image)}
+          alt={displayName}
+          className="rounded-lg"
+        >
+          <Avatar className="h-32 w-32 rounded-lg shadow-sm ring-4 ring-background sm:h-36 sm:w-36">
+            {user.image ? (
+              <AvatarImage
+                src={avatarUrl(user.id, user.image)}
+                alt={displayName}
+                className="rounded-lg object-cover"
+              />
+            ) : null}
+            <AvatarFallback className="rounded-lg text-2xl font-semibold">
+              {initials(user.name, user.email)}
+            </AvatarFallback>
+          </Avatar>
+        </AvatarLightbox>
       </div>
 
       <div className="flex flex-1 flex-col gap-3 p-4">

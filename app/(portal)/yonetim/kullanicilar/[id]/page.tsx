@@ -341,6 +341,7 @@ export default async function AdminUserDetail({
               <ProfilePhotoUploader
                 targetUserId={user.id}
                 currentPhotoUrl={user.image ? `/api/profil/foto/${user.id}?v=${encodeURIComponent(user.image)}` : null}
+                largePhotoUrl={user.image ? `/api/profil/foto/${user.id}?size=lg&v=${encodeURIComponent(user.image)}` : null}
                 fallback={initials(user.name, user.email)}
               />
             </CardContent>

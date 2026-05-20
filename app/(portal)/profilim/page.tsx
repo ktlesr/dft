@@ -123,6 +123,7 @@ export default async function ProfilePage() {
             <CardContent className="space-y-6">
               <ProfilePhotoUploader
                 currentPhotoUrl={userRow?.image ? `/api/profil/foto/${user.id}?v=${encodeURIComponent(userRow.image)}` : null}
+                largePhotoUrl={userRow?.image ? `/api/profil/foto/${user.id}?size=lg&v=${encodeURIComponent(userRow.image)}` : null}
                 fallback={initials(userRow?.name ?? null, user.email)}
               />
               <Separator />

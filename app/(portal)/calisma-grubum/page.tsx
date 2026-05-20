@@ -126,12 +126,11 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
         },
       },
     }),
-    prisma.boardPost.findMany({
+    prisma.notice.findMany({
       where: {
         scope: "GROUP",
         groupId: viewGroupId,
         deletedAt: null,
-        status: "PUBLISHED",
       },
       orderBy: [{ pinned: "desc" }, { publishedAt: "desc" }],
       take: 20,
@@ -443,6 +442,8 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
             <ul className="space-y-2">
               {bildirimler.map((b) => {
                 const authorName = b.author.name?.trim() || b.author.email.split("@")[0];
+                const eventStartAt = (b as { eventStartAt?: Date | null }).eventStartAt ?? null;
+                const eventEndAt = (b as { eventEndAt?: Date | null }).eventEndAt ?? null;
                 return (
                   <li key={b.id} className="rounded-md border p-4">
                     <div className="flex items-start justify-between gap-2">
@@ -459,14 +460,12 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
                         <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-xs text-muted-foreground">
                           {b.body}
                         </p>
-                        {b.tags.length > 0 ? (
-                          <div className="mt-2 flex flex-wrap gap-1">
-                            {b.tags.map((t) => (
-                              <Badge key={t} variant="outline" className="text-[10px]">
-                                #{t}
-                              </Badge>
-                            ))}
-                          </div>
+                        {eventStartAt || eventEndAt || b.eventAt ? (
+                          <p className="mt-1.5 text-[11px] font-medium text-primary">
+                            {eventStartAt && eventEndAt
+                              ? `${formatDateTime(eventStartAt)} - ${formatDateTime(eventEndAt)}`
+                              : formatDateTime(eventStartAt ?? eventEndAt ?? b.eventAt!)}
+                          </p>
                         ) : null}
                         {b.externalUrl ? (
                           <p className="mt-1.5 truncate text-[11px]">
@@ -479,6 +478,22 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
                               {b.externalUrl}
                             </a>
                           </p>
+                        ) : null}
+                        {b.attachments.length > 0 ? (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {b.attachments.map((a) => (
+                              <a
+                                key={a.id}
+                                href={`/api/dosya/${a.id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="rounded-full border px-2 py-0.5 text-[11px] hover:border-primary hover:text-primary"
+                              >
+                                {a.originalName}
+                                <span className="text-muted-foreground"> · {humanSize(a.size)}</span>
+                              </a>
+                            ))}
+                          </div>
                         ) : null}
                         <p className="mt-1.5 text-[11px] text-muted-foreground">
                           {authorName} · {formatDateTime(b.publishedAt)}

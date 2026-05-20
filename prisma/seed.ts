@@ -339,11 +339,11 @@ async function main() {
   }
 
   // One Yol Haritası draft report per group.
-  const existingReports = await prisma.groupReport.count();
+  const existingReports = await prisma.report.count();
   if (existingReports === 0) {
     console.log("• Roadmap reports…");
     for (const c of created) {
-      await prisma.groupReport.create({
+      await prisma.report.create({
         data: {
           groupId: gid(c.code),
           kind: "YOL_HARITASI",

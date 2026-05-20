@@ -51,7 +51,7 @@ export async function createReport(
   // body/outputs are no longer collected from the form — the rapor flow
   // was simplified to "summary + attachments" only. body is nullable in
   // the DB (Faz B migration), so we simply omit it.
-  const row = await prisma.groupReport.create({
+  const row = await prisma.report.create({
     data: {
       groupId: user.groupId,
       kind: parsed.data.kind,
@@ -72,7 +72,7 @@ export async function createReport(
       owner: { reportId: row.id },
     });
   } catch (e) {
-    await prisma.groupReport.delete({ where: { id: row.id } });
+    await prisma.report.delete({ where: { id: row.id } });
     if (e instanceof UploadError) return { ok: false, message: "Ek dosya reddedildi." };
     throw e;
   }
@@ -97,7 +97,7 @@ export async function createReport(
   await audit({
     action: "REPORT_CREATED",
     actorId: user.id,
-    targetType: "GroupReport",
+    targetType: "Report",
     targetId: row.id,
     metadata: { kind: parsed.data.kind },
   });
@@ -108,14 +108,14 @@ export async function createReport(
 
 export async function removeReport(id: string): Promise<void> {
   const user = await requireActiveUser();
-  const row = await prisma.groupReport.findUnique({ where: { id } });
+  const row = await prisma.report.findUnique({ where: { id } });
   if (!row || row.deletedAt) redirect("/calisma-grubum");
   const canRemove =
     isAdmin(user) || (row.authorId === user.id && row.groupId === user.groupId);
   if (!canRemove) await redirectUnauthorized();
 
-  await prisma.groupReport.update({ where: { id }, data: { deletedAt: new Date() } });
-  await audit({ action: "REPORT_UPDATED", actorId: user.id, targetType: "GroupReport", targetId: id, metadata: { removed: true } });
+  await prisma.report.update({ where: { id }, data: { deletedAt: new Date() } });
+  await audit({ action: "REPORT_UPDATED", actorId: user.id, targetType: "Report", targetId: id, metadata: { removed: true } });
   revalidatePath("/calisma-grubum");
   redirect("/calisma-grubum");
 }

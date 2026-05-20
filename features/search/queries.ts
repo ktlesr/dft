@@ -132,7 +132,7 @@ export async function globalSearch(user: CurrentUser, rawQuery: string): Promise
   /* ── Group reports (group-scoped) ─────────────────────────────── */
   const reportsPromise =
     admin || user.groupId
-      ? prisma.groupReport.findMany({
+      ? prisma.report.findMany({
           where: {
             deletedAt: null,
             AND: [

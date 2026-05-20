@@ -21,7 +21,7 @@ export default async function ReportDetailPage({ params }: { params: Params }) {
   const { id } = await params;
   const user = await requireActiveUser();
 
-  const report = await prisma.groupReport.findUnique({
+  const report = await prisma.report.findUnique({
     where: { id },
     include: {
       author: { select: { id: true, name: true, email: true } },

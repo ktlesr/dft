@@ -2,7 +2,7 @@
   "name": "dft-portal",
   "version": "0.1.0",
   "private": true,
-  "description": "DFT Kapalı Portalı — kurumsal, güvenlik odaklı kapalı üye portalı",
+  "description": "DFT Projesi Portalı — kurumsal, güvenlik odaklı üye portalı",
   "scripts": {
     "dev": "next dev --turbo",
     "build": "next build",

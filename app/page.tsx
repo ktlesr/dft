@@ -73,7 +73,7 @@ export default async function LandingPage() {
 
       <footer className="border-t px-6 py-6 text-xs text-muted-foreground md:px-10">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
-          <span>© {new Date().getFullYear()} DFT — Kapalı Portal</span>
+          <span>© {new Date().getFullYear()} DFT Projesi Portalı</span>
           <span>Yetkisiz erişim teşebbüsleri kayıt altına alınır.</span>
         </div>
       </footer>

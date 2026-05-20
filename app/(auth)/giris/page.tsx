@@ -18,7 +18,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
       <CardHeader className="space-y-1.5">
         <CardTitle className="text-xl">Portala giriş yap</CardTitle>
         <CardDescription>
-          DFT Kapalı Portalı yalnızca yetkili üyelere açıktır. Hesap erişimi yönetici tarafından
+          DFT Projesi Portalı yalnızca yetkili üyelere açıktır. Hesap erişimi yönetici tarafından
           verilir.
         </CardDescription>
       </CardHeader>

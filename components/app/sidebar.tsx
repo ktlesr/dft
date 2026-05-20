@@ -120,7 +120,7 @@ export function Sidebar({ user, className }: SidebarProps) {
       </nav>
 
       <div className="border-t px-5 py-3">
-        <p className="text-[10px] text-muted-foreground">DFT Kapalı Portal · v0.1</p>
+        <p className="text-[10px] text-muted-foreground">DFT Projesi Portalı · v0.1</p>
       </div>
     </aside>
   );

@@ -8,11 +8,11 @@ import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: {
-    default: "DFT Kapalı Portalı",
+    default: "DFT Projesi Portalı",
     template: "%s · DFT Portal",
   },
   description:
-    "DFT üyelerine özel, kurumsal kapalı portal. Bu portal kamuya açık değildir ve yalnızca yetkili üyeler tarafından kullanılır.",
+    "DFT üyelerine özel, kurumsal DFT Projesi Portalı. Bu portal kamuya açık değildir ve yalnızca yetkili üyeler tarafından kullanılır.",
   robots: {
     index: false,
     follow: false,

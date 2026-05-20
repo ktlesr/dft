@@ -197,7 +197,7 @@ async function main() {
         {
           scope: "GENERAL",
           kind: "ANNOUNCEMENT",
-          title: "DFT Kapalı Portalı yayına alındı",
+          title: "DFT Projesi Portalı yayına alındı",
           body: "DFT Portal'ın ilk sürümü kullanıma hazır. Kayıtlarınızı, toplantılarınızı ve belgelerinizi artık tek merkezde yönetebilirsiniz.",
           tags: ["portal", "duyuru"],
           pinned: true,

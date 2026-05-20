@@ -108,7 +108,7 @@ export async function createInvite(
     text: [
       "Merhaba,",
       "",
-      "DFT Kapalı Portalı'na davet edildiniz. Aşağıdaki bağlantı ile hesabınızı tamamlayabilirsiniz:",
+      "DFT Projesi Portalı'na davet edildiniz. Aşağıdaki bağlantı ile hesabınızı tamamlayabilirsiniz:",
       "",
       link,
       "",

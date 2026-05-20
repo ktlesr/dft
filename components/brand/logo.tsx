@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 
 const LOGO_SRC = "/dft-logo.svg";
 const VERTICAL_LOGO_SRC = "/yesil-dft.svg";
-const LOGO_ALT = "DFT — Kapalı Portal";
+const LOGO_ALT = "DFT Projesi Portalı";
 
 type LockupProps = {
   className?: string;

@@ -1,7 +1,7 @@
 import type { Role } from "@prisma/client";
 
 export const APP_NAME = "DFT Portal";
-export const APP_FULL_NAME = "DFT Kapalı Portalı";
+export const APP_FULL_NAME = "DFT Projesi Portalı";
 
 /**
  * Faz 7: Groups are now fully dynamic (admin-managed). `GROUP_LABELS`

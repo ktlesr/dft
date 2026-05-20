@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import {
   BarChart3,
   CalendarDays,
@@ -19,12 +19,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/app/empty-state";
 import { requireActiveUser } from "@/lib/current-user";
 import { groupBadgeClass } from "@/lib/group-badge";
-import { getFixedKpiOverview } from "@/lib/kpi/queries";
+import { getFixedKpiOverview, listCustomKpisForUser } from "@/lib/kpi/queries";
 import { prisma } from "@/lib/prisma";
 import { BOARD_KIND_LABELS, GROUP_NOTE_KIND_LABELS, REPORT_KIND_LABELS } from "@/lib/constants";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { listGroupDiscussions } from "@/features/forum/queries";
 import { UserCard } from "@/features/users/user-card";
+import { CustomKpiManagement } from "@/features/kpi/custom-kpi-management";
 
 export const metadata = { title: "Çalışma Grubum" };
 export const dynamic = "force-dynamic";
@@ -67,7 +68,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
     );
   }
 
-  const [group, members, bildirimler, discussions, meetings, reports, notes, kpiOverview] = await Promise.all([
+  const [group, members, bildirimler, discussions, meetings, reports, notes, kpiOverview, customKpis] = await Promise.all([
     prisma.group.findUnique({ where: { id: user.groupId } }),
     prisma.user.findMany({
       where: {
@@ -90,8 +91,6 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
         },
       },
     }),
-    // Grup bildirimleri = grup kapsamlı BoardPost'lar. Faz 10'da "Bildirim Ekle"
-    // formu bu modeli oluşturur; sekme de buradan okur.
     prisma.boardPost.findMany({
       where: {
         scope: "GROUP",
@@ -127,6 +126,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
       },
     }),
     getFixedKpiOverview(user, user.groupId),
+    listCustomKpisForUser(user),
   ]);
 
   const moderators = members.filter((m) => m.roles.some((r) => r.role === "MODERATOR"));
@@ -415,63 +415,69 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
             </div>
           </div>
 
-          {kpiOverview.summaries.every((item) => item.value === 0) ? (
-            <EmptyState
-              title="KPI verisi yok"
-              description="Yeni kayitlar girildikce KPI metrikleri bu sekmede otomatik gosterilir."
-              icon={BarChart3}
-            />
-          ) : (
-            <>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {kpiOverview.summaries.map((item) => (
-                  <Card key={item.code}>
-                    <CardContent className="p-4">
-                      <p className="line-clamp-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        {item.label}
-                      </p>
-                      <p className="mt-2 text-2xl font-semibold tracking-tight">{item.value}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Grup KPI Ozeti</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[940px] text-sm">
-                      <thead>
-                        <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
-                          <th className="px-2 py-2">Grup</th>
-                          {kpiOverview.summaries.map((item) => (
-                            <th key={item.code} className="px-2 py-2">
-                              {item.label}
-                            </th>
-                          ))}
-                          <th className="px-2 py-2">Toplam</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {kpiOverview.groupRows.map((row) => (
-                          <tr key={row.groupId} className="border-b last:border-0">
-                            <td className="px-2 py-2 font-medium">{row.groupCode}</td>
-                            {kpiOverview.summaries.map((item) => (
-                              <td key={`${row.groupId}-${item.code}`} className="px-2 py-2">
-                                {row.values[item.code]}
-                              </td>
-                            ))}
-                            <td className="px-2 py-2 font-semibold">{row.total}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {kpiOverview.summaries.map((item) => (
+              <Card key={item.code}>
+                <CardContent className="p-4">
+                  <p className="line-clamp-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    {item.label}
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold tracking-tight">{item.value}</p>
                 </CardContent>
               </Card>
-            </>
+            ))}
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Grup KPI Özeti</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[940px] text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
+                      <th className="px-2 py-2">Grup</th>
+                      {kpiOverview.summaries.map((item) => (
+                        <th key={item.code} className="px-2 py-2">
+                          {item.label}
+                        </th>
+                      ))}
+                      <th className="px-2 py-2">Toplam</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {kpiOverview.groupRows.map((row) => (
+                      <tr key={row.groupId} className="border-b last:border-0">
+                        <td className="px-2 py-2 font-medium">{row.groupCode}</td>
+                        {kpiOverview.summaries.map((item) => (
+                          <td key={`${row.groupId}-${item.code}`} className="px-2 py-2">
+                            {row.values[item.code]}
+                          </td>
+                        ))}
+                        <td className="px-2 py-2 font-semibold">{row.total}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+
+          {customKpis.length > 0 && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between gap-3">
+                <CardTitle className="text-base">Özel KPI Kayıtları</CardTitle>
+                <Badge variant="outline">{customKpis.length} kayıt</Badge>
+              </CardHeader>
+              <CardContent>
+                <CustomKpiManagement
+                  kpis={customKpis}
+                  isAdmin={user.roles.includes("ADMIN")}
+                  currentGroupId={user.groupId}
+                />
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
 

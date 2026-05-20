@@ -38,7 +38,6 @@ export default async function KpiPage({ searchParams }: { searchParams: KpiPageS
 
   const { group } = await searchParams;
   const overview = await getFixedKpiOverview(user, group ?? null);
-  const total = overview.summaries.reduce((sum, item) => sum + item.value, 0);
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -66,41 +65,7 @@ export default async function KpiPage({ searchParams }: { searchParams: KpiPageS
       </Alert>
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Toplam KPI Olayi
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-semibold tracking-tight">{total}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {overview.selectedGroupCode
-                ? `${overview.selectedGroupCode} grubu`
-                : "Tum gruplar"}
-            </p>
-          </CardContent>
-        </Card>
-
-        {overview.summaries.slice(0, 3).map((item) => (
-          <Card key={item.code}>
-            <CardHeader className="pb-2">
-              <CardTitle className="line-clamp-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                {item.label}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-semibold tracking-tight">{item.value}</p>
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                Son hareket: {item.lastOccurredAt ? formatDateTime(item.lastOccurredAt) : "-"}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
-      </section>
-
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {overview.summaries.slice(3).map((item) => (
+        {overview.summaries.map((item) => (
           <Card key={item.code}>
             <CardHeader className="pb-2">
               <CardTitle className="line-clamp-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">

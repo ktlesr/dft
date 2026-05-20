@@ -31,10 +31,8 @@ export const noticeCreateSchema = z
     scope: z.enum(NOTICE_SCOPES),
     kind: z.enum(NOTICE_KINDS),
     groupId: z
-      .string()
-      .trim()
-      .optional()
-      .transform((v) => (v && v !== "" ? v : undefined)),
+      .union([z.string(), z.null(), z.undefined()])
+      .transform((v) => (typeof v === "string" && v.trim() !== "" ? v.trim() : undefined)),
     title: z.string().trim().min(2, "Başlık en az 2 karakter.").max(200, "Başlık çok uzun."),
     body: z.string().trim().min(1, "İçerik zorunlu.").max(10_000, "İçerik çok uzun."),
     externalUrl: optionalUrl,

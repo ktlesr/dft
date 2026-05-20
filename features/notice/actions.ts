@@ -92,7 +92,11 @@ export async function createNotice(
   if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error), values };
 
   // Sunucu tarafı yetki kontrolü — UI atlatılsa bile geçemez.
-  const groupId = parsed.data.scope === "GROUP" ? (parsed.data.groupId ?? null) : null;
+  // Moderatörde groupId formdan gelmezse kullanıcı grubu hedeflenir.
+  const groupId =
+    parsed.data.scope === "GROUP"
+      ? (parsed.data.groupId ?? (!isAdmin(user) ? user.groupId : null))
+      : null;
   if (!canCreateNotice(user, parsed.data.scope, groupId)) {
     return { ok: false, message: "Bu kapsamda bildirim oluşturma yetkiniz yok.", values };
   }

@@ -69,6 +69,7 @@ export function NoticePageForm({
   const [eventStartAt, setEventStartAt] = useState(state.values?.eventStartAt ?? "");
   const [eventEndAt, setEventEndAt] = useState(state.values?.eventEndAt ?? "");
   const [body, setBody] = useState(state.values?.body ?? "");
+  const submittedGroupId = groupId || defaultGroupId || groupOptions[0]?.id || "";
 
   const hydrated = useRef(false);
   useEffect(() => {
@@ -88,10 +89,18 @@ export function NoticePageForm({
     setBody(state.values.body ?? "");
   }, [initialGroupId, state.values]);
 
+  useEffect(() => {
+    const firstGroupId = groupOptions[0]?.id;
+    if (!groupId && firstGroupId && (isAdmin ? scope === "GROUP" : true)) {
+      setGroupId(firstGroupId);
+    }
+  }, [groupId, groupOptions, isAdmin, scope]);
+
   return (
     <form action={action}>
       {!isAdmin ? <input type="hidden" name="scope" value="GROUP" /> : null}
-      {!isAdmin && groupId ? <input type="hidden" name="groupId" value={groupId} /> : null}
+      {!isAdmin ? <input type="hidden" name="groupId" value={submittedGroupId} /> : null}
+      {isAdmin && scope === "GROUP" ? <input type="hidden" name="groupId" value={submittedGroupId} /> : null}
 
       <Card>
         <CardContent className="space-y-5 p-6">
@@ -119,7 +128,7 @@ export function NoticePageForm({
           {isAdmin && scope === "GROUP" ? (
             groupOptions.length > 0 ? (
               <Field name="groupId" label="Hedef Grup" required error={state.errors?.groupId}>
-                <Select name="groupId" value={groupId} onValueChange={setGroupId}>
+                <Select value={groupId} onValueChange={setGroupId}>
                   <SelectTrigger id="groupId">
                     <SelectValue placeholder="Seçiniz" />
                   </SelectTrigger>

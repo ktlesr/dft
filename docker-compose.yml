@@ -11,6 +11,8 @@
 #
 # Required environment variables (set in Dokploy or a .env file):
 #   AUTH_SECRET           — 32-byte base64 (openssl rand -base64 32)
+#   NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
+#                         — 32-byte base64; keep stable across deploys/replicas
 #   AUTH_URL              — public URL of the portal (e.g. https://dft.example.tr)
 #   APP_URL               — same as AUTH_URL (used inside emails / links)
 #   POSTGRES_PASSWORD     — strong DB password
@@ -47,6 +49,7 @@ services:
       NEXT_PUBLIC_APP_NAME: "DFT Portal"
       APP_URL: ${APP_URL:?set APP_URL in env}
       AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET in env}
+      NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: ${NEXT_SERVER_ACTIONS_ENCRYPTION_KEY:?set NEXT_SERVER_ACTIONS_ENCRYPTION_KEY in env}
       AUTH_URL: ${AUTH_URL:?set AUTH_URL in env}
       AUTH_TRUST_HOST: "true"
       DATABASE_URL: "postgresql://dft:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in env}@postgres:5432/dft_portal?schema=public"

@@ -382,6 +382,168 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
           ) : (
             <ul className="space-y-2">
               {bildirimler.map((b) => {
+                const authorName = b.author.name?.trim() || b.author.email.split("@")[0];
+                return (
+                  <li key={b.id} className="rounded-md border p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {b.pinned ? (
+                            <Pin className="h-3 w-3 shrink-0 text-amber-600" aria-label="Sabit" />
+                          ) : null}
+                          <p className="font-medium">{b.title}</p>
+                          <Badge variant="secondary" className="text-[10px]">
+                            {BOARD_KIND_LABELS[b.kind]}
+                          </Badge>
+                        </div>
+                        <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-xs text-muted-foreground">
+                          {b.body}
+                        </p>
+                        {b.tags.length > 0 ? (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {b.tags.map((t) => (
+                              <Badge key={t} variant="outline" className="text-[10px]">
+                                #{t}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : null}
+                        {b.externalUrl ? (
+                          <p className="mt-1.5 truncate text-[11px]">
+                            <a
+                              href={b.externalUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline"
+                            >
+                              {b.externalUrl}
+                            </a>
+                          </p>
+                        ) : null}
+                        <p className="mt-1.5 text-[11px] text-muted-foreground">
+                          {authorName} · {formatDateTime(b.publishedAt)}
+                        </p>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </TabsContent>
+
+        <TabsContent value="toplantilar">
+          {combinedMeetings.length === 0 ? (
+            <EmptyState title="Henüz toplantı yok" icon={CalendarDays} />
+          ) : (
+            <div className="rounded-md border overflow-x-auto bg-card">
+              <table className="w-full text-left border-collapse min-w-[700px]">
+                <thead>
+                  <tr className="border-b bg-muted/30 text-muted-foreground text-xs font-semibold uppercase tracking-wider">
+                    <th className="p-4">Başlık</th>
+                    <th className="p-4">Tür / Kapsam</th>
+                    <th className="p-4">Açıklama</th>
+                    <th className="p-4">Başlangıç Tarihi</th>
+                    <th className="p-4">Toplantı Bitiş Tarihi</th>
+                    <th className="p-4">Dosya / İndir</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y text-sm">
+                  {combinedMeetings.map((item) => {
+                    const isResult = item.type === "RESULT";
+                    return (
+                      <tr key={`${item.type}-${item.id}`} className="hover:bg-muted/10 transition-colors">
+                        <td className="p-4 font-medium max-w-[200px] truncate" title={item.title}>
+                          {item.title}
+                        </td>
+                        <td className="p-4">
+                          {isResult ? (
+                            <Badge variant="brand" className="font-semibold text-xs">
+                              Sonuç {item.scope === "MRDK" ? "(MRDK)" : "(Genel)"}
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="font-semibold text-xs">
+                              Grup Toplantısı
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="p-4 max-w-[250px] truncate text-muted-foreground text-xs" title={item.description ?? ""}>
+                          {item.description || "—"}
+                        </td>
+                        <td className="p-4 text-xs text-muted-foreground whitespace-nowrap">
+                          {formatDateTime(item.startAt)}
+                        </td>
+                        <td className="p-4 text-xs text-muted-foreground whitespace-nowrap">
+                          {item.endAt ? formatDateTime(item.endAt) : "—"}
+                        </td>
+                        <td className="p-4">
+                          {item.attachments.length > 0 ? (
+                            <div className="flex flex-col gap-1 max-w-[180px]">
+                              {item.attachments.map((att) => (
+                                <a
+                                  key={att.id}
+                                  href={`/api/dosya/${att.id}`}
+                                  className="inline-flex items-center gap-1.5 text-xs text-primary font-medium hover:underline truncate"
+                                  title={att.originalName}
+                                  download
+                                >
+                                  📎 <span className="truncate">{att.originalName}</span>
+                                </a>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="raporlar">
+          {reports.length === 0 ? (
+            <EmptyState title="Henüz rapor yok" icon={FileText} />
+          ) : (
+            <ul className="space-y-2">
+              {reports.map((r) => (
+                <li key={r.id} className="rounded-md border p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-medium">{r.title}</p>
+                    <Badge variant="secondary">{REPORT_KIND_LABELS[r.kind]}</Badge>
+                  </div>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {formatDate(r.periodStart)} – {formatDate(r.periodEnd)}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </TabsContent>
+
+        <TabsContent value="kpi" className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">
+              Bu sekmedeki KPI metrikleri grup üyelerinin girdiği kayıtlardan otomatik hesaplanır.
+            </p>
+            <div className="flex items-center gap-2">
+              <Button asChild variant="outline" size="sm">
+                <Link href="/kpi">KPI Takip</Link>
+              </Button>
+              <Button asChild variant="brand" size="sm">
+                <Link href="/kpi/yeni">KPI Ekle</Link>
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {kpiOverview.summaries.map((item) => (
+              <Card key={item.code}>
+                <CardContent className="p-4">
+                  <p className="line-clamp-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     {item.label}
                   </p>
                   <p className="mt-2 text-2xl font-semibold tracking-tight">

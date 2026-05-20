@@ -12,7 +12,7 @@ const optionalDateTime = z
   .string()
   .optional()
   .transform((v) => (v && v !== "" ? new Date(v) : undefined))
-  .refine((v) => v === undefined || !Number.isNaN(v.getTime()), "Gecersiz tarih.");
+  .refine((v) => v === undefined || !Number.isNaN(v.getTime()), "Geçersiz tarih.");
 
 const optionalUrl = z
   .string()
@@ -23,7 +23,7 @@ const optionalUrl = z
     (v) =>
       v === undefined ||
       /^https?:\/\/[\w\-._~:/?#[\]@!$&'()*+,;=%]+$/i.test(v),
-    "Gecerli bir URL girin (http:// veya https://).",
+    "Geçerli bir URL girin (http:// veya https://).",
   );
 
 export const noticeCreateSchema = z
@@ -35,8 +35,8 @@ export const noticeCreateSchema = z
       .trim()
       .optional()
       .transform((v) => (v && v !== "" ? v : undefined)),
-    title: z.string().trim().min(2, "Baslik en az 2 karakter.").max(200, "Baslik cok uzun."),
-    body: z.string().trim().min(1, "Icerik zorunlu.").max(10_000, "Icerik cok uzun."),
+    title: z.string().trim().min(2, "Başlık en az 2 karakter.").max(200, "Başlık çok uzun."),
+    body: z.string().trim().min(1, "İçerik zorunlu.").max(10_000, "İçerik çok uzun."),
     externalUrl: optionalUrl,
     eventAt: optionalDateTime,
     pinned: checkboxToBool,
@@ -46,7 +46,7 @@ export const noticeCreateSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["groupId"],
-        message: "Grup secilmelidir.",
+        message: "Grup seçilmelidir.",
       });
     }
   });

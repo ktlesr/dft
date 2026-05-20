@@ -117,7 +117,13 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
       take: 10,
     }),
     prisma.groupNote.findMany({
-      where: { groupId: user.groupId, deletedAt: null },
+      where: {
+        OR: [
+          { groupId: user.groupId },
+          { scope: "GENERAL" },
+        ],
+        deletedAt: null,
+      },
       orderBy: { createdAt: "desc" },
       take: 20,
       include: {
@@ -443,7 +449,6 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
                           {item.label}
                         </th>
                       ))}
-                      <th className="px-2 py-2">Toplam</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -455,7 +460,6 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
                             {row.values[item.code]}
                           </td>
                         ))}
-                        <td className="px-2 py-2 font-semibold">{row.total}</td>
                       </tr>
                     ))}
                   </tbody>

@@ -35,24 +35,46 @@ export async function createGroupNote(
   fd: FormData,
 ): Promise<GroupNoteFormState> {
   const user = await requireActiveUser();
-  if (!user.groupId) {
-    return { ok: false, message: "Not eklemek için bir çalışma grubuna atanmış olmalısınız." };
-  }
 
   const parsed = groupNoteSchema.safeParse({
     kind: fd.get("kind"),
     title: fd.get("title"),
     body: fd.get("body"),
+    scope: fd.get("scope"),
+    groupId: fd.get("groupId"),
   });
   if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
 
-  if (!canCreateGroupNote(user, user.groupId, parsed.data.kind)) {
+  const isAdvisorOrAdmin = user.roles.includes("ADMIN") || user.roles.includes("ADVISOR");
+
+  let finalScope = parsed.data.scope;
+  let finalGroupId = parsed.data.groupId;
+
+  if (!isAdvisorOrAdmin) {
+    if (!user.groupId) {
+      return { ok: false, message: "Not eklemek için bir çalışma grubuna atanmış olmalısınız." };
+    }
+    finalScope = "GROUP";
+    finalGroupId = user.groupId;
+  } else {
+    if (finalScope === "GENERAL") {
+      finalGroupId = null;
+    } else {
+      finalGroupId = finalGroupId || user.groupId;
+      if (!finalGroupId) {
+        return { ok: false, message: "Lütfen bir çalışma grubu seçin veya not kapsamını değiştirin." };
+      }
+    }
+  }
+
+  if (!canCreateGroupNote(user, finalGroupId, parsed.data.kind)) {
     return { ok: false, message: "Bu not türünü oluşturma yetkiniz yok." };
   }
 
   const row = await prisma.groupNote.create({
     data: {
-      groupId: user.groupId,
+      scope: finalScope,
+      groupId: finalGroupId,
       kind: parsed.data.kind,
       title: parsed.data.title,
       body: parsed.data.body,
@@ -78,13 +100,19 @@ export async function createGroupNote(
     throw e;
   }
 
-  // Notify group members.
+  // Notify members
+  const memberWhere =
+    finalScope === "GENERAL"
+      ? { groupId: { not: null }, status: "ACTIVE" as const, id: { not: user.id } }
+      : { groupId: finalGroupId, status: "ACTIVE" as const, id: { not: user.id } };
+
   const members = await prisma.user.findMany({
-    where: { groupId: user.groupId, status: "ACTIVE", id: { not: user.id } },
+    where: memberWhere,
     select: { id: true },
   });
+
   if (members.length > 0) {
-    const kindLabel = parsed.data.kind === "ADVISOR_NOTE" ? "Danisman Notu" : "Kalite Sorumlusu Notu";
+    const kindLabel = parsed.data.kind === "ADVISOR_NOTE" ? "Danışman Notu" : "Kalite Sorumlusu Notu";
     await prisma.notification.createMany({
       data: members.map((m) => ({
         userId: m.id,

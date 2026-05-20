@@ -213,7 +213,8 @@ async function resolveScope(user: CurrentUser, requestedGroupId?: string | null)
 function emptyMetricMap(): Record<FixedKpiCode, number> {
   return {
     KPI_PROJECT_IDEA_TOTAL: 0,
-    KPI_PROJECT_APPLICATION_TOTAL: 0,
+    KPI_PROJECT_APPLICATION_DIRECT_TOTAL: 0,
+    KPI_PROJECT_APPLICATION_GUIDANCE_TOTAL: 0,
     KPI_SUCCESSFUL_PROJECT_TOTAL: 0,
     KPI_EVENT_ATTENDED_TOTAL: 0,
     KPI_EVENT_ORGANIZED_TOTAL: 0,

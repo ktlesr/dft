@@ -172,8 +172,12 @@ export async function createProjectApplication(
     throw e;
   }
 
+  const metricCode = parsed.data.memberFunction === "DANISMANLIK"
+    ? "KPI_PROJECT_APPLICATION_GUIDANCE_TOTAL"
+    : "KPI_PROJECT_APPLICATION_DIRECT_TOTAL";
+
   await trackKpiEvent({
-    metricCode: "KPI_PROJECT_APPLICATION_TOTAL",
+    metricCode,
     sourceType: "PROJECT_APPLICATION",
     sourceId: row.id,
     actorUserId: user.id,
@@ -643,8 +647,11 @@ export async function softDeleteRecord(type: string, id: string): Promise<void> 
       if (!row || row.deletedAt) redirect("/kayitlarim?hata=bulunamadi");
       await mustOwnOr403(row, user.id, user.roles);
       await prisma.projectApplicationRecord.update({ where: { id }, data: { deletedAt: now } });
+      const metricCode = row.memberFunction === "DANISMANLIK"
+        ? "KPI_PROJECT_APPLICATION_GUIDANCE_TOTAL"
+        : "KPI_PROJECT_APPLICATION_DIRECT_TOTAL";
       await trackKpiEvent({
-        metricCode: "KPI_PROJECT_APPLICATION_TOTAL",
+        metricCode,
         sourceType: "PROJECT_APPLICATION",
         sourceId: row.id,
         actorUserId: user.id,

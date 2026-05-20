@@ -24,15 +24,23 @@ export default async function NewGroupNotePage({
   const hasAdvisor = user.roles.includes("ADVISOR");
   const hasKs = user.roles.includes("KS");
   const isAdmin = user.roles.includes("ADMIN");
+  const isAdvisorOrAdmin = isAdmin || hasAdvisor;
 
-  if (!user.groupId) {
+  if (!user.groupId && !isAdvisorOrAdmin) {
     return (
       <div className="mx-auto max-w-7xl">
         <PageHeader title="Not Ekle" breadcrumbs={[{ label: "Notlar" }]} />
-        <EmptyState icon={Users} title="Bir calisma grubuna atanmadiniz" />
+        <EmptyState icon={Users} title="Bir çalışma grubuna atanmadınız" />
       </div>
     );
   }
+
+  const groups = isAdvisorOrAdmin
+    ? await prisma.group.findMany({
+        orderBy: { name: "asc" },
+        select: { id: true, name: true },
+      })
+    : [];
 
   const roleAllowedKinds: NoteKind[] = [];
   if (isAdmin || hasAdvisor) roleAllowedKinds.push("ADVISOR_NOTE");
@@ -49,17 +57,17 @@ export default async function NewGroupNotePage({
   const defaultKind = allowedKinds[0]!;
   const modeDescription =
     requestedKind === "ADVISOR_NOTE"
-      ? "Danisman Notu olusturabilirsiniz."
+      ? "Danışman Notu oluşturabilirsiniz."
       : requestedKind === "KS_NOTE"
-        ? "Kalite Sorumlusu Notu olusturabilirsiniz."
+        ? "Kalite Sorumlusu Notu oluşturabilirsiniz."
         : allowedKinds.length > 1
-          ? "Danisman Notu veya Kalite Sorumlusu Notu olusturabilirsiniz."
+          ? "Danışman Notu veya Kalite Sorumlusu Notu oluşturabilirsiniz."
           : allowedKinds[0] === "ADVISOR_NOTE"
-            ? "Danisman Notu olusturabilirsiniz."
-            : "Kalite Sorumlusu Notu olusturabilirsiniz.";
+            ? "Danışman Notu oluşturabilirsiniz."
+            : "Kalite Sorumlusu Notu oluşturabilirsiniz.";
   const pageTitle =
     requestedKind === "ADVISOR_NOTE"
-      ? "Danisman Notu Ekle"
+      ? "Danışman Notu Ekle"
       : requestedKind === "KS_NOTE"
         ? "Kalite Sorumlusu Notu Ekle"
         : "Not Ekle";
@@ -74,11 +82,17 @@ export default async function NewGroupNotePage({
 
       <Alert className="mb-4">
         <AlertDescription>
-          Olusturdugunuz notlar calisma grubunuzda <strong>Danisman / KS Notlari</strong> sekmesinde gorunur.
+          Oluşturduğunuz notlar çalışma grubunuzda <strong>Danışman / KS Notları</strong> sekmesinde görünür.
         </AlertDescription>
       </Alert>
 
-      <GroupNoteForm allowedKinds={allowedKinds} defaultKind={defaultKind} />
+      <GroupNoteForm
+        allowedKinds={allowedKinds}
+        defaultKind={defaultKind}
+        isAdvisorOrAdmin={isAdvisorOrAdmin}
+        groups={groups}
+        defaultGroupId={user.groupId}
+      />
     </div>
   );
 }

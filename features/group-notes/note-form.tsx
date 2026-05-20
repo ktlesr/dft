@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { AlertCircle, Loader2 } from "lucide-react";
 
@@ -23,11 +23,18 @@ const INITIAL: GroupNoteFormState = { ok: true };
 export function GroupNoteForm({
   allowedKinds,
   defaultKind,
+  isAdvisorOrAdmin,
+  groups,
+  defaultGroupId,
 }: {
   allowedKinds: NoteKind[];
   defaultKind: NoteKind;
+  isAdvisorOrAdmin: boolean;
+  groups: { id: string; name: string }[];
+  defaultGroupId: string | null;
 }) {
   const [state, action, pending] = useActionState(createGroupNote, INITIAL);
+  const [scope, setScope] = useState<"GENERAL" | "GROUP">("GROUP");
   const singleKind = allowedKinds.length === 1;
 
   return (
@@ -63,6 +70,43 @@ export function GroupNoteForm({
                 </Select>
               )}
             </Field>
+
+            {isAdvisorOrAdmin && (
+              <>
+                <Field name="scope" label="Not Kapsamı" required error={state.errors?.scope}>
+                  <Select
+                    name="scope"
+                    value={scope}
+                    onValueChange={(val) => setScope(val as "GENERAL" | "GROUP")}
+                  >
+                    <SelectTrigger id="scope">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="GENERAL">Genel Bildirim</SelectItem>
+                      <SelectItem value="GROUP">Çalışma Grubu Bildirimi</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+
+                {scope === "GROUP" && (
+                  <Field name="groupId" label="Çalışma Grubu" required error={state.errors?.groupId}>
+                    <Select name="groupId" defaultValue={defaultGroupId ?? undefined}>
+                      <SelectTrigger id="groupId">
+                        <SelectValue placeholder="Grup Seçin" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {groups.map((g) => (
+                          <SelectItem key={g.id} value={g.id}>
+                            {g.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                )}
+              </>
+            )}
 
             <Field name="title" label="Konu" required error={state.errors?.title}>
               <Input id="title" name="title" required maxLength={200} />

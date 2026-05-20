@@ -58,13 +58,17 @@ export function canCreateReport(user: SessionUser, targetGroupId: string) {
 
 export function canCreateGroupNote(
   user: SessionUser,
-  targetGroupId: string,
+  targetGroupId: string | null,
   kind: GroupNoteKind,
 ) {
   if (isAdmin(user)) return true;
-  if (user.groupId !== targetGroupId) return false;
-  if (kind === "ADVISOR_NOTE") return isAdvisor(user);
-  return isKsManager(user);
+  if (kind === "ADVISOR_NOTE") {
+    return isAdvisor(user);
+  }
+  if (kind === "KS_NOTE") {
+    return isKsManager(user) && user.groupId === targetGroupId;
+  }
+  return false;
 }
 
 export function canSeeGroupResource(user: SessionUser, targetGroupId: string | null) {

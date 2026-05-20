@@ -164,6 +164,8 @@ enum AuditAction {
 enum KpiMetricCode {
   KPI_PROJECT_IDEA_TOTAL
   KPI_PROJECT_APPLICATION_TOTAL
+  KPI_PROJECT_APPLICATION_DIRECT_TOTAL
+  KPI_PROJECT_APPLICATION_GUIDANCE_TOTAL
   KPI_SUCCESSFUL_PROJECT_TOTAL
   KPI_EVENT_ATTENDED_TOTAL
   KPI_EVENT_ORGANIZED_TOTAL
@@ -237,7 +239,7 @@ model User {
   discussionReplies DiscussionReply[]
   meetings        Meeting[]
   minutes         MeetingMinute[]
-  reports         GroupReport[]
+  reports         Report[]
   groupNotes      GroupNote[]
   documents       Document[]
   projectApps     ProjectApplicationRecord[]
@@ -305,7 +307,7 @@ model Group {
   notices     Notice[]
   discussions Discussion[]
   meetings    Meeting[]
-  reports     GroupReport[]
+  reports     Report[]
   groupNotes  GroupNote[]
   documents   Document[]
   kpiMetricEvents KpiMetricEvent[]
@@ -418,7 +420,7 @@ model Attachment {
   minute        MeetingMinute? @relation(fields: [minuteId], references: [id], onDelete: Cascade)
 
   reportId      String?
-  report        GroupReport? @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  report        Report? @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
   groupNoteId   String?
   groupNote     GroupNote? @relation(fields: [groupNoteId], references: [id], onDelete: Cascade)
@@ -621,7 +623,7 @@ model MeetingMinute {
   @@index([meetingId])
 }
 
-model GroupReport {
+model Report {
   id          String     @id @default(cuid())
   groupId     String
   group       Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
@@ -630,8 +632,6 @@ model GroupReport {
   periodStart DateTime?
   periodEnd   DateTime?
   summary     String?    @db.Text
-  // Faz 6: Rapor formu sadeleştirildi; body artık opsiyonel. Eski kayıtlar
-  // dolu gelir; yeni kayıtlar sadece summary + attachment ile oluşturulur.
   body        String?    @db.Text
   outputs     String?    @db.Text
   authorId    String
@@ -641,13 +641,20 @@ model GroupReport {
   updatedAt   DateTime   @updatedAt
   deletedAt   DateTime?
 
-  @@index([groupId, kind])
+  @@index([groupId, kind, createdAt])
+  @@index([authorId, createdAt])
+}
+
+enum GroupNoteScope {
+  GENERAL
+  GROUP
 }
 
 model GroupNote {
   id          String        @id @default(cuid())
-  groupId     String
-  group       Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  scope       GroupNoteScope @default(GROUP)
+  groupId     String?
+  group       Group?        @relation(fields: [groupId], references: [id], onDelete: Cascade)
   kind        GroupNoteKind
   title       String
   body        String        @db.Text

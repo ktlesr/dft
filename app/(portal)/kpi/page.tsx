@@ -29,8 +29,8 @@ export default async function KpiPage({ searchParams }: { searchParams: KpiPageS
         <PageHeader title="KPI Takip" breadcrumbs={[{ label: "KPI Takip" }]} />
         <EmptyState
           icon={Users}
-          title="Bir calisma grubuna atanmadiniz"
-          description="KPI metrikleri grup bazli hesaplandigi icin bu ekran icin grup atamasi gerekir."
+          title="Bir çalışma grubuna atanmadınız"
+          description="KPI metrikleri grup bazlı hesaplandığı için bu ekran için grup ataması gerekir."
         />
       </div>
     );
@@ -57,10 +57,10 @@ export default async function KpiPage({ searchParams }: { searchParams: KpiPageS
 
       <Alert>
         <BarChart3 className="h-4 w-4" />
-        <AlertTitle>Sabit KPI seti otomatik hesaplanir</AlertTitle>
+        <AlertTitle>Sabit KPI seti otomatik hesaplanır</AlertTitle>
         <AlertDescription>
-          Bu ekrandaki 7 KPI kayitlardan beslenir. KPI Ekle alani sadece sabit set disindaki
-          ihtiyaclar icindir.
+          Bu ekrandaki 8 KPI kayıtlardan beslenir. KPI Ekle alanı sadece sabit set dışındaki
+          ihtiyaçlar içindir.
         </AlertDescription>
       </Alert>
 
@@ -107,7 +107,7 @@ export default async function KpiPage({ searchParams }: { searchParams: KpiPageS
             <EmptyState
               icon={BarChart3}
               title="KPI verisi yok"
-              description="Kayit girildikce KPI metrikleri otomatik olarak burada gorunecek."
+              description="Kayıt girildikçe KPI metrikleri otomatik olarak burada görünecek."
               className="border-0"
             />
           ) : (
@@ -121,7 +121,6 @@ export default async function KpiPage({ searchParams }: { searchParams: KpiPageS
                         {shortLabel(code)}
                       </th>
                     ))}
-                    <th className="px-2 py-2">Toplam</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -133,7 +132,6 @@ export default async function KpiPage({ searchParams }: { searchParams: KpiPageS
                           {row.values[code]}
                         </td>
                       ))}
-                      <td className="px-2 py-2 font-semibold">{row.total}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -150,17 +148,19 @@ function shortLabel(code: (typeof FIXED_KPI_CODES)[number]) {
   switch (code) {
     case "KPI_PROJECT_IDEA_TOTAL":
       return "Proje Fikri";
-    case "KPI_PROJECT_APPLICATION_TOTAL":
-      return "Basvuru";
+    case "KPI_PROJECT_APPLICATION_DIRECT_TOTAL":
+      return "Başvuru (Bireysel/DFT)";
+    case "KPI_PROJECT_APPLICATION_GUIDANCE_TOTAL":
+      return "Başvuru (Danışmanlık)";
     case "KPI_SUCCESSFUL_PROJECT_TOTAL":
-      return "Basarili";
+      return "Başarılı";
     case "KPI_EVENT_ATTENDED_TOTAL":
-      return "Etkinlik Katilim";
+      return "Etkinlik Katılım";
     case "KPI_EVENT_ORGANIZED_TOTAL":
-      return "Etkinlik Duzenlenen";
+      return "Etkinlik Düzenlenen";
     case "KPI_CONTENT_TOTAL":
-      return "Dijital Icerik";
+      return "Dijital İçerik";
     case "KPI_STAKEHOLDER_TOTAL":
-      return "Paydas";
+      return "Paydaş";
   }
 }

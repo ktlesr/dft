@@ -85,7 +85,7 @@ export function NewUserForm({ groups }: { groups: NewUserGroupOption[] }) {
             </Field>
             <Field
               name="academicTitle"
-              label="Akademik Ünvan"
+              label="Akademik Unvan"
               hint="Örn. Dr., Doç. Dr., Prof. Dr. — opsiyonel."
               error={state.errors?.academicTitle}
             >

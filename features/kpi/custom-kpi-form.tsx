@@ -55,30 +55,30 @@ export function CustomKpiForm({
           <input type="hidden" name="assigneeGroupId" value={groupId} />
 
           <div className="grid gap-4 md:grid-cols-2">
-            <Field name="name" label="KPI Adi" required error={state.errors?.name}>
+            <Field name="name" label="KPI Adı" required error={state.errors?.name}>
               <Input id="name" name="name" required maxLength={160} />
             </Field>
 
             <Field
               name="description"
-              label="Aciklama"
+              label="Açıklama"
               error={state.errors?.description}
               className="md:col-span-2"
             >
               <Textarea id="description" name="description" rows={4} maxLength={5000} />
             </Field>
 
-            <Field name="targetValue" label="Hedef deger" required error={state.errors?.targetValue}>
+            <Field name="targetValue" label="Hedef Değer" required error={state.errors?.targetValue}>
               <Input id="targetValue" name="targetValue" inputMode="decimal" required placeholder="0" />
             </Field>
 
-            <Field name="targetDate" label="Hedef tarihi" required error={state.errors?.targetDate}>
+            <Field name="targetDate" label="Hedef Tarihi" required error={state.errors?.targetDate}>
               <Input id="targetDate" name="targetDate" type="date" required />
             </Field>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <Field name="assigneeType" label="Sorumlu tipi" required error={state.errors?.assigneeType}>
+            <Field name="assigneeType" label="Sorumlu Tipi" required error={state.errors?.assigneeType}>
               <Select
                 name="assigneeType"
                 value={assigneeType}
@@ -88,8 +88,8 @@ export function CustomKpiForm({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="USER_SINGLE">Tek kisi</SelectItem>
-                  <SelectItem value="USER_MULTI">Coklu kisi</SelectItem>
+                  <SelectItem value="USER_SINGLE">Tek kişi</SelectItem>
+                  <SelectItem value="USER_MULTI">Çoklu kişi</SelectItem>
                   <SelectItem value="GROUP">Grup</SelectItem>
                 </SelectContent>
               </Select>
@@ -104,13 +104,13 @@ export function CustomKpiForm({
             ) : assigneeType === "USER_SINGLE" ? (
               <Field
                 name="assigneeUserIds"
-                label="Sorumlu kisi"
+                label="Sorumlu Kişi"
                 required
                 error={state.errors?.assigneeUserIds}
               >
                 <Select name="assigneeUserIds">
                   <SelectTrigger id="assigneeUserIds">
-                    <SelectValue placeholder="Kisi secin" />
+                    <SelectValue placeholder="Kişi seçin" />
                   </SelectTrigger>
                   <SelectContent>
                     {members.map((m) => (
@@ -127,7 +127,7 @@ export function CustomKpiForm({
                 label="Sorumlular"
                 required
                 error={state.errors?.assigneeUserIds}
-                hint="Birden fazla kisi secilebilir."
+                hint="Birden fazla kişi seçilebilir."
               >
                 <div className="max-h-52 space-y-2 overflow-auto rounded-md border p-3">
                   {members.map((m) => (
@@ -137,7 +137,7 @@ export function CustomKpiForm({
                     </label>
                   ))}
                   {members.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">Bu grupta aktif uye bulunmuyor.</p>
+                    <p className="text-xs text-muted-foreground">Bu grupta aktif üye bulunmuyor.</p>
                   ) : null}
                 </div>
               </Field>
@@ -154,7 +154,7 @@ export function CustomKpiForm({
               ) : (
                 <>
                   <PlusCircle className="h-4 w-4" />
-                  KPI taslagi olustur
+                  KPI taslağı oluştur
                 </>
               )}
             </Button>

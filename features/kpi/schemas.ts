@@ -10,19 +10,19 @@ const optionalDate = z
   .string()
   .optional()
   .transform((v) => (v && v !== "" ? new Date(v) : undefined))
-  .refine((v) => v === undefined || !Number.isNaN(v.getTime()), "Gecersiz tarih.");
+  .refine((v) => v === undefined || !Number.isNaN(v.getTime()), "Geçersiz tarih.");
 
 const optionalDecimal = z
   .string()
   .trim()
   .optional()
   .transform((v) => (v && v.length > 0 ? v : undefined))
-  .refine((v) => v === undefined || /^-?\d+([.,]\d+)?$/.test(v), "Gecersiz sayi.")
+  .refine((v) => v === undefined || /^-?\d+([.,]\d+)?$/.test(v), "Geçersiz sayı.")
   .transform((v) => (v ? v.replace(",", ".") : undefined));
 
 export const createCustomKpiSchema = z
   .object({
-    name: z.string().trim().min(2, "KPI adi en az 2 karakter olmalidir.").max(160),
+    name: z.string().trim().min(2, "KPI adı en az 2 karakter olmalıdır.").max(160),
     description: optionalText,
     targetValue: optionalDecimal,
     targetDate: optionalDate,
@@ -35,7 +35,7 @@ export const createCustomKpiSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["targetValue"],
-        message: "Hedef deger zorunludur.",
+        message: "Hedef değer zorunludur.",
       });
     }
     if (!v.targetDate) {
@@ -50,7 +50,7 @@ export const createCustomKpiSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["assigneeGroupId"],
-        message: "Grup secimi zorunludur.",
+        message: "Grup seçimi zorunludur.",
       });
     }
 
@@ -58,7 +58,7 @@ export const createCustomKpiSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["assigneeUserIds"],
-        message: "Tek kisi secmelisiniz.",
+        message: "Tek kişi seçmelisiniz.",
       });
     }
 
@@ -66,7 +66,7 @@ export const createCustomKpiSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["assigneeUserIds"],
-        message: "En az bir sorumlu secmelisiniz.",
+        message: "En az bir sorumlu seçmelisiniz.",
       });
     }
   });
@@ -91,7 +91,7 @@ export const reviseCustomKpiTargetSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["targetValue"],
-        message: "Hedef deger zorunludur.",
+        message: "Hedef değer zorunludur.",
       });
     }
     if (!v.targetDate) {
@@ -115,7 +115,7 @@ export const reviseCustomKpiBaselineSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["baselineValue"],
-        message: "Baseline deger zorunludur.",
+        message: "Baseline değer zorunludur.",
       });
     }
     if (!v.baselineDate) {
@@ -139,7 +139,7 @@ export const completeCustomKpiSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["actualValue"],
-        message: "Gerceklesen deger zorunludur.",
+        message: "Gerçekleşen değer zorunludur.",
       });
     }
   });

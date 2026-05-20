@@ -29,7 +29,7 @@ export function StakeholderForm() {
           <Field name="fullName" label="Adı Soyadı" required error={state.errors?.fullName}>
             <Input id="fullName" name="fullName" required maxLength={200} />
           </Field>
-          <Field name="positionTitle" label="Ünvanı" error={state.errors?.positionTitle}>
+          <Field name="positionTitle" label="Unvanı" error={state.errors?.positionTitle}>
             <Input id="positionTitle" name="positionTitle" maxLength={200} />
           </Field>
 

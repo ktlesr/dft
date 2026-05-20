@@ -56,7 +56,7 @@ export function UserEditForm({ defaults }: { defaults: UserEditDefaults }) {
         <Field name="organization" label="Kurum / Kuruluş" error={state.errors?.organization}>
           <Input id="organization" name="organization" maxLength={200} defaultValue={defaults.organization} />
         </Field>
-        <Field name="academicTitle" label="Akademik Ünvan" error={state.errors?.academicTitle}>
+        <Field name="academicTitle" label="Akademik Unvan" error={state.errors?.academicTitle}>
           <Input id="academicTitle" name="academicTitle" maxLength={50} defaultValue={defaults.academicTitle} />
         </Field>
 

@@ -111,7 +111,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
       orderBy: { startAt: "desc" },
       take: 10,
     }),
-    prisma.groupReport.findMany({
+    prisma.report.findMany({
       where: { groupId: user.groupId, deletedAt: null },
       orderBy: { createdAt: "desc" },
       take: 10,

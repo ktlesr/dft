@@ -254,7 +254,7 @@ export async function reviseCustomKpiTarget(
   });
 
   revalidateKpiPages();
-  return { ok: true, message: "KPI hedef degeri revize edildi." };
+  return { ok: true, message: "KPI hedef değeri revize edildi." };
 }
 
 export async function reviseCustomKpiBaseline(
@@ -342,7 +342,7 @@ export async function completeCustomKpi(
     return { ok: false, message: "Bu KPI için tamamlama yetkiniz yok." };
   }
   if (row.approvalStatus !== "APPROVED") {
-    return { ok: false, message: "KPI tamamlanmadan once onaylanmis olmali." };
+    return { ok: false, message: "KPI tamamlanmadan önce onaylanmış olmalı." };
   }
 
   const actualValue = toDecimal(parsed.data.actualValue)!;
@@ -403,8 +403,8 @@ export async function completeCustomKpi(
     actorId: user.id,
     title:
       evidenceType === "OVERACHIEVED"
-        ? "KPI hedef ustu tamamlandi"
-        : "KPI basarili tamamlandi",
+        ? "KPI hedef üstü tamamlandı"
+        : "KPI başarılı tamamlandı",
     body: parsed.data.note ?? "KPI tamamlama kaydı yapıldı ve kanıt eklendi.",
   });
 

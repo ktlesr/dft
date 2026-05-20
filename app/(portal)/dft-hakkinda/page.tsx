@@ -174,7 +174,7 @@ export default async function DftAboutPage() {
             <p className="text-muted-foreground">
               Portal üzerinde sahip olduğunuz yetkileri ve menü kullanımlarını detaylıca incelemek için size özel kılavuza göz atın.
             </p>
-            <UserManualModal roles={user.roles.map((r) => r.role)} />
+            <UserManualModal roles={user.roles} />
           </CardContent>
         </Card>
       </section>

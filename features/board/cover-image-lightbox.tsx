@@ -19,7 +19,7 @@ type CoverImageLightboxProps = {
 };
 
 const SIZE_CLASS: Record<NonNullable<CoverImageLightboxProps["size"]>, string> = {
-  cover: "h-44 w-44 sm:h-48 sm:w-48",
+  cover: "w-full h-48 sm:h-48 sm:w-48",
   thumb: "h-20 w-20 sm:h-24 sm:w-24",
 };
 
@@ -39,13 +39,17 @@ export function CoverImageLightbox({
     />
   );
 
+  const wrapperClass = `group block shrink-0 overflow-hidden rounded-md border bg-muted ${
+    size === "cover" ? "w-full sm:w-auto sm:self-start" : "self-start"
+  }`;
+
   if (externalUrl) {
     return (
       <a
         href={externalUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="group block shrink-0 self-start overflow-hidden rounded-md border bg-muted"
+        className={wrapperClass}
         title="Harici bağlantıyı aç"
       >
         {thumb}
@@ -58,7 +62,7 @@ export function CoverImageLightbox({
       <DialogTrigger asChild>
         <button
           type="button"
-          className="group block shrink-0 self-start overflow-hidden rounded-md border bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className={`${wrapperClass} focus:outline-none focus-visible:ring-2 focus-visible:ring-ring`}
           title={`${alt} — büyüt`}
         >
           {thumb}

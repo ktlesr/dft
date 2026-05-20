@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { GroupNoteForm } from "@/features/group-notes/note-form";
 import { redirectUnauthorized, requireActiveUser } from "@/lib/current-user";
 import { GROUP_NOTE_KIND_LABELS } from "@/lib/constants";
+import { prisma } from "@/lib/prisma";
 
 export const metadata = { title: "Not Ekle" };
 export const dynamic = "force-dynamic";

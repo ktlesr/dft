@@ -24,8 +24,8 @@ export default async function NewBildirimPage() {
         <PageHeader title="Bildirim Ekle" breadcrumbs={[{ label: "Bildirim Ekle" }]} />
         <EmptyState
           icon={Users}
-          title="Bir calisma grubuna atanmadiniz"
-          description="Yoneticiniz grubu atadiktan sonra bildirim olusturabilirsiniz."
+          title="Bir çalışma grubuna atanmadınız"
+          description="Yöneticiniz grubu atadıktan sonra bildirim oluşturabilirsiniz."
         />
       </div>
     );
@@ -48,13 +48,13 @@ export default async function NewBildirimPage() {
         title="Bildirim Ekle"
         description={
           admin
-            ? "Yonetici olarak bildirimin genel mi grup bazli mi oldugunu secebilirsiniz."
+            ? "Yönetici olarak bildirimin genel mi grup bazlı mı olduğunu seçebilirsiniz."
             : user.groupCode
-              ? `${user.groupCode} grubunun uyeleri bu bildirimi gorur.`
-              : "Bildirim atandiginiz calisma grubunda yayimlanir."
+              ? `${user.groupCode} grubunun üyeleri bu bildirimi görür.`
+              : "Bildirim atandığınız çalışma grubunda yayımlanır."
         }
         breadcrumbs={[
-          { label: "Calisma Grubum", href: "/calisma-grubum" },
+          { label: "Çalışma Grubum", href: "/calisma-grubum" },
           { label: "Bildirim Ekle" },
         ]}
       />

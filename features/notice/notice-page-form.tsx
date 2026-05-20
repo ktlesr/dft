@@ -70,7 +70,7 @@ export function NoticePageForm({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="GROUP">Calisma grubu bildirimi</SelectItem>
+                  <SelectItem value="GROUP">Çalışma grubu bildirimi</SelectItem>
                   <SelectItem value="GENERAL">Genel bildirim</SelectItem>
                 </SelectContent>
               </Select>
@@ -79,10 +79,10 @@ export function NoticePageForm({
 
           {isAdmin && scope === "GROUP" ? (
             groupOptions.length > 0 ? (
-              <Field name="groupId" label="Hedef grup" required error={state.errors?.groupId}>
+              <Field name="groupId" label="Hedef Grup" required error={state.errors?.groupId}>
                 <Select name="groupId" defaultValue={resolvedDefaultGroupId || undefined}>
                   <SelectTrigger id="groupId">
-                    <SelectValue placeholder="Seciniz" />
+                    <SelectValue placeholder="Seçiniz" />
                   </SelectTrigger>
                   <SelectContent>
                     {groupOptions.map((g) => (
@@ -96,17 +96,17 @@ export function NoticePageForm({
             ) : (
               <Alert>
                 <AlertDescription>
-                  Grup kapsaminda bildirim icin en az bir grup tanimli olmalidir.
+                  Grup kapsamında bildirim için en az bir grup tanımlı olmalıdır.
                 </AlertDescription>
               </Alert>
             )
           ) : null}
 
-          <Field name="title" label="Baslik" required error={state.errors?.title}>
+          <Field name="title" label="Başlık" required error={state.errors?.title}>
             <Input id="title" name="title" required maxLength={200} />
           </Field>
 
-          <Field name="kind" label="Bildirim tipi" required error={state.errors?.kind}>
+          <Field name="kind" label="Bildirim Tipi" required error={state.errors?.kind}>
             <Select name="kind" value={kind} onValueChange={(v) => setKind(v as "MEETING" | "EVENT" | "NEWS" | "OTHER")}>
               <SelectTrigger id="kind">
                 <SelectValue />
@@ -124,12 +124,12 @@ export function NoticePageForm({
             name="externalUrl"
             label={
               kind === "MEETING"
-                ? "Toplanti baglantisi (opsiyonel)"
+                ? "Toplantı bağlantısı (opsiyonel)"
                 : kind === "EVENT"
-                  ? "Etkinlik baglantisi (opsiyonel)"
+                  ? "Etkinlik bağlantısı (opsiyonel)"
                   : kind === "NEWS"
-                    ? "Haber baglantisi (opsiyonel)"
-                    : "Ilgili baglanti (opsiyonel)"
+                    ? "Haber bağlantısı (opsiyonel)"
+                    : "İlgili bağlantı (opsiyonel)"
             }
             error={state.errors?.externalUrl}
           >
@@ -138,14 +138,14 @@ export function NoticePageForm({
 
           <Field
             name="eventAt"
-            label="Tarih ve saat (opsiyonel)"
-            hint="Toplanti saati, son basvuru tarihi gibi olay zamani."
+            label="Tarih ve Saat (opsiyonel)"
+            hint="Toplantı saati, son başvuru tarihi gibi olay zamanı."
             error={state.errors?.eventAt}
           >
             <Input id="eventAt" name="eventAt" type="datetime-local" />
           </Field>
 
-          <Field name="body" label="Icerik" required error={state.errors?.body}>
+          <Field name="body" label="İçerik" required error={state.errors?.body}>
             <Textarea id="body" name="body" rows={6} required maxLength={10_000} />
           </Field>
 
@@ -153,7 +153,7 @@ export function NoticePageForm({
             <div className="flex items-center gap-2">
               <Checkbox id="pinned" name="pinned" value="on" />
               <Label htmlFor="pinned" className="text-sm font-normal">
-                Uste sabitle
+                Üste sabitle
               </Label>
             </div>
           ) : null}
@@ -165,7 +165,7 @@ export function NoticePageForm({
 
           <div className="flex items-center justify-end gap-2 border-t pt-5">
             <Button asChild variant="ghost" disabled={pending}>
-              <Link href="/calisma-grubum?tab=bildirimler">Vazgec</Link>
+              <Link href="/calisma-grubum?tab=bildirimler">Vazgeç</Link>
             </Button>
             <Button type="submit" variant="brand" disabled={pending || (isAdmin && scope === "GROUP" && groupOptions.length === 0)}>
               {pending ? (

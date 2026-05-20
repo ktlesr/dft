@@ -24,6 +24,12 @@ type GroupOption = {
   name: string;
 };
 
+function groupLabel(group: GroupOption): string {
+  return group.name.trim().toLowerCase() === group.code.trim().toLowerCase()
+    ? group.code
+    : `${group.code} - ${group.name}`;
+}
+
 export function MeetingResultForm({ groups }: { groups: GroupOption[] }) {
   const [state, action, pending] = useActionState(createMeetingResult, INITIAL);
   
@@ -104,7 +110,7 @@ export function MeetingResultForm({ groups }: { groups: GroupOption[] }) {
                     <div key={group.id} className="flex items-center space-x-2 p-1.5 hover:bg-muted/40 rounded-md transition-colors">
                       <Checkbox id={`group-${group.id}`} name="targetGroupIds" value={group.id} />
                       <label htmlFor={`group-${group.id}`} className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer select-none">
-                        <span className="font-bold text-brand-dark dark:text-brand">{group.code}</span> - {group.name}
+                        <span className="font-bold text-brand-dark dark:text-brand">{groupLabel(group)}</span>
                       </label>
                     </div>
                   ))}

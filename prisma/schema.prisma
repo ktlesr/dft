@@ -161,6 +161,7 @@ enum AuditAction {
   KPI_METRIC_EVENT_CREATED
   KPI_FIXED_TARGET_SET
   MEETING_RESULT_CREATED
+  REPORT_TEMPLATE_CREATED
 }
 
 enum KpiMetricCode {
@@ -262,6 +263,7 @@ model User {
   auditLogs       AuditLog[]
   notifications   Notification[]
   meetingResultsCreated MeetingResult[] @relation("MeetingResultCreator")
+  reportTemplatesCreated ReportTemplate[] @relation("ReportTemplateCreator")
   approvedById    String?
   approvedBy      User?        @relation("UserApprover", fields: [approvedById], references: [id], onDelete: SetNull)
   approvedUsers   User[]       @relation("UserApprover")
@@ -466,6 +468,9 @@ model Attachment {
   meetingResultId String?
   meetingResult   MeetingResult? @relation(fields: [meetingResultId], references: [id], onDelete: Cascade)
 
+  reportTemplateId String?
+  reportTemplate   ReportTemplate? @relation(fields: [reportTemplateId], references: [id], onDelete: Cascade)
+
   @@index([uploadedById])
   @@index([boardPostId])
   @@index([meetingId])
@@ -474,6 +479,7 @@ model Attachment {
   @@index([groupNoteId])
   @@index([documentId])
   @@index([meetingResultId])
+  @@index([reportTemplateId])
 }
 
 // ============================================================
@@ -1136,3 +1142,19 @@ model MeetingResult {
   @@index([createdById])
 }
 
+model ReportTemplate {
+  id             String       @id @default(cuid())
+  title          String
+  description    String?      @db.Text
+  scope          String       // "GENEL" | "GROUPS"
+  targetGroupIds String[]     @default([])
+  attachments    Attachment[]
+  createdById    String
+  createdBy      User         @relation("ReportTemplateCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+
+  @@index([createdById])
+  @@index([scope, createdAt])
+}

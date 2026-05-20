@@ -63,6 +63,13 @@ export async function GET(
           deletedAt: true,
         },
       },
+      reportTemplate: {
+        select: {
+          scope: true,
+          targetGroupIds: true,
+          deletedAt: true,
+        },
+      },
       kpiCustomEvidence: {
         select: {
           kpi: {
@@ -144,10 +151,19 @@ function canView(
       targetGroupIds: string[];
       deletedAt: Date | null;
     } | null;
+    reportTemplate: {
+      scope: string;
+      targetGroupIds: string[];
+      deletedAt: Date | null;
+    } | null;
     kpiCustomEvidence: { kpi: { groupId: string; deletedAt: Date | null } } | null;
   },
   viewerGroupId: string | null,
 ): boolean {
+  if (att.reportTemplate && !att.reportTemplate.deletedAt) {
+    if (att.reportTemplate.scope === "GENEL") return true;
+    return viewerGroupId !== null && att.reportTemplate.targetGroupIds.includes(viewerGroupId);
+  }
   if (att.meetingResult && !att.meetingResult.deletedAt) {
     if (att.meetingResult.scope === "GENEL") return true;
     if (att.meetingResult.scope === "MRDK") {

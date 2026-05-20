@@ -78,6 +78,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
     meetings,
     meetingResults,
     reports,
+    reportTemplates,
     notes,
     kpiOverview,
     customKpis,
@@ -154,6 +155,20 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
       where: { groupId: user.groupId, deletedAt: null },
       orderBy: { createdAt: "desc" },
       take: 20,
+    }),
+    prisma.reportTemplate.findMany({
+      where: {
+        deletedAt: null,
+        OR: [
+          { scope: "GENEL" },
+          { scope: "GROUPS", targetGroupIds: { has: user.groupId } },
+        ],
+      },
+      orderBy: { createdAt: "desc" },
+      include: {
+        attachments: { select: { id: true, originalName: true } },
+      },
+      take: 50,
     }),
     prisma.groupNote.findMany({
       where: {
@@ -505,23 +520,66 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
         </TabsContent>
 
         <TabsContent value="raporlar">
-          {reports.length === 0 ? (
-            <EmptyState title="Henüz rapor yok" icon={FileText} />
-          ) : (
-            <ul className="space-y-2">
-              {reports.map((r) => (
-                <li key={r.id} className="rounded-md border p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="font-medium">{r.title}</p>
-                    <Badge variant="secondary">{REPORT_KIND_LABELS[r.kind]}</Badge>
-                  </div>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {formatDate(r.periodStart)} – {formatDate(r.periodEnd)}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Şablonlar</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {reportTemplates.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Bu kapsamda görüntüleyebileceğiniz şablon bulunmuyor.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {reportTemplates.map((t) => (
+                      <li key={t.id} className="rounded-md border p-4">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium">{t.title}</p>
+                            {t.description ? (
+                              <p className="mt-1 text-xs text-muted-foreground">{t.description}</p>
+                            ) : null}
+                          </div>
+                          <Badge variant={t.scope === "GENEL" ? "secondary" : "outline"}>
+                            {t.scope === "GENEL" ? "Genel" : "Belli Gruplar"}
+                          </Badge>
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {t.attachments.map((att) => (
+                            <a
+                              key={att.id}
+                              href={`/api/dosya/${att.id}`}
+                              className="inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/5"
+                              download
+                            >
+                              İndir: {att.originalName}
+                            </a>
+                          ))}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+
+            {reports.length === 0 ? (
+              <EmptyState title="Henüz rapor yok" icon={FileText} />
+            ) : (
+              <ul className="space-y-2">
+                {reports.map((r) => (
+                  <li key={r.id} className="rounded-md border p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-medium">{r.title}</p>
+                      <Badge variant="secondary">{REPORT_KIND_LABELS[r.kind]}</Badge>
+                    </div>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {formatDate(r.periodStart)} – {formatDate(r.periodEnd)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="kpi" className="space-y-4">

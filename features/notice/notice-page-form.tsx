@@ -27,6 +27,12 @@ const INITIAL: NoticeFormState = { ok: true };
 
 type GroupOpt = { id: string; code: string; name: string };
 
+function groupLabel(group: GroupOpt): string {
+  return group.name.trim().toLowerCase() === group.code.trim().toLowerCase()
+    ? group.code
+    : `${group.code} - ${group.name}`;
+}
+
 export function NoticePageForm({
   isAdmin,
   groups,
@@ -87,7 +93,7 @@ export function NoticePageForm({
                   <SelectContent>
                     {groupOptions.map((g) => (
                       <SelectItem key={g.id} value={g.id}>
-                        {g.code} - {g.name}
+                        {groupLabel(g)}
                       </SelectItem>
                     ))}
                   </SelectContent>

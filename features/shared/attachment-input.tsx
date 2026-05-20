@@ -22,10 +22,12 @@ export function AttachmentInput({
   name = "attachments",
   className,
   disabled,
+  accept = ACCEPT,
 }: {
   name?: string;
   className?: string;
   disabled?: boolean;
+  accept?: string;
 }) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [files, setFiles] = React.useState<File[]>([]);
@@ -68,7 +70,7 @@ export function AttachmentInput({
           type="file"
           name={name}
           multiple
-          accept={ACCEPT}
+          accept={accept}
           className="hidden"
           onChange={onPick}
           disabled={disabled}

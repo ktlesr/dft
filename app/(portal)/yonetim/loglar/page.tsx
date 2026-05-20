@@ -65,6 +65,7 @@ const ACTION_LABELS: Record<AuditAction, string> = {
   KPI_METRIC_EVENT_CREATED: "KPI metriği işlendi",
   KPI_FIXED_TARGET_SET: "Sabit KPI hedefi belirlendi",
   MEETING_RESULT_CREATED: "Toplantı sonucu oluşturuldu",
+  REPORT_TEMPLATE_CREATED: "Rapor şablonu oluşturuldu",
 };
 
 type SearchParams = Promise<{ action?: string; actor?: string; target?: string }>;

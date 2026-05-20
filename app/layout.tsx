@@ -9,7 +9,7 @@ import { Toaster } from "@/components/ui/sonner";
 export const metadata: Metadata = {
   title: {
     default: "DFT Projesi Portalı",
-    template: "%s · DFT Portal",
+    template: "%s · DFT Projesi Portalı",
   },
   description:
     "DFT üyelerine özel, kurumsal DFT Projesi Portalı. Bu portal kamuya açık değildir ve yalnızca yetkili üyeler tarafından kullanılır.",
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
       noimageindex: true,
     },
   },
-  applicationName: "DFT Portal",
+  applicationName: "DFT Projesi Portalı",
   formatDetection: { email: false, address: false, telephone: false },
 };
 

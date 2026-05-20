@@ -10,13 +10,14 @@ import { requireActiveUser } from "@/lib/current-user";
 import { getAboutContent } from "@/features/about/queries";
 import { AboutModal } from "@/features/about/about-modal";
 import { UserCard } from "@/features/users/user-card";
+import { UserManualModal } from "@/features/about/user-manual-modal";
 
 export const metadata = { title: "DFT Hakkında" };
 export const dynamic = "force-dynamic";
 const DFT_ADMIN_EMAIL = "admin@dft.ktlsr.com";
 
 export default async function DftAboutPage() {
-  await requireActiveUser();
+  const user = await requireActiveUser();
 
   const [groups, members, postCount, meetingCount, about] = await Promise.all([
     prisma.group.findMany({ orderBy: { code: "asc" } }),
@@ -163,22 +164,17 @@ export default async function DftAboutPage() {
       </section>
 
       <section className="mt-8">
-        <Card>
+        <Card className="border-primary/20 bg-primary/5">
           <CardHeader>
-            <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              İletişim
+            <CardTitle className="text-xs font-medium uppercase tracking-wide text-primary">
+              Kullanım Kılavuzu
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <p className="flex items-center gap-2 text-foreground">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              <a href="mailto:iletisim@dft.local" className="hover:text-primary">
-                iletisim@dft.local
-              </a>
+          <CardContent className="space-y-4 text-sm">
+            <p className="text-muted-foreground">
+              Portal üzerinde sahip olduğunuz yetkileri ve menü kullanımlarını detaylıca incelemek için size özel kılavuza göz atın.
             </p>
-            <p className="text-xs text-muted-foreground">
-              Portal erişimi, hesap yönetimi ve içerik onayları için yönetim ekibine ulaşabilirsiniz.
-            </p>
+            <UserManualModal roles={user.roles.map((r) => r.role)} />
           </CardContent>
         </Card>
       </section>

@@ -1,6 +1,6 @@
 import type { Role } from "@prisma/client";
 
-export const APP_NAME = "DFT Portal";
+export const APP_NAME = "DFT Projesi Portalı";
 export const APP_FULL_NAME = "DFT Projesi Portalı";
 
 /**

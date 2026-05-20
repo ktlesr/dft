@@ -24,8 +24,6 @@ export const createCustomKpiSchema = z
   .object({
     name: z.string().trim().min(2, "KPI adi en az 2 karakter olmalidir.").max(160),
     description: optionalText,
-    baselineValue: optionalDecimal,
-    baselineDate: optionalDate,
     targetValue: optionalDecimal,
     targetDate: optionalDate,
     assigneeType: z.enum(["USER_SINGLE", "USER_MULTI", "GROUP"]),

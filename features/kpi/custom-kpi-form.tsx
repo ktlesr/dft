@@ -68,14 +68,6 @@ export function CustomKpiForm({
               <Textarea id="description" name="description" rows={4} maxLength={5000} />
             </Field>
 
-            <Field name="baselineValue" label="Baseline deger" error={state.errors?.baselineValue}>
-              <Input id="baselineValue" name="baselineValue" inputMode="decimal" placeholder="0" />
-            </Field>
-
-            <Field name="baselineDate" label="Baseline tarihi" error={state.errors?.baselineDate}>
-              <Input id="baselineDate" name="baselineDate" type="date" />
-            </Field>
-
             <Field name="targetValue" label="Hedef deger" required error={state.errors?.targetValue}>
               <Input id="targetValue" name="targetValue" inputMode="decimal" required placeholder="0" />
             </Field>

@@ -534,7 +534,9 @@ model Notice {
   group       Group?      @relation(fields: [groupId], references: [id], onDelete: SetNull)
   // Opsiyonel — bildirimin atıfta bulunduğu olay tarihi (toplantı saati,
   // başvuru son tarihi vb.). `publishedAt`/`createdAt` ise yayım anıdır.
-  eventAt     DateTime?
+  eventAt      DateTime?
+  eventStartAt DateTime?
+  eventEndAt   DateTime?
   attachments Attachment[]
   publishedAt DateTime    @default(now())
   createdAt   DateTime    @default(now())
@@ -545,6 +547,8 @@ model Notice {
   @@index([groupId, publishedAt])
   @@index([authorId])
   @@index([eventAt])
+  @@index([eventStartAt])
+  @@index([eventEndAt])
 }
 
 // ============================================================

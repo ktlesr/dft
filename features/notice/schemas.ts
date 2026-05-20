@@ -38,7 +38,8 @@ export const noticeCreateSchema = z
     title: z.string().trim().min(2, "Başlık en az 2 karakter.").max(200, "Başlık çok uzun."),
     body: z.string().trim().min(1, "İçerik zorunlu.").max(10_000, "İçerik çok uzun."),
     externalUrl: optionalUrl,
-    eventAt: optionalDateTime,
+    eventStartAt: optionalDateTime,
+    eventEndAt: optionalDateTime,
     pinned: checkboxToBool,
   })
   .superRefine((v, ctx) => {
@@ -47,6 +48,14 @@ export const noticeCreateSchema = z
         code: z.ZodIssueCode.custom,
         path: ["groupId"],
         message: "Grup seçilmelidir.",
+      });
+    }
+
+    if (v.eventStartAt && v.eventEndAt && v.eventEndAt.getTime() < v.eventStartAt.getTime()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["eventEndAt"],
+        message: "Bitiş tarihi, başlangıçtan önce olamaz.",
       });
     }
   });

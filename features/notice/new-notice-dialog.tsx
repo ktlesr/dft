@@ -30,18 +30,12 @@ const INITIAL: NoticeFormState = { ok: true };
 type GroupOpt = { id: string; code: string; name: string };
 
 type Props = {
-  /** Açık olan kanal — varsayılan kapsam ve UI metni için. */
   kanal: "genel" | "grup";
-  /** İstemcinin yetkisi: hangi kapsamları açabilir? */
   caps: {
-    /** Genel kapsamda yeni bildirim açabilir mi? (Admin) */
     canCreateGeneral: boolean;
-    /** Grup kapsamı için açabileceği gruplar. Admin: tüm gruplar; moderatör: kendi grubu. */
     groupsForGroupScope: GroupOpt[];
-    /** Üste sabitleme (admin). */
     canPin: boolean;
   };
-  /** Moderatör için sabit grup (UI gizleme). */
   fixedGroupId?: string | null;
 };
 
@@ -61,18 +55,17 @@ export function NewNoticeDialog({ kanal, caps, fixedGroupId }: Props) {
         ? "GROUP"
         : (allowedScopes[0] ?? "GENERAL");
 
-  const [scope, setScope] = React.useState<"GENERAL" | "GROUP">(defaultScope);
-  const [kind, setKind] = React.useState<"MEETING" | "EVENT" | "NEWS" | "OTHER">("NEWS");
+  const [scope, setScope] = React.useState<"GENERAL" | "GROUP">(
+    state.values?.scope === "GENERAL" || state.values?.scope === "GROUP"
+      ? (state.values.scope as "GENERAL" | "GROUP")
+      : defaultScope,
+  );
+  const [kind, setKind] = React.useState<"MEETING" | "EVENT" | "NEWS" | "OTHER">(
+    state.values?.kind && ["MEETING", "EVENT", "NEWS", "OTHER"].includes(state.values.kind)
+      ? (state.values.kind as "MEETING" | "EVENT" | "NEWS" | "OTHER")
+      : "NEWS",
+  );
 
-  React.useEffect(() => {
-    if (!pending && state.ok && !state.errors && !state.message) {
-      // form initial state — gerçek bir success sinyaline emin değiliz; useEffect cycle'da
-      // gereksiz close olmasın diye burada open'ı kapatmıyoruz. Aşağıdaki dependency
-      // değişimi sadece submit sonrası tetiklenir.
-    }
-  }, [pending, state]);
-
-  // Submit sonrası success → dialog kapansın.
   const prevPending = React.useRef(false);
   React.useEffect(() => {
     if (prevPending.current && !pending && state.ok && !state.errors && !state.message) {
@@ -109,7 +102,6 @@ export function NewNoticeDialog({ kanal, caps, fixedGroupId }: Props) {
             </Alert>
           ) : null}
 
-          {/* Kapsam — birden fazla seçenek varsa açılır, yoksa hidden. */}
           {allowedScopes.length > 1 ? (
             <Field name="scope" label="Kapsam" required error={state.errors?.scope}>
               <Select
@@ -121,12 +113,8 @@ export function NewNoticeDialog({ kanal, caps, fixedGroupId }: Props) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {allowedScopes.includes("GENERAL") ? (
-                    <SelectItem value="GENERAL">Genel bildirim</SelectItem>
-                  ) : null}
-                  {allowedScopes.includes("GROUP") ? (
-                    <SelectItem value="GROUP">Çalışma grubu bildirimi</SelectItem>
-                  ) : null}
+                  {allowedScopes.includes("GENERAL") ? <SelectItem value="GENERAL">Genel bildirim</SelectItem> : null}
+                  {allowedScopes.includes("GROUP") ? <SelectItem value="GROUP">Çalışma grubu bildirimi</SelectItem> : null}
                 </SelectContent>
               </Select>
             </Field>
@@ -134,20 +122,19 @@ export function NewNoticeDialog({ kanal, caps, fixedGroupId }: Props) {
             <input type="hidden" name="scope" value={scope} />
           )}
 
-          {/* Grup — yalnızca GROUP kapsam aktifken. */}
           {scope === "GROUP" ? (
             fixedGroupId && caps.groupsForGroupScope.length === 1 ? (
               <input type="hidden" name="groupId" value={fixedGroupId} />
             ) : (
               <Field name="groupId" label="Grup" required error={state.errors?.groupId}>
-                <Select name="groupId" defaultValue={fixedGroupId ?? undefined}>
+                <Select name="groupId" defaultValue={state.values?.groupId ?? fixedGroupId ?? undefined}>
                   <SelectTrigger id="groupId">
                     <SelectValue placeholder="Seçiniz" />
                   </SelectTrigger>
                   <SelectContent>
                     {caps.groupsForGroupScope.map((g) => (
                       <SelectItem key={g.id} value={g.id}>
-                        {g.code} — {g.name}
+                        {g.name.trim().toLowerCase() === g.code.trim().toLowerCase() ? g.code : `${g.code} - ${g.name}`}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -157,7 +144,7 @@ export function NewNoticeDialog({ kanal, caps, fixedGroupId }: Props) {
           ) : null}
 
           <Field name="title" label="Başlık" required error={state.errors?.title}>
-            <Input id="title" name="title" required maxLength={200} />
+            <Input id="title" name="title" required maxLength={200} defaultValue={state.values?.title ?? ""} />
           </Field>
 
           <Field name="kind" label="Bildirim tipi" required error={state.errors?.kind}>
@@ -182,29 +169,38 @@ export function NewNoticeDialog({ kanal, caps, fixedGroupId }: Props) {
             name="externalUrl"
             label={
               kind === "MEETING"
-                ? "Toplanti baglantisi (opsiyonel)"
+                ? "Toplantı bağlantısı (opsiyonel)"
                 : kind === "EVENT"
-                  ? "Etkinlik baglantisi (opsiyonel)"
+                  ? "Etkinlik bağlantısı (opsiyonel)"
                   : kind === "NEWS"
-                    ? "Haber baglantisi (opsiyonel)"
-                    : "Ilgili baglanti (opsiyonel)"
+                    ? "Haber bağlantısı (opsiyonel)"
+                    : "İlgili bağlantı (opsiyonel)"
             }
             error={state.errors?.externalUrl}
           >
-            <Input id="externalUrl" name="externalUrl" type="url" placeholder="https://..." />
+            <Input id="externalUrl" name="externalUrl" type="url" placeholder="https://..." defaultValue={state.values?.externalUrl ?? ""} />
           </Field>
 
           <Field
-            name="eventAt"
-            label="Tarih ve saat (opsiyonel)"
-            hint="Bildirimin atıfta bulunduğu olay zamanı; toplantı, son başvuru vb. için."
-            error={state.errors?.eventAt}
+            name="eventStartAt"
+            label="Başlangıç tarih ve saat (opsiyonel)"
+            hint="Bildirimin atıfta bulunduğu başlangıç zamanı."
+            error={state.errors?.eventStartAt}
           >
-            <Input id="eventAt" name="eventAt" type="datetime-local" />
+            <Input id="eventStartAt" name="eventStartAt" type="datetime-local" defaultValue={state.values?.eventStartAt ?? ""} />
+          </Field>
+
+          <Field
+            name="eventEndAt"
+            label="Bitiş tarih ve saat (opsiyonel)"
+            hint="Bildirimin atıfta bulunduğu bitiş zamanı."
+            error={state.errors?.eventEndAt}
+          >
+            <Input id="eventEndAt" name="eventEndAt" type="datetime-local" defaultValue={state.values?.eventEndAt ?? ""} />
           </Field>
 
           <Field name="body" label="İçerik" required error={state.errors?.body}>
-            <Textarea id="body" name="body" rows={5} required maxLength={10_000} />
+            <Textarea id="body" name="body" rows={5} required maxLength={10_000} defaultValue={state.values?.body ?? ""} />
           </Field>
 
           <div className="space-y-1.5">
@@ -214,7 +210,7 @@ export function NewNoticeDialog({ kanal, caps, fixedGroupId }: Props) {
 
           {caps.canPin ? (
             <div className="flex items-center gap-2">
-              <Checkbox id="pinned" name="pinned" value="on" />
+              <Checkbox id="pinned" name="pinned" value="on" defaultChecked={Boolean(state.values?.pinned)} />
               <Label htmlFor="pinned" className="text-sm font-normal">
                 Üste sabitle
               </Label>

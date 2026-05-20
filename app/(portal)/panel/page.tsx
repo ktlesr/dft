@@ -292,10 +292,12 @@ export default async function DashboardPage() {
                         {n.title}
                       </Link>
                     </div>
-                    {n.eventAt ? (
+                    {n.eventStartAt || n.eventEndAt || n.eventAt ? (
                       <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-primary">
                         <CalendarClock className="h-3 w-3" />
-                        {formatDateTime(n.eventAt)}
+                        {n.eventStartAt && n.eventEndAt
+                          ? `${formatDateTime(n.eventStartAt)} - ${formatDateTime(n.eventEndAt)}`
+                          : formatDateTime(n.eventStartAt ?? n.eventEndAt ?? n.eventAt!)}
                       </p>
                     ) : null}
                     <p className="mt-0.5 truncate text-xs text-muted-foreground">
@@ -363,10 +365,12 @@ export default async function DashboardPage() {
                         <Badge variant="outline" className={groupBadgeClass(n.group.code, "shrink-0 text-[10px]")}>{n.group.code}</Badge>
                       ) : null}
                     </div>
-                    {n.eventAt ? (
+                    {n.eventStartAt || n.eventEndAt || n.eventAt ? (
                       <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-primary">
                         <CalendarClock className="h-3 w-3" />
-                        {formatDateTime(n.eventAt)}
+                        {n.eventStartAt && n.eventEndAt
+                          ? `${formatDateTime(n.eventStartAt)} - ${formatDateTime(n.eventEndAt)}`
+                          : formatDateTime(n.eventStartAt ?? n.eventEndAt ?? n.eventAt!)}
                       </p>
                     ) : null}
                     <p className="mt-0.5 truncate text-xs text-muted-foreground">
@@ -405,4 +409,3 @@ export default async function DashboardPage() {
     </div>
   );
 }
-

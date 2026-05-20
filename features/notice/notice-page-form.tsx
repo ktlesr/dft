@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { AlertCircle, Loader2, Send } from "lucide-react";
 
@@ -45,20 +45,53 @@ export function NoticePageForm({
   canPin: boolean;
 }) {
   const [state, action, pending] = useActionState(createNoticeFromPage, INITIAL);
-  const initialScope: "GENERAL" | "GROUP" =
-    isAdmin && !defaultGroupId ? "GENERAL" : "GROUP";
-  const [scope, setScope] = useState<"GENERAL" | "GROUP">(initialScope);
-  const [kind, setKind] = useState<"MEETING" | "EVENT" | "NEWS" | "OTHER">("NEWS");
-
   const groupOptions = useMemo(() => groups, [groups]);
-  const resolvedDefaultGroupId = defaultGroupId ?? groupOptions[0]?.id ?? "";
+
+  const initialScope: "GENERAL" | "GROUP" =
+    state.values?.scope === "GROUP" || state.values?.scope === "GENERAL"
+      ? (state.values.scope as "GENERAL" | "GROUP")
+      : isAdmin && !defaultGroupId
+        ? "GENERAL"
+        : "GROUP";
+
+  const initialKind: "MEETING" | "EVENT" | "NEWS" | "OTHER" =
+    state.values?.kind && ["MEETING", "EVENT", "NEWS", "OTHER"].includes(state.values.kind)
+      ? (state.values.kind as "MEETING" | "EVENT" | "NEWS" | "OTHER")
+      : "NEWS";
+
+  const initialGroupId = state.values?.groupId ?? defaultGroupId ?? groupOptions[0]?.id ?? "";
+
+  const [scope, setScope] = useState<"GENERAL" | "GROUP">(initialScope);
+  const [kind, setKind] = useState<"MEETING" | "EVENT" | "NEWS" | "OTHER">(initialKind);
+  const [groupId, setGroupId] = useState(initialGroupId);
+  const [title, setTitle] = useState(state.values?.title ?? "");
+  const [externalUrl, setExternalUrl] = useState(state.values?.externalUrl ?? "");
+  const [eventStartAt, setEventStartAt] = useState(state.values?.eventStartAt ?? "");
+  const [eventEndAt, setEventEndAt] = useState(state.values?.eventEndAt ?? "");
+  const [body, setBody] = useState(state.values?.body ?? "");
+
+  const hydrated = useRef(false);
+  useEffect(() => {
+    if (hydrated.current || !state.values) return;
+    hydrated.current = true;
+    if (state.values.scope === "GROUP" || state.values.scope === "GENERAL") {
+      setScope(state.values.scope);
+    }
+    if (state.values.kind && ["MEETING", "EVENT", "NEWS", "OTHER"].includes(state.values.kind)) {
+      setKind(state.values.kind as "MEETING" | "EVENT" | "NEWS" | "OTHER");
+    }
+    setGroupId(state.values.groupId ?? initialGroupId);
+    setTitle(state.values.title ?? "");
+    setExternalUrl(state.values.externalUrl ?? "");
+    setEventStartAt(state.values.eventStartAt ?? "");
+    setEventEndAt(state.values.eventEndAt ?? "");
+    setBody(state.values.body ?? "");
+  }, [initialGroupId, state.values]);
 
   return (
     <form action={action}>
       {!isAdmin ? <input type="hidden" name="scope" value="GROUP" /> : null}
-      {!isAdmin && resolvedDefaultGroupId ? (
-        <input type="hidden" name="groupId" value={resolvedDefaultGroupId} />
-      ) : null}
+      {!isAdmin && groupId ? <input type="hidden" name="groupId" value={groupId} /> : null}
 
       <Card>
         <CardContent className="space-y-5 p-6">
@@ -86,7 +119,7 @@ export function NoticePageForm({
           {isAdmin && scope === "GROUP" ? (
             groupOptions.length > 0 ? (
               <Field name="groupId" label="Hedef Grup" required error={state.errors?.groupId}>
-                <Select name="groupId" defaultValue={resolvedDefaultGroupId || undefined}>
+                <Select name="groupId" value={groupId} onValueChange={setGroupId}>
                   <SelectTrigger id="groupId">
                     <SelectValue placeholder="Seçiniz" />
                   </SelectTrigger>
@@ -109,7 +142,7 @@ export function NoticePageForm({
           ) : null}
 
           <Field name="title" label="Başlık" required error={state.errors?.title}>
-            <Input id="title" name="title" required maxLength={200} />
+            <Input id="title" name="title" required maxLength={200} value={title} onChange={(e) => setTitle(e.target.value)} />
           </Field>
 
           <Field name="kind" label="Bildirim Tipi" required error={state.errors?.kind}>
@@ -139,25 +172,53 @@ export function NoticePageForm({
             }
             error={state.errors?.externalUrl}
           >
-            <Input id="externalUrl" name="externalUrl" type="url" placeholder="https://..." />
+            <Input
+              id="externalUrl"
+              name="externalUrl"
+              type="url"
+              placeholder="https://..."
+              value={externalUrl}
+              onChange={(e) => setExternalUrl(e.target.value)}
+            />
           </Field>
 
           <Field
-            name="eventAt"
-            label="Tarih ve Saat (opsiyonel)"
-            hint="Toplantı saati, son başvuru tarihi gibi olay zamanı."
-            error={state.errors?.eventAt}
+            name="eventStartAt"
+            label="Başlangıç Tarihi ve Saati (opsiyonel)"
+            hint="Toplantı başlangıcı, duyuru başlangıç zamanı vb."
+            error={state.errors?.eventStartAt}
           >
-            <Input id="eventAt" name="eventAt" type="datetime-local" />
+            <Input
+              id="eventStartAt"
+              name="eventStartAt"
+              type="datetime-local"
+              value={eventStartAt}
+              onChange={(e) => setEventStartAt(e.target.value)}
+            />
+          </Field>
+
+          <Field
+            name="eventEndAt"
+            label="Bitiş Tarihi ve Saati (opsiyonel)"
+            hint="Toplantı bitişi, son başvuru bitiş zamanı vb."
+            error={state.errors?.eventEndAt}
+          >
+            <Input
+              id="eventEndAt"
+              name="eventEndAt"
+              type="datetime-local"
+              value={eventEndAt}
+              onChange={(e) => setEventEndAt(e.target.value)}
+            />
           </Field>
 
           <Field name="body" label="İçerik" required error={state.errors?.body}>
-            <Textarea id="body" name="body" rows={6} required maxLength={10_000} />
+            <Textarea id="body" name="body" rows={6} required maxLength={10_000} value={body} onChange={(e) => setBody(e.target.value)} />
           </Field>
 
           {canPin ? (
             <div className="flex items-center gap-2">
-              <Checkbox id="pinned" name="pinned" value="on" />
+              <Checkbox id="pinned" name="pinned" value="on" defaultChecked={Boolean(state.values?.pinned)} />
               <Label htmlFor="pinned" className="text-sm font-normal">
                 Üste sabitle
               </Label>

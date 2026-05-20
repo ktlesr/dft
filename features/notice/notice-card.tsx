@@ -56,10 +56,14 @@ export function NoticeCard({ notice, caps }: Props) {
           ) : null}
         </div>
 
-        {notice.eventAt ? (
+        {notice.eventStartAt || notice.eventEndAt || notice.eventAt ? (
           <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
             <CalendarClock className="h-3.5 w-3.5" />
-            <span>{formatDateTime(notice.eventAt)}</span>
+            <span>
+              {notice.eventStartAt && notice.eventEndAt
+                ? `${formatDateTime(notice.eventStartAt)} - ${formatDateTime(notice.eventEndAt)}`
+                : formatDateTime(notice.eventStartAt ?? notice.eventEndAt ?? notice.eventAt!)}
+            </span>
           </div>
         ) : null}
 

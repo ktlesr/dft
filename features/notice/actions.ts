@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 import { audit } from "@/lib/audit";
@@ -16,9 +17,27 @@ export type NoticeFormState = {
   ok: boolean;
   message?: string;
   errors?: Record<string, string[]>;
+  values?: {
+    scope?: string;
+    kind?: string;
+    groupId?: string;
+    title?: string;
+    body?: string;
+    externalUrl?: string;
+    eventStartAt?: string;
+    eventEndAt?: string;
+    pinned?: boolean;
+  };
 };
 
 const OK: NoticeFormState = { ok: true };
+
+function isLegacyNoticeSchemaError(err: unknown): boolean {
+  if (err instanceof Prisma.PrismaClientValidationError) {
+    return err.message.includes("eventStartAt") || err.message.includes("eventEndAt");
+  }
+  return false;
+}
 
 function zodErrors(err: z.ZodError): Record<string, string[]> {
   const out: Record<string, string[]> = {};
@@ -29,18 +48,34 @@ function zodErrors(err: z.ZodError): Record<string, string[]> {
   return out;
 }
 
+function snapshotValues(fd: FormData): NonNullable<NoticeFormState["values"]> {
+  const read = (k: string) => String(fd.get(k) ?? "");
+  return {
+    scope: read("scope") || undefined,
+    kind: read("kind") || undefined,
+    groupId: read("groupId") || undefined,
+    title: read("title") || undefined,
+    body: read("body") || undefined,
+    externalUrl: read("externalUrl") || undefined,
+    eventStartAt: read("eventStartAt") || undefined,
+    eventEndAt: read("eventEndAt") || undefined,
+    pinned: read("pinned") === "on" || read("pinned") === "true",
+  };
+}
+
 /** Create a new notice. Role + group checks done server-side. */
 export async function createNotice(
   _prev: NoticeFormState,
   fd: FormData,
 ): Promise<NoticeFormState> {
   const user = await requireActiveUser();
+  const values = snapshotValues(fd);
 
   // Rate-limit ile abuse koruması — moderatör/admin için de geçerli.
   const ip = await getClientIp();
   const rl = await rateLimit(`notice:${user.id}:${ip}`, 30, 10 * 60_000);
   if (!rl.allowed) {
-    return { ok: false, message: "Çok fazla bildirim denemesi. Biraz sonra tekrar deneyin." };
+    return { ok: false, message: "Çok fazla bildirim denemesi. Biraz sonra tekrar deneyin.", values };
   }
 
   const parsed = noticeCreateSchema.safeParse({
@@ -50,40 +85,60 @@ export async function createNotice(
     title: fd.get("title"),
     body: fd.get("body"),
     externalUrl: fd.get("externalUrl"),
-    eventAt: fd.get("eventAt"),
+    eventStartAt: fd.get("eventStartAt"),
+    eventEndAt: fd.get("eventEndAt"),
     pinned: fd.get("pinned"),
   });
-  if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
+  if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error), values };
 
   // Sunucu tarafı yetki kontrolü — UI atlatılsa bile geçemez.
   const groupId = parsed.data.scope === "GROUP" ? (parsed.data.groupId ?? null) : null;
   if (!canCreateNotice(user, parsed.data.scope, groupId)) {
-    return { ok: false, message: "Bu kapsamda bildirim oluşturma yetkiniz yok." };
+    return { ok: false, message: "Bu kapsamda bildirim oluşturma yetkiniz yok.", values };
   }
 
   // GROUP scope: group gerçekten var mı? (canCreateNotice grubu doğrulamıyor)
   if (parsed.data.scope === "GROUP" && groupId) {
     const exists = await prisma.group.findUnique({ where: { id: groupId }, select: { id: true } });
-    if (!exists) return { ok: false, errors: { groupId: ["Grup bulunamadı."] } };
+    if (!exists) return { ok: false, errors: { groupId: ["Grup bulunamadı."] }, values };
   }
 
   // Pin yetkisi = oluşturma yetkisi. Admin her kapsam, moderatör kendi
   // grubu için sabitleyebilir.
   const pinned = parsed.data.pinned && canCreateNotice(user, parsed.data.scope, groupId);
 
-  const row = await prisma.notice.create({
-    data: {
-      scope: parsed.data.scope,
-      kind: parsed.data.kind,
-      title: parsed.data.title,
-      body: parsed.data.body,
-      externalUrl: parsed.data.externalUrl ?? null,
-      eventAt: parsed.data.eventAt ?? null,
-      pinned,
-      authorId: user.id,
-      groupId,
-    },
-  });
+  const createData = {
+    scope: parsed.data.scope,
+    kind: parsed.data.kind,
+    title: parsed.data.title,
+    body: parsed.data.body,
+    externalUrl: parsed.data.externalUrl ?? null,
+    eventAt: parsed.data.eventStartAt ?? null,
+    eventStartAt: parsed.data.eventStartAt ?? null,
+    eventEndAt: parsed.data.eventEndAt ?? null,
+    pinned,
+    authorId: user.id,
+    groupId,
+  };
+  const fallbackData = {
+    scope: parsed.data.scope,
+    kind: parsed.data.kind,
+    title: parsed.data.title,
+    body: parsed.data.body,
+    externalUrl: parsed.data.externalUrl ?? null,
+    eventAt: parsed.data.eventStartAt ?? null,
+    pinned,
+    authorId: user.id,
+    groupId,
+  };
+
+  let row;
+  try {
+    row = await prisma.notice.create({ data: createData as Prisma.NoticeUncheckedCreateInput });
+  } catch (e) {
+    if (!isLegacyNoticeSchemaError(e)) throw e;
+    row = await prisma.notice.create({ data: fallbackData });
+  }
 
   // Ek dosya yükleme — hata olursa notice'i geri sar (cascade temizliği için
   // attachment kayıtları onDelete: Cascade ile birlikte düşer).
@@ -103,9 +158,9 @@ export async function createNotice(
           : e.code === "mime_not_allowed"
             ? "Bir dosyanın türü desteklenmiyor."
             : e.code === "too_many"
-              ? `En fazla ${MAX_ATTACHMENTS_PER_REQUEST} dosya yükleyebilirsiniz.`
+            ? `En fazla ${MAX_ATTACHMENTS_PER_REQUEST} dosya yükleyebilirsiniz.`
               : "Dosya yükleme başarısız.";
-      return { ok: false, message: msg };
+      return { ok: false, message: msg, values };
     }
     throw e;
   }
@@ -143,6 +198,8 @@ export async function createNotice(
       groupId: row.groupId,
       pinned: row.pinned,
       eventAt: row.eventAt,
+      eventStartAt: parsed.data.eventStartAt ?? null,
+      eventEndAt: parsed.data.eventEndAt ?? null,
       externalUrl: row.externalUrl,
     },
   });

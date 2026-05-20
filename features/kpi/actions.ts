@@ -1,6 +1,6 @@
 "use server";
 
-import { Prisma } from "@prisma/client";
+import { KpiMetricCode, Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -24,6 +24,7 @@ import {
   reviseCustomKpiBaselineSchema,
   reviseCustomKpiTargetSchema,
   setCustomKpiApprovalSchema,
+  setFixedKpiTargetSchema,
 } from "./schemas";
 
 export type KpiFormState = {
@@ -583,3 +584,78 @@ async function notifyGroupModeratorsAndAdmins({
     })),
   });
 }
+
+export async function setFixedKpiTarget(
+  _prev: KpiFormState,
+  fd: FormData,
+): Promise<KpiFormState> {
+  const user = await requireActiveUser();
+  const groupId = fd.get("groupId") as string;
+  if (!groupId) {
+    return { ok: false, message: "Çalışma grubu bilgisi eksik." };
+  }
+  if (!canReviseKpi(user, groupId)) {
+    return { ok: false, message: "Bu çalışma grubu için hedef belirleme yetkiniz yok." };
+  }
+
+  const parsed = setFixedKpiTargetSchema.safeParse({
+    metricCode: fd.get("metricCode"),
+    baselineValue: fd.get("baselineValue"),
+    baselineDate: fd.get("baselineDate"),
+    targetValue: fd.get("targetValue"),
+    targetDate: fd.get("targetDate"),
+  });
+
+  if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
+
+  const input = parsed.data;
+  const metricCode = input.metricCode as KpiMetricCode;
+
+  const targetValue = toDecimal(input.targetValue)!;
+  const targetDate = input.targetDate!;
+  const baselineValue = toDecimal(input.baselineValue);
+  const baselineDate = input.baselineDate ?? null;
+
+  await prisma.kpiFixedTarget.upsert({
+    where: {
+      groupId_metricCode: {
+        groupId,
+        metricCode,
+      },
+    },
+    update: {
+      targetValue,
+      targetDate,
+      baselineValue,
+      baselineDate,
+    },
+    create: {
+      groupId,
+      metricCode,
+      targetValue,
+      targetDate,
+      baselineValue,
+      baselineDate,
+    },
+  });
+
+  await audit({
+    action: "KPI_FIXED_TARGET_SET",
+    actorId: user.id,
+    targetType: "KpiFixedTarget",
+    targetId: `${groupId}:${metricCode}`,
+    metadata: {
+      groupId,
+      metricCode,
+      targetValue: targetValue.toString(),
+      targetDate: targetDate.toISOString(),
+      baselineValue: baselineValue?.toString() ?? null,
+      baselineDate: baselineDate?.toISOString() ?? null,
+    },
+  });
+
+  revalidatePath("/calisma-grubum");
+  revalidatePath("/kpi");
+  return { ok: true, message: "Hedef başarıyla güncellendi." };
+}
+

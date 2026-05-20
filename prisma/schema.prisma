@@ -313,6 +313,7 @@ model Group {
   kpiMetricEvents KpiMetricEvent[]
   kpiCustoms  KpiCustom[]
   kpiCustomAssignees KpiCustomAssignee[] @relation("KpiCustomAssigneeGroup")
+  fixedTargets       KpiFixedTarget[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
@@ -1091,3 +1092,20 @@ model DictionaryItem {
   @@unique([kind, code])
   @@index([kind, active, order])
 }
+
+model KpiFixedTarget {
+  id            String        @id @default(cuid())
+  groupId       String
+  group         Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  metricCode    KpiMetricCode
+  baselineValue Decimal?      @db.Decimal(18, 2)
+  baselineDate  DateTime?
+  targetValue   Decimal?      @db.Decimal(18, 2)
+  targetDate    DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@unique([groupId, metricCode])
+  @@index([groupId])
+}
+

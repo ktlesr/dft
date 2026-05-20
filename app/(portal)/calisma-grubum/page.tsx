@@ -21,11 +21,13 @@ import { requireActiveUser } from "@/lib/current-user";
 import { groupBadgeClass } from "@/lib/group-badge";
 import { getFixedKpiOverview, listCustomKpisForUser } from "@/lib/kpi/queries";
 import { prisma } from "@/lib/prisma";
+import { canReviseKpi } from "@/lib/rbac";
 import { BOARD_KIND_LABELS, GROUP_NOTE_KIND_LABELS, REPORT_KIND_LABELS } from "@/lib/constants";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { listGroupDiscussions } from "@/features/forum/queries";
 import { UserCard } from "@/features/users/user-card";
 import { CustomKpiManagement } from "@/features/kpi/custom-kpi-management";
+import { FixedKpiManagement } from "@/features/kpi/fixed-kpi-management";
 
 export const metadata = { title: "Çalışma Grubum" };
 export const dynamic = "force-dynamic";
@@ -68,7 +70,18 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
     );
   }
 
-  const [group, members, bildirimler, discussions, meetings, reports, notes, kpiOverview, customKpis] = await Promise.all([
+  const [
+    group,
+    members,
+    bildirimler,
+    discussions,
+    meetings,
+    reports,
+    notes,
+    kpiOverview,
+    customKpis,
+    fixedTargets,
+  ] = await Promise.all([
     prisma.group.findUnique({ where: { id: user.groupId } }),
     prisma.user.findMany({
       where: {
@@ -133,6 +146,9 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
     }),
     getFixedKpiOverview(user, user.groupId),
     listCustomKpisForUser(user),
+    prisma.kpiFixedTarget.findMany({
+      where: { groupId: user.groupId },
+    }),
   ]);
 
   const moderators = members.filter((m) => m.roles.some((r) => r.role === "MODERATOR"));
@@ -433,6 +449,20 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
               </Card>
             ))}
           </div>
+
+          <FixedKpiManagement
+            groupId={user.groupId}
+            isModeratorOrAdmin={canReviseKpi(user, user.groupId)}
+            summaries={kpiOverview.summaries}
+            fixedTargets={fixedTargets.map((t) => ({
+              id: t.id,
+              metricCode: t.metricCode as any,
+              targetValue: t.targetValue ? t.targetValue.toString() : null,
+              targetDate: t.targetDate,
+              baselineValue: t.baselineValue ? t.baselineValue.toString() : null,
+              baselineDate: t.baselineDate,
+            }))}
+          />
 
           <Card>
             <CardHeader>

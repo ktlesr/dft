@@ -143,3 +143,31 @@ export const completeCustomKpiSchema = z
       });
     }
   });
+
+export const setFixedKpiTargetSchema = z
+  .object({
+    metricCode: z.string().min(1),
+    baselineValue: optionalDecimal,
+    baselineDate: optionalDate,
+    targetValue: optionalDecimal,
+    targetDate: optionalDate,
+  })
+  .superRefine((v, ctx) => {
+    if (!v.targetValue) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["targetValue"],
+        message: "Hedef değer zorunludur.",
+      });
+    }
+    if (!v.targetDate) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["targetDate"],
+        message: "Hedef tarihi zorunludur.",
+      });
+    }
+  });
+
+export type SetFixedKpiTargetInput = z.infer<typeof setFixedKpiTargetSchema>;
+

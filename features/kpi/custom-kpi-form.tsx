@@ -59,23 +59,6 @@ export function CustomKpiForm({
               <Input id="name" name="name" required maxLength={160} />
             </Field>
 
-            <Field name="assigneeType" label="Sorumlu tipi" required error={state.errors?.assigneeType}>
-              <Select
-                name="assigneeType"
-                value={assigneeType}
-                onValueChange={(v) => setAssigneeType(v as AssigneeType)}
-              >
-                <SelectTrigger id="assigneeType">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="USER_SINGLE">Tek kisi</SelectItem>
-                  <SelectItem value="USER_MULTI">Coklu kisi</SelectItem>
-                  <SelectItem value="GROUP">Grup</SelectItem>
-                </SelectContent>
-              </Select>
-            </Field>
-
             <Field
               name="description"
               label="Aciklama"
@@ -102,51 +85,72 @@ export function CustomKpiForm({
             </Field>
           </div>
 
-          {assigneeType === "GROUP" ? (
-            <div className="rounded-md border bg-muted/20 px-3 py-2 text-sm">
-              Sorumlu grup: <span className="font-medium">{groupLabel}</span>
-            </div>
-          ) : assigneeType === "USER_SINGLE" ? (
-            <Field
-              name="assigneeUserIds"
-              label="Sorumlu kisi"
-              required
-              error={state.errors?.assigneeUserIds}
-            >
-              <Select name="assigneeUserIds">
-                <SelectTrigger id="assigneeUserIds">
-                  <SelectValue placeholder="Kisi secin" />
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field name="assigneeType" label="Sorumlu tipi" required error={state.errors?.assigneeType}>
+              <Select
+                name="assigneeType"
+                value={assigneeType}
+                onValueChange={(v) => setAssigneeType(v as AssigneeType)}
+              >
+                <SelectTrigger id="assigneeType">
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {members.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>
-                      {m.label}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="USER_SINGLE">Tek kisi</SelectItem>
+                  <SelectItem value="USER_MULTI">Coklu kisi</SelectItem>
+                  <SelectItem value="GROUP">Grup</SelectItem>
                 </SelectContent>
               </Select>
             </Field>
-          ) : (
-            <Field
-              name="assigneeUserIds"
-              label="Sorumlular"
-              required
-              error={state.errors?.assigneeUserIds}
-              hint="Birden fazla kisi secilebilir."
-            >
-              <div className="max-h-52 space-y-2 overflow-auto rounded-md border p-3">
-                {members.map((m) => (
-                  <label key={m.id} className="flex items-center gap-2 text-sm">
-                    <Checkbox name="assigneeUserIds" value={m.id} />
-                    <span>{m.label}</span>
-                  </label>
-                ))}
-                {members.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">Bu grupta aktif uye bulunmuyor.</p>
-                ) : null}
-              </div>
-            </Field>
-          )}
+
+            {assigneeType === "GROUP" ? (
+              <Field name="assigneeGroupId" label="Sorumlular">
+                <div className="rounded-md border bg-muted/20 px-3 py-2 text-sm">
+                  Sorumlu grup: <span className="font-medium">{groupLabel}</span>
+                </div>
+              </Field>
+            ) : assigneeType === "USER_SINGLE" ? (
+              <Field
+                name="assigneeUserIds"
+                label="Sorumlu kisi"
+                required
+                error={state.errors?.assigneeUserIds}
+              >
+                <Select name="assigneeUserIds">
+                  <SelectTrigger id="assigneeUserIds">
+                    <SelectValue placeholder="Kisi secin" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {members.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            ) : (
+              <Field
+                name="assigneeUserIds"
+                label="Sorumlular"
+                required
+                error={state.errors?.assigneeUserIds}
+                hint="Birden fazla kisi secilebilir."
+              >
+                <div className="max-h-52 space-y-2 overflow-auto rounded-md border p-3">
+                  {members.map((m) => (
+                    <label key={m.id} className="flex items-center gap-2 text-sm">
+                      <Checkbox name="assigneeUserIds" value={m.id} />
+                      <span>{m.label}</span>
+                    </label>
+                  ))}
+                  {members.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">Bu grupta aktif uye bulunmuyor.</p>
+                  ) : null}
+                </div>
+              </Field>
+            )}
+          </div>
 
           <div className="flex items-center justify-end border-t pt-4">
             <Button type="submit" variant="brand" disabled={pending}>

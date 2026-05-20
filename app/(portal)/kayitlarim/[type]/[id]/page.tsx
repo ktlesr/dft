@@ -248,7 +248,6 @@ function describe(
           { label: "Çağrı / konu (legacy)", value: r.callTopic },
           { label: "Potansiyel ortaklar (legacy)", value: r.potentialPartners },
           { label: "Sonraki adım (legacy)", value: r.nextStep },
-          { label: "Hedef tarih (legacy)", value: formatDate(r.targetDate) },
           { label: "Notlar (legacy)", value: r.notes },
         ].filter((f) => f.value !== null && f.value !== ""),
       };

@@ -124,18 +124,20 @@ export default async function GeneralBoardPage({ searchParams }: { searchParams:
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input name="q" defaultValue={q ?? ""} placeholder="Paylaşımlarda ara…" className="pl-9" />
         </div>
-        <FilterSelect
-          param="tur"
-          value={kind}
-          options={kindOptions}
-          placeholder="Tüm türler"
-          allLabel="Tüm türler"
-          ariaLabel="Tür filtresi"
-        />
+        {!isCallGrantCategory ? (
+          <FilterSelect
+            param="tur"
+            value={kind}
+            options={kindOptions}
+            placeholder="Tüm türler"
+            allLabel="Tüm türler"
+            ariaLabel="Tür filtresi"
+          />
+        ) : null}
         <Button type="submit" variant="secondary">
           Ara
         </Button>
-        {q || kind ? (
+        {q || (!isCallGrantCategory && kind) ? (
           <Button asChild variant="ghost">
             <Link href={clearHref}>Temizle</Link>
           </Button>
@@ -144,9 +146,9 @@ export default async function GeneralBoardPage({ searchParams }: { searchParams:
 
       {posts.length === 0 ? (
         <EmptyState
-          title={q || kind ? "Sonuç bulunamadı" : "Henüz paylaşım yok"}
+          title={q || (!isCallGrantCategory && kind) ? "Sonuç bulunamadı" : "Henüz paylaşım yok"}
           description={
-            q || kind
+            q || (!isCallGrantCategory && kind)
               ? "Farklı bir arama veya filtre deneyin."
               : view?.creatorAdminOnly
                 ? "Yönetici yeni paylaşım eklediğinde burada görünecek."

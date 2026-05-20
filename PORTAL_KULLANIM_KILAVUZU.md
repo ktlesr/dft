@@ -38,7 +38,7 @@ Portalın tüm menülerine, gruplarına ve verilerine sınırsız erişimi olan 
 - **Yetkileri:** 
   - Yönetim paneli üzerinden yeni çalışma grupları açabilir, üyeleri davet edip silebilir.
   - Rol atamalarını yönetir.
-  - Özel KPI'ların referans değeri olan "Baseline (Başlangıç)" verilerini sadece Admin güncelleyebilir/silebilir.
+  - Özel KPI'ların referans değeri olan "Baseline" verilerini sadece Admin güncelleyebilir/silebilir.
   - Tüm genel pano ve grup panolarında duyuru (Bildirim) oluşturabilir.
 
 ### 2.2. Grup Moderatörü (Moderator)
@@ -89,8 +89,9 @@ Projenin ve grubun çıktılarının hedeflenen kalite standartlarına uygunluğ
 4. **Toplantılar:** Takvim entegrasyonlu, lokasyonlu ve dosyalı olarak girilen toplantı arşivleridir. (Herkes kayıt ekleyemez, sadece admin ve ilgili yetkililer yetkilidir).
 5. **Raporlar:** Raporlar sekmesinden raportör tarafından eklenen dönem raporları okunur.
 6. **KPI Sekmesi:**
-   - **Sabit KPI'lar:** Tüm sistem için aynı olan 7 metrik. Hiçbir hedef girilmez. Eklenen form verilerinden otomatik olarak grafik/puanlama oluşturur.
-   - **Özel KPI'lar:** Moderatörün girdiği, grup üyelerinin kanıt yüklediği KPI tablolarıdır. Onay-bekleyen-reddedilen şeklinde 3 farklı durumu barındırır.
+   - **Sabit KPI'lar:** Tüm sistem için tanımlı olan 7 temel metrik. Grup Moderatörü bu sabit KPI'lar için hedef değer atayabilir. Bu hedefler ve gerçekleşme oranları tablo şeklinde gösterilir.
+   - **Özel KPI'lar:** Moderatörün girdiği, grup üyelerinin kanıt yüklediği özel (Custom) KPI hedefleridir. Onay-bekleyen-reddedilen şeklinde 3 farklı durumu barındırır.
+   - *Not: Tüm KPI formlarından hedef/başlangıç/bitiş tarih alanları kaldırılmış olup, sadece sayısal hedef/baseline değerleri üzerinden işlem yapılmaktadır.*
 7. **Danışman / KS Notları:** Notların tasniflenerek okunabildiği sekmedir.
 8. **Üyeler:** İletişim bilgileri şeffaf olarak gösterilen üye kartlarıdır.
 

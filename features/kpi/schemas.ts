@@ -25,7 +25,6 @@ export const createCustomKpiSchema = z
     name: z.string().trim().min(2, "KPI adı en az 2 karakter olmalıdır.").max(160),
     description: optionalText,
     targetValue: optionalDecimal,
-    targetDate: optionalDate,
     assigneeType: z.enum(["USER_SINGLE", "USER_MULTI", "GROUP"]),
     assigneeUserIds: z.array(z.string().min(1)).default([]),
     assigneeGroupId: optionalText,
@@ -36,13 +35,6 @@ export const createCustomKpiSchema = z
         code: z.ZodIssueCode.custom,
         path: ["targetValue"],
         message: "Hedef değer zorunludur.",
-      });
-    }
-    if (!v.targetDate) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["targetDate"],
-        message: "Hedef tarihi zorunludur.",
       });
     }
 
@@ -83,7 +75,6 @@ export const reviseCustomKpiTargetSchema = z
   .object({
     kpiId: z.string().min(1),
     targetValue: optionalDecimal,
-    targetDate: optionalDate,
     reason: optionalText,
   })
   .superRefine((v, ctx) => {
@@ -94,20 +85,12 @@ export const reviseCustomKpiTargetSchema = z
         message: "Hedef değer zorunludur.",
       });
     }
-    if (!v.targetDate) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["targetDate"],
-        message: "Hedef tarihi zorunludur.",
-      });
-    }
   });
 
 export const reviseCustomKpiBaselineSchema = z
   .object({
     kpiId: z.string().min(1),
     baselineValue: optionalDecimal,
-    baselineDate: optionalDate,
     reason: optionalText,
   })
   .superRefine((v, ctx) => {
@@ -116,13 +99,6 @@ export const reviseCustomKpiBaselineSchema = z
         code: z.ZodIssueCode.custom,
         path: ["baselineValue"],
         message: "Baseline değer zorunludur.",
-      });
-    }
-    if (!v.baselineDate) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["baselineDate"],
-        message: "Baseline tarihi zorunludur.",
       });
     }
   });
@@ -147,10 +123,7 @@ export const completeCustomKpiSchema = z
 export const setFixedKpiTargetSchema = z
   .object({
     metricCode: z.string().min(1),
-    baselineValue: optionalDecimal,
-    baselineDate: optionalDate,
     targetValue: optionalDecimal,
-    targetDate: optionalDate,
   })
   .superRefine((v, ctx) => {
     if (!v.targetValue) {
@@ -158,13 +131,6 @@ export const setFixedKpiTargetSchema = z
         code: z.ZodIssueCode.custom,
         path: ["targetValue"],
         message: "Hedef değer zorunludur.",
-      });
-    }
-    if (!v.targetDate) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["targetDate"],
-        message: "Hedef tarihi zorunludur.",
       });
     }
   });

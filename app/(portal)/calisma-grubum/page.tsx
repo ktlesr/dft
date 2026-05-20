@@ -21,7 +21,7 @@ import { requireActiveUser } from "@/lib/current-user";
 import { groupBadgeClass } from "@/lib/group-badge";
 import { getFixedKpiOverview, listCustomKpisForUser } from "@/lib/kpi/queries";
 import { prisma } from "@/lib/prisma";
-import { canReviseKpi } from "@/lib/rbac";
+import { canCreateOrApproveKpi, canReviseKpi } from "@/lib/rbac";
 import { BOARD_KIND_LABELS, GROUP_NOTE_KIND_LABELS, REPORT_KIND_LABELS } from "@/lib/constants";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { listGroupDiscussions } from "@/features/forum/queries";
@@ -452,7 +452,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
 
           <FixedKpiManagement
             groupId={user.groupId}
-            isModeratorOrAdmin={canReviseKpi(user, user.groupId)}
+            isModerator={canCreateOrApproveKpi(user, user.groupId)}
             summaries={kpiOverview.summaries}
             fixedTargets={fixedTargets.map((t) => ({
               id: t.id,

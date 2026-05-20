@@ -71,10 +71,6 @@ export function CustomKpiForm({
             <Field name="targetValue" label="Hedef Değer" required error={state.errors?.targetValue}>
               <Input id="targetValue" name="targetValue" inputMode="decimal" required placeholder="0" />
             </Field>
-
-            <Field name="targetDate" label="Hedef Tarihi" required error={state.errors?.targetDate}>
-              <Input id="targetDate" name="targetDate" type="date" required />
-            </Field>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">

@@ -98,12 +98,10 @@ function KpiCard({
       <CardContent className="space-y-4">
         {kpi.description ? <p className="text-sm">{kpi.description}</p> : null}
 
-        <div className="grid gap-3 md:grid-cols-5">
-          <Info label="Hedef deger" value={kpi.targetValue ?? "-"} />
-          <Info label="Gerceklesen deger" value={kpi.actualValue ?? "-"} />
-          <Info label="Hedef tarihi" value={d(kpi.targetDate)} />
-          <Info label="Baseline deger" value={kpi.baselineValue ?? "-"} />
-          <Info label="Baseline tarihi" value={d(kpi.baselineDate)} />
+        <div className="grid gap-3 md:grid-cols-3">
+          <Info label="Hedef değer" value={kpi.targetValue ?? "-"} />
+          <Info label="Gerçekleşen değer" value={kpi.actualValue ?? "-"} />
+          <Info label="Baseline" value={kpi.baselineValue ?? "-"} />
         </div>
 
         <TargetProgress
@@ -167,24 +165,17 @@ function KpiCard({
             <form action={targetAction} className="rounded-md border p-3 space-y-2">
               <input type="hidden" name="kpiId" value={kpi.id} />
               <p className="text-sm font-medium">Hedef Revizyonu</p>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <Input
-                  name="targetValue"
-                  inputMode="decimal"
-                  defaultValue={kpi.targetValue ?? ""}
-                  placeholder="Hedef deger"
-                />
-                <Input
-                  type="date"
-                  name="targetDate"
-                  defaultValue={dateInput(kpi.targetDate)}
-                />
-              </div>
+              <Input
+                name="targetValue"
+                inputMode="decimal"
+                defaultValue={kpi.targetValue ?? ""}
+                placeholder="Hedef değer"
+              />
               <Input name="reason" placeholder="Revizyon notu (opsiyonel)" />
               <FormMessage state={targetState} />
               <Button size="sm" type="submit" disabled={targetPending}>
                 {targetPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                Hedefi guncelle
+                Hedefi güncelle
               </Button>
             </form>
 
@@ -192,24 +183,17 @@ function KpiCard({
               <form action={baselineAction} className="rounded-md border p-3 space-y-2">
                 <input type="hidden" name="kpiId" value={kpi.id} />
                 <p className="text-sm font-medium">Baseline Revizyonu (Admin)</p>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <Input
-                    name="baselineValue"
-                    inputMode="decimal"
-                    defaultValue={kpi.baselineValue ?? ""}
-                    placeholder="Baseline deger"
-                  />
-                  <Input
-                    type="date"
-                    name="baselineDate"
-                    defaultValue={dateInput(kpi.baselineDate)}
-                  />
-                </div>
-                <Input name="reason" placeholder="Degisiklik nedeni" />
+                <Input
+                  name="baselineValue"
+                  inputMode="decimal"
+                  defaultValue={kpi.baselineValue ?? ""}
+                  placeholder="Baseline"
+                />
+                <Input name="reason" placeholder="Değişiklik nedeni" />
                 <FormMessage state={baselineState} />
                 <Button size="sm" type="submit" disabled={baselinePending}>
                   {baselinePending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  Baseline guncelle
+                  Baseline güncelle
                 </Button>
               </form>
             ) : null}

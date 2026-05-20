@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
@@ -190,6 +190,7 @@ export async function resetAction(_prev: FormState, formData: FormData): Promise
 export async function signOutAction(): Promise<void> {
   const current = await getCurrentUser();
   await audit({ action: "USER_LOGOUT", actorId: current?.id });
-  await signOut({ redirectTo: "/giris" });
+  await signOut({ redirect: false });
+  redirect("/giris");
 }
 

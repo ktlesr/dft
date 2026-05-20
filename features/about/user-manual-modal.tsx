@@ -104,7 +104,7 @@ export function UserManualModal({ roles }: UserManualModalProps) {
                 <FeatureCard 
                   icon={BarChart3} 
                   title="KPI & Baseline Kontrolü" 
-                  desc="Özel KPI'ların başlangıç (Baseline) hedeflerini silebilir veya revize edebilirsiniz." 
+                  desc="Özel KPI'ların Baseline hedeflerini silebilir veya revize edebilirsiniz." 
                   variant="admin"
                 />
                 <FeatureCard 

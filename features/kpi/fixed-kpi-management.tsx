@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { Calendar, Edit3, Loader2, Target, Trophy } from "lucide-react";
+import { Edit3, Loader2, Target, Trophy } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -35,7 +35,7 @@ interface KpiFixedTargetItem {
 
 interface FixedKpiManagementProps {
   groupId: string;
-  isModeratorOrAdmin: boolean;
+  isModerator: boolean;
   summaries: Array<{
     code: FixedKpiCode;
     label: string;
@@ -46,7 +46,7 @@ interface FixedKpiManagementProps {
 
 export function FixedKpiManagement({
   groupId,
-  isModeratorOrAdmin,
+  isModerator,
   summaries,
   fixedTargets,
 }: FixedKpiManagementProps) {
@@ -86,7 +86,7 @@ export function FixedKpiManagement({
                 <th className="px-4 py-3 text-center">Hedef Değer</th>
                 <th className="px-4 py-3 text-center">Gerçekleşen</th>
                 <th className="px-4 py-3 text-center">Durum / Kalan</th>
-                {isModeratorOrAdmin && <th className="px-4 py-3 text-right">İşlemler</th>}
+                {isModerator && <th className="px-4 py-3 text-right">İşlemler</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">
@@ -142,12 +142,6 @@ export function FixedKpiManagement({
                           <div className="font-medium text-foreground">
                             {parseFloat(targetObj.baselineValue)}
                           </div>
-                          {targetObj.baselineDate && (
-                            <div className="text-[10px] text-muted-foreground flex items-center justify-center gap-1 mt-0.5">
-                              <Calendar className="h-3 w-3" />
-                              {new Date(targetObj.baselineDate).toLocaleDateString("tr-TR")}
-                            </div>
-                          )}
                         </div>
                       ) : (
                         <span className="text-muted-foreground text-xs">-</span>
@@ -159,12 +153,6 @@ export function FixedKpiManagement({
                           <div className="font-semibold text-foreground">
                             {parseFloat(targetObj.targetValue)}
                           </div>
-                          {targetObj.targetDate && (
-                            <div className="text-[10px] text-muted-foreground flex items-center justify-center gap-1 mt-0.5">
-                              <Calendar className="h-3 w-3" />
-                              {new Date(targetObj.targetDate).toLocaleDateString("tr-TR")}
-                            </div>
-                          )}
                         </div>
                       ) : (
                         <span className="text-muted-foreground text-xs">Tanımlanmamış</span>
@@ -195,7 +183,7 @@ export function FixedKpiManagement({
                         </div>
                       )}
                     </td>
-                    {isModeratorOrAdmin && (
+                    {isModerator && (
                       <td className="px-4 py-3.5 text-right">
                         <Button
                           variant="ghost"
@@ -227,7 +215,7 @@ export function FixedKpiManagement({
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Target className="h-5 w-5 text-brand" />
-                Hedef & Baseline Tanımla
+                Hedef Tanımla
               </DialogTitle>
               <DialogDescription>
                 {selectedKpi && FIXED_KPI_LABELS[selectedKpi]} metrik göstergesi için grup hedef değerlerini düzenleyin.
@@ -242,78 +230,19 @@ export function FixedKpiManagement({
               )}
 
               <div className="border rounded-lg p-3 bg-muted/20 space-y-4">
-                <div className="font-medium text-xs text-muted-foreground uppercase tracking-wide">
-                  Baseline (Başlangıç) Değerleri
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="baselineValue">Değer</Label>
-                    <Input
-                      id="baselineValue"
-                      name="baselineValue"
-                      placeholder="Örn: 2"
-                      inputMode="decimal"
-                      defaultValue={activeTargetItem?.baselineValue || ""}
-                    />
-                    {formState.errors?.baselineValue?.[0] && (
-                      <p className="text-[10px] text-destructive">{formState.errors.baselineValue[0]}</p>
-                    )}
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="baselineDate">Başlangıç Tarihi</Label>
-                    <Input
-                      id="baselineDate"
-                      name="baselineDate"
-                      type="date"
-                      defaultValue={
-                        activeTargetItem?.baselineDate
-                          ? new Date(activeTargetItem.baselineDate).toISOString().split("T")[0]
-                          : ""
-                      }
-                    />
-                    {formState.errors?.baselineDate?.[0] && (
-                      <p className="text-[10px] text-destructive">{formState.errors.baselineDate[0]}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="border rounded-lg p-3 bg-muted/20 space-y-4">
-                <div className="font-medium text-xs text-muted-foreground uppercase tracking-wide">
-                  Hedef Değerleri
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="targetValue">Hedef Değer</Label>
-                    <Input
-                      id="targetValue"
-                      name="targetValue"
-                      placeholder="Örn: 10"
-                      inputMode="decimal"
-                      defaultValue={activeTargetItem?.targetValue || ""}
-                      required
-                    />
-                    {formState.errors?.targetValue?.[0] && (
-                      <p className="text-[10px] text-destructive">{formState.errors.targetValue[0]}</p>
-                    )}
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="targetDate">Hedef Tarihi</Label>
-                    <Input
-                      id="targetDate"
-                      name="targetDate"
-                      type="date"
-                      defaultValue={
-                        activeTargetItem?.targetDate
-                          ? new Date(activeTargetItem.targetDate).toISOString().split("T")[0]
-                          : ""
-                      }
-                      required
-                    />
-                    {formState.errors?.targetDate?.[0] && (
-                      <p className="text-[10px] text-destructive">{formState.errors.targetDate[0]}</p>
-                    )}
-                  </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="targetValue">Hedef Değer</Label>
+                  <Input
+                    id="targetValue"
+                    name="targetValue"
+                    placeholder="Örn: 10"
+                    inputMode="decimal"
+                    defaultValue={activeTargetItem?.targetValue || ""}
+                    required
+                  />
+                  {formState.errors?.targetValue?.[0] && (
+                    <p className="text-[10px] text-destructive">{formState.errors.targetValue[0]}</p>
+                  )}
                 </div>
               </div>
             </div>

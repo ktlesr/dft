@@ -60,7 +60,6 @@ export async function createCustomKpi(
     name: fd.get("name"),
     description: fd.get("description"),
     targetValue: fd.get("targetValue"),
-    targetDate: fd.get("targetDate"),
     assigneeType: fd.get("assigneeType"),
     assigneeUserIds: fd
       .getAll("assigneeUserIds")
@@ -94,9 +93,9 @@ export async function createCustomKpi(
         name: input.name,
         description: input.description ?? null,
         baselineValue: toDecimal(input.targetValue),
-        baselineDate: input.targetDate ?? null,
+        baselineDate: new Date(),
         targetValue: toDecimal(input.targetValue),
-        targetDate: input.targetDate ?? null,
+        targetDate: new Date(),
         createdById: user.id,
         status: "DRAFT",
         approvalStatus: "PENDING",
@@ -209,7 +208,6 @@ export async function reviseCustomKpiTarget(
   const parsed = reviseCustomKpiTargetSchema.safeParse({
     kpiId: fd.get("kpiId"),
     targetValue: fd.get("targetValue"),
-    targetDate: fd.get("targetDate"),
     reason: fd.get("reason"),
   });
   if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
@@ -220,14 +218,12 @@ export async function reviseCustomKpiTarget(
   }
 
   const nextValue = toDecimal(parsed.data.targetValue)!;
-  const nextDate = parsed.data.targetDate!;
 
   await prisma.$transaction(async (tx) => {
     await tx.kpiCustom.update({
       where: { id: row.id },
       data: {
         targetValue: nextValue,
-        targetDate: nextDate,
       },
     });
 
@@ -238,19 +234,6 @@ export async function reviseCustomKpiTarget(
           field: "TARGET_VALUE",
           oldValue: row.targetValue?.toString() ?? undefined,
           newValue: nextValue.toString(),
-          changedById: user.id,
-          reason: parsed.data.reason ?? null,
-        },
-      });
-    }
-
-    if (!sameDate(row.targetDate, nextDate)) {
-      await tx.kpiCustomRevision.create({
-        data: {
-          kpiId: row.id,
-          field: "TARGET_DATE",
-          oldValue: row.targetDate?.toISOString() ?? undefined,
-          newValue: nextDate.toISOString(),
           changedById: user.id,
           reason: parsed.data.reason ?? null,
         },
@@ -270,11 +253,11 @@ export async function reviseCustomKpiTarget(
     kpiId: row.id,
     actorId: user.id,
     title: "KPI hedefi revize edildi",
-    body: parsed.data.reason ?? "Hedef deger veya hedef tarihi guncellendi.",
+    body: parsed.data.reason ?? "Hedef deger guncellendi.",
   });
 
   revalidateKpiPages();
-  return { ok: true, message: "KPI hedef degeri/tarihi revize edildi." };
+  return { ok: true, message: "KPI hedef degeri revize edildi." };
 }
 
 export async function reviseCustomKpiBaseline(
@@ -285,7 +268,6 @@ export async function reviseCustomKpiBaseline(
   const parsed = reviseCustomKpiBaselineSchema.safeParse({
     kpiId: fd.get("kpiId"),
     baselineValue: fd.get("baselineValue"),
-    baselineDate: fd.get("baselineDate"),
     reason: fd.get("reason"),
   });
   if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
@@ -295,14 +277,12 @@ export async function reviseCustomKpiBaseline(
 
   const row = await requireKpiForGroup(user, parsed.data.kpiId);
   const nextValue = toDecimal(parsed.data.baselineValue)!;
-  const nextDate = parsed.data.baselineDate!;
 
   await prisma.$transaction(async (tx) => {
     await tx.kpiCustom.update({
       where: { id: row.id },
       data: {
         baselineValue: nextValue,
-        baselineDate: nextDate,
       },
     });
 
@@ -313,19 +293,6 @@ export async function reviseCustomKpiBaseline(
           field: "TARGET_VALUE",
           oldValue: row.baselineValue?.toString() ?? undefined,
           newValue: nextValue.toString(),
-          changedById: user.id,
-          reason: parsed.data.reason ?? null,
-        },
-      });
-    }
-
-    if (!sameDate(row.baselineDate, nextDate)) {
-      await tx.kpiBaselineHistory.create({
-        data: {
-          kpiId: row.id,
-          field: "TARGET_DATE",
-          oldValue: row.baselineDate?.toISOString() ?? undefined,
-          newValue: nextDate.toISOString(),
           changedById: user.id,
           reason: parsed.data.reason ?? null,
         },
@@ -346,18 +313,18 @@ export async function reviseCustomKpiBaseline(
     actorId: user.id,
     kind: "kpi",
     title: "KPI baseline guncellendi",
-    body: parsed.data.reason ?? "Baseline deger/tarih admin tarafindan revize edildi.",
+    body: parsed.data.reason ?? "Baseline deger admin tarafindan revize edildi.",
     link: "/kpi/yeni",
   });
   await notifyKpiCreatedByAndAssignees({
     kpiId: row.id,
     actorId: user.id,
     title: "KPI baseline guncellendi",
-    body: parsed.data.reason ?? "Baseline deger/tarih admin tarafindan revize edildi.",
+    body: parsed.data.reason ?? "Baseline deger admin tarafindan revize edildi.",
   });
 
   revalidateKpiPages();
-  return { ok: true, message: "KPI baseline degeri/tarihi guncellendi." };
+  return { ok: true, message: "KPI baseline degeri guncellendi." };
 }
 
 export async function completeCustomKpi(
@@ -594,16 +561,13 @@ export async function setFixedKpiTarget(
   if (!groupId) {
     return { ok: false, message: "Çalışma grubu bilgisi eksik." };
   }
-  if (!canReviseKpi(user, groupId)) {
+  if (!canCreateOrApproveKpi(user, groupId)) {
     return { ok: false, message: "Bu çalışma grubu için hedef belirleme yetkiniz yok." };
   }
 
   const parsed = setFixedKpiTargetSchema.safeParse({
     metricCode: fd.get("metricCode"),
-    baselineValue: fd.get("baselineValue"),
-    baselineDate: fd.get("baselineDate"),
     targetValue: fd.get("targetValue"),
-    targetDate: fd.get("targetDate"),
   });
 
   if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
@@ -612,9 +576,19 @@ export async function setFixedKpiTarget(
   const metricCode = input.metricCode as KpiMetricCode;
 
   const targetValue = toDecimal(input.targetValue)!;
-  const targetDate = input.targetDate!;
-  const baselineValue = toDecimal(input.baselineValue);
-  const baselineDate = input.baselineDate ?? null;
+  const targetDate = new Date();
+
+  const existing = await prisma.kpiFixedTarget.findUnique({
+    where: {
+      groupId_metricCode: {
+        groupId,
+        metricCode,
+      },
+    },
+  });
+
+  const baselineValue = existing?.baselineValue ?? targetValue;
+  const baselineDate = existing?.baselineDate ?? targetDate;
 
   await prisma.kpiFixedTarget.upsert({
     where: {

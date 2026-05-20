@@ -31,7 +31,7 @@ export function CustomKpiManagement({
   currentGroupId: string | null;
 }) {
   if (kpis.length === 0) {
-    return <p className="text-sm text-muted-foreground">Henuz ozel KPI kaydi yok.</p>;
+    return <p className="text-sm text-muted-foreground">Henüz özel KPI kaydı yok.</p>;
   }
 
   return (
@@ -125,42 +125,44 @@ function KpiCard({
 
         {canManage ? (
           <div className="grid gap-4 lg:grid-cols-2">
-            <form action={approvalAction} className="rounded-md border p-3 space-y-2">
-              <input type="hidden" name="kpiId" value={kpi.id} />
-              <p className="text-sm font-medium">Onay</p>
-              <Input name="reason" placeholder="Red nedeni (opsiyonel)" />
-              {approvalState.message ? (
-                <Alert variant={approvalState.ok ? "success" : "destructive"}>
-                  <AlertDescription>{approvalState.message}</AlertDescription>
-                </Alert>
-              ) : null}
-              {approvalState.errors?._?.[0] ? (
-                <p className="text-xs text-destructive">{approvalState.errors._[0]}</p>
-              ) : null}
-              <div className="flex items-center gap-2">
-                <Button
-                  type="submit"
-                  name="decision"
-                  value="APPROVE"
-                  size="sm"
-                  disabled={approvalPending}
-                >
-                  {approvalPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                  Onayla
-                </Button>
-                <Button
-                  type="submit"
-                  name="decision"
-                  value="REJECT"
-                  size="sm"
-                  variant="outline"
-                  disabled={approvalPending}
-                >
-                  <XCircle className="h-4 w-4" />
-                  Reddet
-                </Button>
-              </div>
-            </form>
+            {kpi.approvalStatus === "PENDING" ? (
+              <form action={approvalAction} className="rounded-md border p-3 space-y-2">
+                <input type="hidden" name="kpiId" value={kpi.id} />
+                <p className="text-sm font-medium">Onay</p>
+                <Input name="reason" placeholder="Red nedeni (opsiyonel)" />
+                {approvalState.message ? (
+                  <Alert variant={approvalState.ok ? "success" : "destructive"}>
+                    <AlertDescription>{approvalState.message}</AlertDescription>
+                  </Alert>
+                ) : null}
+                {approvalState.errors?._?.[0] ? (
+                  <p className="text-xs text-destructive">{approvalState.errors._[0]}</p>
+                ) : null}
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="submit"
+                    name="decision"
+                    value="APPROVE"
+                    size="sm"
+                    disabled={approvalPending}
+                  >
+                    {approvalPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                    Onayla
+                  </Button>
+                  <Button
+                    type="submit"
+                    name="decision"
+                    value="REJECT"
+                    size="sm"
+                    variant="outline"
+                    disabled={approvalPending}
+                  >
+                    <XCircle className="h-4 w-4" />
+                    Reddet
+                  </Button>
+                </div>
+              </form>
+            ) : null}
 
             <form action={targetAction} className="rounded-md border p-3 space-y-2">
               <input type="hidden" name="kpiId" value={kpi.id} />
@@ -218,7 +220,7 @@ function KpiCard({
               <FormMessage state={completionState} />
               <Button size="sm" type="submit" disabled={completionPending}>
                 {completionPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                Tamamlama kaydi ekle
+                Tamamlama kaydı ekle
               </Button>
             </form>
           </div>

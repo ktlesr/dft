@@ -50,10 +50,10 @@ export async function createCustomKpi(
 ): Promise<KpiFormState> {
   const user = await requireActiveUser();
   if (!user.groupId) {
-    return { ok: false, message: "KPI girmek icin bir calisma grubuna atanmalisiniz." };
+    return { ok: false, message: "KPI girmek için bir çalışma grubuna atanmalısınız." };
   }
   if (!canCreateOrApproveKpi(user, user.groupId)) {
-    return { ok: false, message: "Yeni KPI girisi sadece moderator rolune aciktir." };
+    return { ok: false, message: "Yeni KPI girişi sadece moderatör rolüne açıktır." };
   }
 
   const parsed = createCustomKpiSchema.safeParse({
@@ -79,26 +79,29 @@ export async function createCustomKpi(
         where: { id: { in: targetUsers }, groupId, status: "ACTIVE" },
       });
       if (count !== targetUsers.length) {
-        return { ok: false, errors: { assigneeUserIds: ["Secilen sorumlular gruba ait olmali."] } };
+        return { ok: false, errors: { assigneeUserIds: ["Seçilen sorumlular gruba ait olmalı."] } };
       }
     }
   } else if (input.assigneeGroupId !== groupId) {
-    return { ok: false, errors: { assigneeGroupId: ["Sadece kendi grubunuzu secebilirsiniz."] } };
+    return { ok: false, errors: { assigneeGroupId: ["Sadece kendi grubunuzu seçebilirsiniz."] } };
   }
 
   const row = await prisma.$transaction(async (tx) => {
+    const now = new Date();
     const created = await tx.kpiCustom.create({
       data: {
         groupId,
         name: input.name,
         description: input.description ?? null,
         baselineValue: toDecimal(input.targetValue),
-        baselineDate: new Date(),
+        baselineDate: now,
         targetValue: toDecimal(input.targetValue),
-        targetDate: new Date(),
+        targetDate: now,
         createdById: user.id,
-        status: "DRAFT",
-        approvalStatus: "PENDING",
+        status: "ACTIVE",
+        approvalStatus: "APPROVED",
+        approvedById: user.id,
+        approvedAt: now,
       },
     });
 
@@ -134,16 +137,10 @@ export async function createCustomKpi(
     },
   });
 
-  await notifyKpiPendingApproval({
-    groupId,
-    actorId: user.id,
-    kpiName: row.name,
-  });
-
   revalidatePath("/kpi");
   revalidatePath("/kpi/yeni");
   revalidatePath("/calisma-grubum");
-  return { ok: true, message: "KPI taslagi olusturuldu." };
+  return { ok: true, message: "KPI kaydı oluşturuldu ve yayına alındı." };
 }
 
 export async function setCustomKpiApproval(
@@ -160,7 +157,7 @@ export async function setCustomKpiApproval(
 
   const row = await requireKpiForGroup(user, parsed.data.kpiId);
   if (!canCreateOrApproveKpi(user, row.groupId)) {
-    return { ok: false, message: "Bu KPI icin onay yetkiniz yok." };
+    return { ok: false, message: "Bu KPI için onay yetkiniz yok." };
   }
 
   const approvalStatus = parsed.data.decision === "APPROVE" ? "APPROVED" : "REJECTED";
@@ -186,17 +183,17 @@ export async function setCustomKpiApproval(
   await notifyKpiCreatedByAndAssignees({
     kpiId: row.id,
     actorId: user.id,
-    title: parsed.data.decision === "APPROVE" ? "KPI onaylandi" : "KPI reddedildi",
+    title: parsed.data.decision === "APPROVE" ? "KPI onaylandı" : "KPI reddedildi",
     body:
       parsed.data.decision === "APPROVE"
-        ? `${row.name} KPI kaydi onaylandi.`
-        : `${row.name} KPI kaydi reddedildi.${parsed.data.reason ? ` Neden: ${parsed.data.reason}` : ""}`,
+        ? `${row.name} KPI kaydı onaylandı.`
+        : `${row.name} KPI kaydı reddedildi.${parsed.data.reason ? ` Neden: ${parsed.data.reason}` : ""}`,
   });
 
   revalidateKpiPages();
   return {
     ok: true,
-    message: parsed.data.decision === "APPROVE" ? "KPI onaylandi." : "KPI reddedildi.",
+    message: parsed.data.decision === "APPROVE" ? "KPI onaylandı." : "KPI reddedildi.",
   };
 }
 
@@ -214,7 +211,7 @@ export async function reviseCustomKpiTarget(
 
   const row = await requireKpiForGroup(user, parsed.data.kpiId);
   if (!canReviseKpi(user, row.groupId)) {
-    return { ok: false, message: "Bu KPI icin hedef revizyon yetkiniz yok." };
+    return { ok: false, message: "Bu KPI için hedef revizyon yetkiniz yok." };
   }
 
   const nextValue = toDecimal(parsed.data.targetValue)!;
@@ -253,7 +250,7 @@ export async function reviseCustomKpiTarget(
     kpiId: row.id,
     actorId: user.id,
     title: "KPI hedefi revize edildi",
-    body: parsed.data.reason ?? "Hedef deger guncellendi.",
+    body: parsed.data.reason ?? "Hedef değer güncellendi.",
   });
 
   revalidateKpiPages();
@@ -272,7 +269,7 @@ export async function reviseCustomKpiBaseline(
   });
   if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
   if (!canChangeKpiBaseline(user)) {
-    return { ok: false, message: "Baseline degistirme yetkisi sadece admin rolundedir." };
+    return { ok: false, message: "Baseline değiştirme yetkisi sadece admin rolündedir." };
   }
 
   const row = await requireKpiForGroup(user, parsed.data.kpiId);
@@ -312,19 +309,19 @@ export async function reviseCustomKpiBaseline(
     groupId: row.groupId,
     actorId: user.id,
     kind: "kpi",
-    title: "KPI baseline guncellendi",
+    title: "KPI baseline güncellendi",
     body: parsed.data.reason ?? "Baseline deger admin tarafindan revize edildi.",
     link: "/kpi/yeni",
   });
   await notifyKpiCreatedByAndAssignees({
     kpiId: row.id,
     actorId: user.id,
-    title: "KPI baseline guncellendi",
+    title: "KPI baseline güncellendi",
     body: parsed.data.reason ?? "Baseline deger admin tarafindan revize edildi.",
   });
 
   revalidateKpiPages();
-  return { ok: true, message: "KPI baseline degeri guncellendi." };
+  return { ok: true, message: "KPI baseline değeri güncellendi." };
 }
 
 export async function completeCustomKpi(
@@ -342,7 +339,7 @@ export async function completeCustomKpi(
 
   const row = await requireKpiForGroup(user, parsed.data.kpiId);
   if (!canReviseKpi(user, row.groupId)) {
-    return { ok: false, message: "Bu KPI icin tamamlama yetkiniz yok." };
+    return { ok: false, message: "Bu KPI için tamamlama yetkiniz yok." };
   }
   if (row.approvalStatus !== "APPROVED") {
     return { ok: false, message: "KPI tamamlanmadan once onaylanmis olmali." };
@@ -353,7 +350,7 @@ export async function completeCustomKpi(
   const nextStatus = evidenceType === "OVERACHIEVED" ? "OVERACHIEVED" : "COMPLETED";
   const files = fd.getAll("attachments").filter((v): v is File => v instanceof File);
   if (files.length < 1) {
-    return { ok: false, message: "Tamamlama icin en az bir kanit dokuman yuklenmelidir." };
+    return { ok: false, message: "Tamamlama için en az bir kanıt doküman yüklenmelidir." };
   }
 
   try {
@@ -386,8 +383,8 @@ export async function completeCustomKpi(
     if (error instanceof UploadError) {
       const msg =
         error.code === "too_many"
-          ? `En fazla ${MAX_ATTACHMENTS_PER_REQUEST} dosya yukleyebilirsiniz.`
-          : "Kanit dosyalari yuklenemedi.";
+          ? `En fazla ${MAX_ATTACHMENTS_PER_REQUEST} dosya yükleyebilirsiniz.`
+          : "Kanıt dosyaları yüklenemedi.";
       return { ok: false, message: msg };
     }
     throw error;
@@ -408,11 +405,11 @@ export async function completeCustomKpi(
       evidenceType === "OVERACHIEVED"
         ? "KPI hedef ustu tamamlandi"
         : "KPI basarili tamamlandi",
-    body: parsed.data.note ?? "KPI tamamlama kaydi yapildi ve kanit eklendi.",
+    body: parsed.data.note ?? "KPI tamamlama kaydı yapıldı ve kanıt eklendi.",
   });
 
   revalidateKpiPages();
-  return { ok: true, message: "KPI tamamlanma kaydi ve kanitlari eklendi." };
+  return { ok: true, message: "KPI tamamlanma kaydı ve kanıtları eklendi." };
 }
 
 function toDecimal(raw: string | undefined) {
@@ -436,10 +433,10 @@ async function requireKpiForGroup(user: SessionUser, kpiId: string) {
     },
   });
   if (!row || !row.groupId) {
-    throw new Error("KPI kaydi bulunamadi.");
+    throw new Error("KPI kaydı bulunamadı.");
   }
   if (!user.roles.includes("ADMIN") && user.groupId !== row.groupId) {
-    throw new Error("Bu KPI icin erisim yetkiniz yok.");
+    throw new Error("Bu KPI için erişim yetkiniz yok.");
   }
   return row;
 }
@@ -454,25 +451,6 @@ function revalidateKpiPages() {
   revalidatePath("/kpi");
   revalidatePath("/kpi/yeni");
   revalidatePath("/calisma-grubum");
-}
-
-async function notifyKpiPendingApproval({
-  groupId,
-  actorId,
-  kpiName,
-}: {
-  groupId: string;
-  actorId: string;
-  kpiName: string;
-}) {
-  await notifyGroupModeratorsAndAdmins({
-    groupId,
-    actorId,
-    kind: "kpi_pending",
-    title: "KPI onay bekliyor",
-    body: kpiName,
-    link: "/kpi/yeni",
-  });
 }
 
 async function notifyKpiCreatedByAndAssignees({
@@ -632,4 +610,3 @@ export async function setFixedKpiTarget(
   revalidatePath("/kpi");
   return { ok: true, message: "Hedef başarıyla güncellendi." };
 }
-

@@ -39,7 +39,7 @@ export function UnauthorizedModal() {
           <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
             <ShieldAlert className="h-5 w-5" />
           </div>
-          <DialogTitle>Yetkisiz erisim</DialogTitle>
+          <DialogTitle>Yetkisiz erişim</DialogTitle>
           <DialogDescription>
             Bu sayfayi goruntuleme yetkiniz yok. Erisim gerekiyorsa yoneticinizle iletisime gecin.
           </DialogDescription>

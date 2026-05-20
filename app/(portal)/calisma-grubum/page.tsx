@@ -21,7 +21,7 @@ import { requireActiveUser } from "@/lib/current-user";
 import { groupBadgeClass } from "@/lib/group-badge";
 import { getFixedKpiOverview, listCustomKpisForUser } from "@/lib/kpi/queries";
 import { prisma } from "@/lib/prisma";
-import { canCreateOrApproveKpi, canReviseKpi } from "@/lib/rbac";
+import { canCreateOrApproveKpi, canCreateReport } from "@/lib/rbac";
 import { BOARD_KIND_LABELS, GROUP_NOTE_KIND_LABELS, REPORT_KIND_LABELS } from "@/lib/constants";
 import { cn, formatDateTime } from "@/lib/utils";
 import { listGroupDiscussions } from "@/features/forum/queries";
@@ -216,6 +216,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
   const canCreateAdvisorNote = user.roles.includes("ADMIN") || user.roles.includes("ADVISOR");
   const canCreateKsNote = user.roles.includes("ADMIN") || user.roles.includes("KS");
   const canCreateNotes = canCreateAdvisorNote || canCreateKsNote;
+  const canCreateGroupReport = canCreateReport(user, viewGroupId);
   const advisorNotes = notes.filter((n) => n.kind === "ADVISOR_NOTE");
   const ksNotes = notes.filter((n) => n.kind === "KS_NOTE");
 
@@ -580,6 +581,16 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
         </TabsContent>
 
         <TabsContent value="raporlar">
+          <div className="mb-4 flex items-center justify-end">
+            {canCreateGroupReport ? (
+              <Button asChild variant="brand" size="sm">
+                <Link href="/rapor/yeni">
+                  <FileText className="h-4 w-4" />
+                  Rapor Ekle
+                </Link>
+              </Button>
+            ) : null}
+          </div>
           <Tabs defaultValue="grup-raporlari" className="space-y-4">
             <TabsList>
               <TabsTrigger value="grup-raporlari">Raporlar</TabsTrigger>
@@ -746,7 +757,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
         <TabsContent value="notlar">
           <div className="mb-4 flex items-center justify-between gap-3">
             <p className="text-xs text-muted-foreground">
-              Danisman ve Kalite Sorumlusu notlari ayri alanlarda listelenir.
+              Danışman ve Kalite Sorumlusu notları ayrı alanlarda listelenir.
             </p>
             {canCreateNotes ? (
               <div className="flex flex-wrap items-center gap-2">
@@ -754,7 +765,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
                   <Button asChild variant="brand" size="sm">
                     <Link href="/not/yeni?kind=ADVISOR_NOTE">
                       <NotebookPen className="h-4 w-4" />
-                      Danisman Notu Ekle
+                      Danışman Notu Ekle
                     </Link>
                   </Button>
                 ) : null}
@@ -772,8 +783,8 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
 
           {advisorNotes.length === 0 && ksNotes.length === 0 ? (
             <EmptyState
-              title="Henuz not yok"
-              description="Ilk notu eklediginizde burada gorunur."
+              title="Henüz not yok"
+              description="İlk notu eklediğinizde burada görünür."
               icon={NotebookPen}
             />
           ) : (
@@ -781,7 +792,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
               <NoteColumn
                 title={GROUP_NOTE_KIND_LABELS.ADVISOR_NOTE}
                 notes={advisorNotes}
-                emptyText="Danisman notu yok."
+                emptyText="Danışman notu yok."
               />
               <NoteColumn
                 title={GROUP_NOTE_KIND_LABELS.KS_NOTE}

@@ -47,8 +47,8 @@ export default async function NewKpiPage() {
         <ShieldCheck className="h-4 w-4" />
         <AlertTitle>Yetki notu</AlertTitle>
         <AlertDescription>
-          Yeni KPI girisi ve onayi moderatordedir. Admin rolunde bu ekranda izleme ve sonraki
-          asamada baseline revizyonu yapabilirsiniz.
+          Yeni KPI girişi yapan moderatör kaydı doğrudan onaylı ve yayında olarak oluşturur.
+          Admin rolünde bu ekranda izleme ve sonraki aşamada baseline revizyonu yapabilirsiniz.
         </AlertDescription>
       </Alert>
 
@@ -61,11 +61,11 @@ export default async function NewKpiPage() {
       ) : (
         <EmptyState
           icon={ClipboardPlus}
-          title="Bu rolde yeni KPI girisi kapali"
-          description="Yine de olusturulmus KPI kayitlarini asagidaki listeden takip edebilirsiniz."
+          title="Bu rolde yeni KPI girişi kapalı"
+          description="Yine de oluşturulmuş KPI kayıtlarını aşağıdaki listeden takip edebilirsiniz."
           action={
             <Button asChild variant="outline">
-              <Link href="/kpi">KPI Takip ekranina don</Link>
+              <Link href="/kpi">KPI Takip ekranına dön</Link>
             </Button>
           }
         />

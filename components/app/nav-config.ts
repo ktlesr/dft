@@ -101,8 +101,25 @@ export const NAV_GROUPS: NavGroup[] = [
 ];
 
 export function filterNavForRoles(roles: Role[]) {
-  return NAV_GROUPS.map((g) => ({
-    ...g,
-    items: g.items.filter((i) => !i.roles || i.roles.some((r) => roles.includes(r))),
-  })).filter((g) => g.items.length > 0);
+  const isAdmin = roles.includes("ADMIN");
+
+  return NAV_GROUPS.map((g) => {
+    let items = g.items.filter((i) => !i.roles || i.roles.some((r) => roles.includes(r)));
+
+    if (isAdmin && g.label === "Grup İşlemleri") {
+      items = items
+        .filter((i) =>
+          i.href === "/calisma-grubum" ||
+          i.href === "/bildirim/yeni" ||
+          i.href === "/toplanti-sonucu/yeni",
+        )
+        .map((i) =>
+          i.href === "/calisma-grubum"
+            ? { ...i, href: "/calisma-gruplari", label: "Çalışma Grupları" }
+            : i,
+        );
+    }
+
+    return { ...g, items };
+  }).filter((g) => g.items.length > 0);
 }

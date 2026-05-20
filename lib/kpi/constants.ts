@@ -19,7 +19,7 @@ export const FIXED_KPI_LABELS: Record<FixedKpiCode, string> = {
   KPI_EVENT_ATTENDED_TOTAL: "Katılım Sağlanan Etkinlik",
   KPI_EVENT_ORGANIZED_TOTAL: "Düzenlenen Etkinlik",
   KPI_CONTENT_TOTAL: "Dijital İçerik",
-  KPI_STAKEHOLDER_TOTAL: "Paydaş Sayısı (Toplam)",
+  KPI_STAKEHOLDER_TOTAL: "Paydaş Sayısı",
 };
 
 export const FIXED_KPI_DESCRIPTIONS: Record<FixedKpiCode, string> = {

@@ -23,7 +23,7 @@ import { getFixedKpiOverview, listCustomKpisForUser } from "@/lib/kpi/queries";
 import { prisma } from "@/lib/prisma";
 import { canCreateOrApproveKpi, canReviseKpi } from "@/lib/rbac";
 import { BOARD_KIND_LABELS, GROUP_NOTE_KIND_LABELS, REPORT_KIND_LABELS } from "@/lib/constants";
-import { formatDateTime } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
 import { listGroupDiscussions } from "@/features/forum/queries";
 import { UserCard } from "@/features/users/user-card";
 import { CustomKpiManagement } from "@/features/kpi/custom-kpi-management";
@@ -45,26 +45,46 @@ const VALID_TABS = [
 ] as const;
 type GroupTab = (typeof VALID_TABS)[number];
 
-type GroupSearchParams = Promise<{ tab?: string }>;
+type GroupSearchParams = Promise<{ tab?: string; grup?: string; tumGruplar?: string }>;
 
 export default async function MyGroupPage({ searchParams }: { searchParams: GroupSearchParams }) {
   const user = await requireActiveUser();
-  const { tab } = await searchParams;
+  const { tab, grup, tumGruplar } = await searchParams;
+  const isAdminUser = user.roles.includes("ADMIN");
+  const adminAllGroupsMode = isAdminUser && tumGruplar === "1";
+
+  const adminGroups = adminAllGroupsMode
+    ? await prisma.group.findMany({
+        orderBy: { code: "asc" },
+        select: { id: true, code: true, name: true, description: true },
+      })
+    : [];
+
+  const selectedAdminGroup =
+    adminAllGroupsMode
+      ? adminGroups.find((g) => g.id === grup) ?? adminGroups[0] ?? null
+      : null;
+
+  const viewGroupId = adminAllGroupsMode ? selectedAdminGroup?.id ?? null : user.groupId;
+  const viewGroupCode = adminAllGroupsMode ? selectedAdminGroup?.code ?? null : user.groupCode;
+  const viewGroupDescription = adminAllGroupsMode
+    ? selectedAdminGroup?.description ?? null
+    : user.groupDescription;
   const activeTab: GroupTab = (VALID_TABS as readonly string[]).includes(tab ?? "")
     ? (tab as GroupTab)
     : "ozet";
 
-  if (!user.groupId || !user.groupCode) {
+  if (!viewGroupId || !viewGroupCode) {
     return (
       <div className="mx-auto max-w-7xl">
         <PageHeader
-          title="Çalışma Grubum"
-          breadcrumbs={[{ label: "Çalışma Grubum" }]}
+          title={adminAllGroupsMode ? "Çalışma Grupları" : "Çalışma Grubum"}
+          breadcrumbs={[{ label: adminAllGroupsMode ? "Çalışma Grupları" : "Çalışma Grubum" }]}
         />
         <EmptyState
           icon={Users}
-          title="Henüz bir çalışma grubuna atanmadınız"
-          description="Yöneticiniz grubu atadıktan sonra bu alan aktif olur."
+          title={adminAllGroupsMode ? "Henüz tanımlı çalışma grubu yok" : "Henüz bir çalışma grubuna atanmadınız"}
+          description={adminAllGroupsMode ? "Yönetim panelinden grup oluşturduktan sonra bu alan aktif olur." : "Yöneticiniz grubu atadıktan sonra bu alan aktif olur."}
         />
       </div>
     );
@@ -84,10 +104,10 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
     customKpis,
     fixedTargets,
   ] = await Promise.all([
-    prisma.group.findUnique({ where: { id: user.groupId } }),
+    prisma.group.findUnique({ where: { id: viewGroupId } }),
     prisma.user.findMany({
       where: {
-        groupId: user.groupId,
+        groupId: viewGroupId,
         status: "ACTIVE",
         NOT: { email: { equals: DFT_ADMIN_EMAIL, mode: "insensitive" } },
       },
@@ -109,7 +129,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
     prisma.boardPost.findMany({
       where: {
         scope: "GROUP",
-        groupId: user.groupId,
+        groupId: viewGroupId,
         deletedAt: null,
         status: "PUBLISHED",
       },
@@ -120,9 +140,9 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
         attachments: { select: { id: true, originalName: true, size: true } },
       },
     }),
-    listGroupDiscussions({ groupId: user.groupId, take: 50 }),
+    listGroupDiscussions({ groupId: viewGroupId, take: 50 }),
     prisma.meeting.findMany({
-      where: { groupId: user.groupId, deletedAt: null },
+      where: { groupId: viewGroupId, deletedAt: null },
       orderBy: { startAt: "desc" },
       take: 20,
       include: {
@@ -140,7 +160,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
               { mrdkTarget: "ALL" },
               {
                 mrdkTarget: "SPECIFIC",
-                targetGroupIds: { has: user.groupId },
+                targetGroupIds: { has: viewGroupId },
               },
             ],
           },
@@ -152,7 +172,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
       },
     }),
     prisma.report.findMany({
-      where: { groupId: user.groupId, deletedAt: null },
+      where: { groupId: viewGroupId, deletedAt: null },
       orderBy: { createdAt: "desc" },
       take: 20,
     }),
@@ -161,7 +181,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
         deletedAt: null,
         OR: [
           { scope: "GENEL" },
-          { scope: "GROUPS", targetGroupIds: { has: user.groupId } },
+          { scope: "GROUPS", targetGroupIds: { has: viewGroupId } },
         ],
       },
       orderBy: { createdAt: "desc" },
@@ -173,7 +193,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
     prisma.groupNote.findMany({
       where: {
         OR: [
-          { groupId: user.groupId },
+          { groupId: viewGroupId },
           { scope: "GENERAL" },
         ],
         deletedAt: null,
@@ -185,10 +205,10 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
         attachments: { select: { id: true, originalName: true, size: true } },
       },
     }),
-    getFixedKpiOverview(user, user.groupId),
+    getFixedKpiOverview(user, viewGroupId),
     listCustomKpisForUser(user),
     prisma.kpiFixedTarget.findMany({
-      where: { groupId: user.groupId },
+      where: { groupId: viewGroupId },
     }),
   ]);
 
@@ -225,9 +245,9 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
-        title={`Çalışma Grubum · ${user.groupCode}`}
-        description={user.groupDescription ?? undefined}
-        breadcrumbs={[{ label: "Çalışma Grubum" }]}
+        title={adminAllGroupsMode ? `Çalışma Grupları · ${viewGroupCode}` : `Çalışma Grubum · ${viewGroupCode}`}
+        description={viewGroupDescription ?? undefined}
+        breadcrumbs={[{ label: adminAllGroupsMode ? "Çalışma Grupları" : "Çalışma Grubum" }]}
         actions={
           <Button asChild variant="secondary">
             <Link href="/panolar/grup">
@@ -237,6 +257,31 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
           </Button>
         }
       />
+
+      {adminAllGroupsMode ? (
+        <div className="mb-4 overflow-x-auto">
+          <div className="flex min-w-max gap-1 border-b pb-1">
+            {adminGroups.map((g) => {
+              const active = g.id === viewGroupId;
+              const href = `/calisma-gruplari?tumGruplar=1&grup=${encodeURIComponent(g.id)}&tab=${encodeURIComponent(activeTab)}`;
+              return (
+                <Link
+                  key={g.id}
+                  href={href}
+                  className={cn(
+                    "inline-flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    active
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-accent/10 hover:text-foreground",
+                  )}
+                >
+                  {g.code}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
 
       <Tabs defaultValue={activeTab}>
         <TabsList>
@@ -256,8 +301,8 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
               <Field
                 label="Grup kodu"
                 value={
-                  <Badge variant="outline" className={groupBadgeClass(user.groupCode)}>
-                    {user.groupCode}
+                  <Badge variant="outline" className={groupBadgeClass(viewGroupCode)}>
+                    {viewGroupCode}
                   </Badge>
                 }
               />
@@ -619,8 +664,8 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
           </div>
 
           <FixedKpiManagement
-            groupId={user.groupId}
-            isModerator={canCreateOrApproveKpi(user, user.groupId)}
+            groupId={viewGroupId}
+            isModerator={canCreateOrApproveKpi(user, viewGroupId)}
             summaries={kpiOverview.summaries}
             fixedTargets={fixedTargets.map((t) => ({
               id: t.id,
@@ -676,7 +721,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
                 <CustomKpiManagement
                   kpis={customKpis}
                   isAdmin={user.roles.includes("ADMIN")}
-                  currentGroupId={user.groupId}
+                  currentGroupId={viewGroupId}
                 />
               </CardContent>
             </Card>

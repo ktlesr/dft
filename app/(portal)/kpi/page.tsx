@@ -165,6 +165,6 @@ function shortLabel(code: (typeof FIXED_KPI_CODES)[number]) {
     case "KPI_CONTENT_TOTAL":
       return "Dijital İçerik";
     case "KPI_STAKEHOLDER_TOTAL":
-      return "Paydaş Sayısı (Toplam)";
+      return "Paydaş Sayısı";
   }
 }

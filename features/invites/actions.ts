@@ -10,6 +10,7 @@ import { hashPassword } from "@/lib/password";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { createToken, hashToken } from "@/lib/tokens";
 import { sendMail } from "@/lib/mail";
+import { notifyAdminsAboutNonAdminActivity } from "@/lib/notifications/admin-activity";
 import type { Role } from "@prisma/client";
 
 export type InviteFormState = {
@@ -234,6 +235,16 @@ export async function acceptInvite(
     actorId: user.id,
     targetType: "Invite",
     targetId: invite.id,
+  });
+  await notifyAdminsAboutNonAdminActivity({
+    actorId: user.id,
+    actorRoles: (invite.roles.length > 0 ? invite.roles : (["USER"] as Role[])),
+    actorName: user.name,
+    actorEmail: user.email,
+    kind: "signup_admin",
+    title: "Yeni kullanıcı kaydı tamamlandı",
+    body: user.name?.trim() || user.email,
+    link: "/yonetim/kullanicilar",
   });
 
   // Fall through to login. requireActiveUser is imported only to keep

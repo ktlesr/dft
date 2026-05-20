@@ -10,6 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { isAdmin, isModerator } from "@/lib/rbac";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { MAX_ATTACHMENTS_PER_REQUEST, UploadError, storeAttachments } from "@/lib/upload";
+import { notifyAdminsAboutNonAdminActivity } from "@/lib/notifications/admin-activity";
 import { discussionCreateSchema, replyCreateSchema } from "./schemas";
 
 export type ForumFormState = {
@@ -121,6 +122,16 @@ export async function createDiscussion(
     targetId: row.id,
     metadata: { groupId: user.groupId, pinned },
   });
+  await notifyAdminsAboutNonAdminActivity({
+    actorId: user.id,
+    actorRoles: user.roles,
+    actorName: user.name,
+    actorEmail: user.email,
+    kind: "discussion_admin",
+    title: "Yeni forum konusu açıldı",
+    body: `${user.name?.trim() || user.email} · ${parsed.data.title}`,
+    link: `/forum/${row.id}`,
+  });
 
   revalidatePath("/calisma-grubum");
   revalidatePath(`/forum/${row.id}`);
@@ -191,6 +202,16 @@ export async function replyToDiscussion(
     targetType: "DiscussionReply",
     targetId: reply.id,
     metadata: { discussionId: discussion.id },
+  });
+  await notifyAdminsAboutNonAdminActivity({
+    actorId: user.id,
+    actorRoles: user.roles,
+    actorName: user.name,
+    actorEmail: user.email,
+    kind: "discussion_reply_admin",
+    title: "Forum konusuna yeni yanıt eklendi",
+    body: `${user.name?.trim() || user.email}`,
+    link: `/forum/${discussion.id}`,
   });
 
   revalidatePath(`/forum/${discussion.id}`);

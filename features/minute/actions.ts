@@ -9,6 +9,7 @@ import { redirectUnauthorized, requireActiveUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { canCreateMinute, isAdmin } from "@/lib/rbac";
 import { storeAttachments, UploadError } from "@/lib/upload";
+import { notifyAdminsAboutNonAdminActivity } from "@/lib/notifications/admin-activity";
 import { minuteSchema } from "./schemas";
 
 export type MinuteFormState = {
@@ -87,6 +88,16 @@ export async function createMinute(
     targetType: "MeetingMinute",
     targetId: row.id,
     metadata: { meetingId: meeting.id },
+  });
+  await notifyAdminsAboutNonAdminActivity({
+    actorId: user.id,
+    actorRoles: user.roles,
+    actorName: user.name,
+    actorEmail: user.email,
+    kind: "minute_admin",
+    title: "Yeni toplantı tutanağı eklendi",
+    body: `${user.name?.trim() || user.email} · Toplantı #${meeting.id}`,
+    link: `/toplanti/${meeting.id}`,
   });
 
   revalidatePath(`/toplanti/${meeting.id}`);

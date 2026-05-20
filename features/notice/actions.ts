@@ -11,6 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { canCreateNotice, isAdmin } from "@/lib/rbac";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { MAX_ATTACHMENTS_PER_REQUEST, UploadError, storeAttachments } from "@/lib/upload";
+import { notifyAdminsAboutNonAdminActivity } from "@/lib/notifications/admin-activity";
 import { noticeCreateSchema } from "./schemas";
 
 export type NoticeFormState = {
@@ -206,6 +207,16 @@ export async function createNotice(
       eventEndAt: parsed.data.eventEndAt ?? null,
       externalUrl: row.externalUrl,
     },
+  });
+  await notifyAdminsAboutNonAdminActivity({
+    actorId: user.id,
+    actorRoles: user.roles,
+    actorName: user.name,
+    actorEmail: user.email,
+    kind: "notice_admin",
+    title: "Yeni bildirim paylaşıldı",
+    body: `${user.name?.trim() || user.email} · ${row.title}`,
+    link: row.scope === "GENERAL" ? "/duyurular?kanal=genel" : "/duyurular?kanal=grup",
   });
 
   revalidatePath("/duyurular");

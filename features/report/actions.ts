@@ -9,6 +9,7 @@ import { redirectUnauthorized, requireActiveUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { canCreateReport, isAdmin } from "@/lib/rbac";
 import { storeAttachments, UploadError } from "@/lib/upload";
+import { notifyAdminsAboutNonAdminActivity } from "@/lib/notifications/admin-activity";
 import { reportSchema } from "./schemas";
 
 export type ReportFormState = {
@@ -98,6 +99,16 @@ export async function createReport(
     targetType: "Report",
     targetId: row.id,
     metadata: { kind: parsed.data.kind },
+  });
+  await notifyAdminsAboutNonAdminActivity({
+    actorId: user.id,
+    actorRoles: user.roles,
+    actorName: user.name,
+    actorEmail: user.email,
+    kind: "report_admin",
+    title: "Yeni rapor eklendi",
+    body: `${user.name?.trim() || user.email} · ${parsed.data.title}`,
+    link: `/rapor/${row.id}`,
   });
 
   revalidatePath("/calisma-grubum");

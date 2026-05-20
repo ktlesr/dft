@@ -9,6 +9,7 @@ import { requireActiveUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { canCreateGroupNote } from "@/lib/rbac";
 import { MAX_ATTACHMENTS_PER_REQUEST, storeAttachments, UploadError } from "@/lib/upload";
+import { notifyAdminsAboutNonAdminActivity } from "@/lib/notifications/admin-activity";
 import { groupNoteSchema } from "./schemas";
 
 export type GroupNoteFormState = {
@@ -130,6 +131,16 @@ export async function createGroupNote(
     targetType: "GroupNote",
     targetId: row.id,
     metadata: { kind: parsed.data.kind },
+  });
+  await notifyAdminsAboutNonAdminActivity({
+    actorId: user.id,
+    actorRoles: user.roles,
+    actorName: user.name,
+    actorEmail: user.email,
+    kind: "group_note_admin",
+    title: "Yeni grup notu eklendi",
+    body: `${user.name?.trim() || user.email} · ${parsed.data.title}`,
+    link: "/calisma-grubum?tab=notlar",
   });
 
   revalidatePath("/calisma-grubum");

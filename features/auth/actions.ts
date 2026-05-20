@@ -12,6 +12,7 @@ import { hashPassword } from "@/lib/password";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { createToken, hashToken } from "@/lib/tokens";
 import { sendMail, passwordResetEmail } from "@/lib/mail";
+import { notifyAdminsAboutNonAdminActivity } from "@/lib/notifications/admin-activity";
 import { forgotSchema, loginSchema, resetSchema } from "./schemas";
 
 export type FormState = {
@@ -84,18 +85,27 @@ export async function loginAction(_prev: FormState, formData: FormData): Promise
   }
 
   // Resolve actor for audit using the login identifier (username).
-  const loginActor = await prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: { username: loginIdentifier },
-    select: { id: true },
+    include: { roles: { select: { role: true } } },
   });
-
-  // Resolve user to decide where to land.
-  const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
   await audit({
     action: "USER_LOGIN",
-    actorId: loginActor?.id ?? user?.id,
+    actorId: user?.id,
     metadata: { loginIdentifier },
   });
+  if (user) {
+    await notifyAdminsAboutNonAdminActivity({
+      actorId: user.id,
+      actorRoles: user.roles.map((r) => r.role),
+      actorName: user.name,
+      actorEmail: user.email,
+      kind: "login_admin",
+      title: "Kullanıcı giriş yaptı",
+      body: user.name?.trim() || user.email,
+      link: "/yonetim/loglar",
+    });
+  }
 
   if (user?.status === "PENDING_APPROVAL") redirect("/onay-bekleniyor");
   if (user?.status === "SUSPENDED" || user?.status === "REJECTED") redirect("/yetkisiz");

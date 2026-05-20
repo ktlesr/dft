@@ -10,6 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { canCreateMeeting, isAdmin } from "@/lib/rbac";
 import { formatDateTime } from "@/lib/utils";
 import { storeAttachments, UploadError } from "@/lib/upload";
+import { notifyAdminsAboutNonAdminActivity } from "@/lib/notifications/admin-activity";
 import { meetingSchema } from "./schemas";
 
 export type MeetingFormState = {
@@ -125,6 +126,16 @@ export async function createMeeting(
     actorId: user.id,
     targetType: "Meeting",
     targetId: row.id,
+  });
+  await notifyAdminsAboutNonAdminActivity({
+    actorId: user.id,
+    actorRoles: user.roles,
+    actorName: user.name,
+    actorEmail: user.email,
+    kind: "meeting_admin",
+    title: "Yeni toplantı bildirimi oluşturuldu",
+    body: `${user.name?.trim() || user.email} · ${parsed.data.title}`,
+    link: `/toplanti/${row.id}`,
   });
 
   revalidatePath("/calisma-grubum");

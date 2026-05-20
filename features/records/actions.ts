@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { Prisma, type KpiMetricCode, type KpiSourceType } from "@prisma/client";
+import { Prisma, type KpiMetricCode, type KpiSourceType, type Role } from "@prisma/client";
 
 import { audit } from "@/lib/audit";
 import { redirectUnauthorized, requireActiveUser } from "@/lib/current-user";
@@ -12,6 +12,7 @@ import { MAX_ATTACHMENTS_PER_REQUEST, UploadError, storeAttachments } from "@/li
 import { sendMail } from "@/lib/mail";
 import { writeKpiMetricEvent } from "@/lib/kpi/events";
 import { KPI_EVENT_ATTENDED_ROLE, KPI_EVENT_ORGANIZED_ROLE } from "@/lib/kpi/constants";
+import { notifyAdminsAboutNonAdminActivity } from "@/lib/notifications/admin-activity";
 import { z } from "zod";
 
 import {
@@ -90,6 +91,28 @@ async function trackKpiEvent(input: {
   delta: 1 | -1;
 }) {
   await writeKpiMetricEvent(input);
+}
+
+function actorLabel(user: { name: string | null; email: string }) {
+  return user.name?.trim() || user.email;
+}
+
+async function notifyAdminsForRecordCreate(input: {
+  user: { id: string; roles: readonly Role[]; name: string | null; email: string };
+  recordLabel: string;
+  recordTitle: string;
+  link: string;
+}) {
+  await notifyAdminsAboutNonAdminActivity({
+    actorId: input.user.id,
+    actorRoles: input.user.roles,
+    actorName: input.user.name,
+    actorEmail: input.user.email,
+    kind: "record_admin",
+    title: "Yeni kayıt eklendi",
+    body: `${actorLabel(input.user)} · ${input.recordLabel}: ${input.recordTitle}`,
+    link: input.link,
+  });
 }
 
 /* ────────── owner-only helpers used by update/delete ────────── */
@@ -185,6 +208,12 @@ export async function createProjectApplication(
     delta: 1,
   });
   await audit({ action: "RECORD_CREATED", actorId: user.id, targetType: "ProjectApplicationRecord", targetId: row.id });
+  await notifyAdminsForRecordCreate({
+    user,
+    recordLabel: "Proje Başvurusu",
+    recordTitle: parsed.data.projectName,
+    link: `/kayitlarim/proje-basvurusu/${row.id}`,
+  });
   revalidatePath("/kayitlarim");
   revalidatePath("/panel");
   redirect(`/kayitlarim/proje-basvurusu/${row.id}`);
@@ -264,6 +293,12 @@ export async function createSuccessfulProject(
     delta: 1,
   });
   await audit({ action: "RECORD_CREATED", actorId: user.id, targetType: "SuccessfulProjectRecord", targetId: row.id });
+  await notifyAdminsForRecordCreate({
+    user,
+    recordLabel: "Başarılı Proje",
+    recordTitle: parsed.data.projectName,
+    link: `/kayitlarim/basarili-proje/${row.id}`,
+  });
   revalidatePath("/kayitlarim");
   revalidatePath("/panel");
   redirect(`/kayitlarim/basarili-proje/${row.id}`);
@@ -320,6 +355,12 @@ export async function createProjectIdea(
     delta: 1,
   });
   await audit({ action: "RECORD_CREATED", actorId: user.id, targetType: "ProjectIdeaRecord", targetId: row.id });
+  await notifyAdminsForRecordCreate({
+    user,
+    recordLabel: "Proje Fikri",
+    recordTitle: parsed.data.title,
+    link: `/kayitlarim/proje-fikri/${row.id}`,
+  });
   revalidatePath("/kayitlarim");
   revalidatePath("/panel");
   redirect(`/kayitlarim/proje-fikri/${row.id}`);
@@ -396,6 +437,12 @@ export async function createEventRecord(
     });
   }
   await audit({ action: "RECORD_CREATED", actorId: user.id, targetType: "EventRecord", targetId: row.id });
+  await notifyAdminsForRecordCreate({
+    user,
+    recordLabel: "Etkinlik",
+    recordTitle: parsed.data.name,
+    link: `/kayitlarim/etkinlik/${row.id}`,
+  });
   revalidatePath("/kayitlarim");
   revalidatePath("/panel");
   redirect(`/kayitlarim/etkinlik/${row.id}`);
@@ -451,6 +498,12 @@ export async function createDissemination(
   }
 
   await audit({ action: "RECORD_CREATED", actorId: user.id, targetType: "DisseminationRecord", targetId: row.id });
+  await notifyAdminsForRecordCreate({
+    user,
+    recordLabel: "Bilgi Çoğaltımı",
+    recordTitle: parsed.data.title,
+    link: `/kayitlarim/bilgi-cogaltimi/${row.id}`,
+  });
   revalidatePath("/kayitlarim");
   revalidatePath("/panel");
   redirect(`/kayitlarim/bilgi-cogaltimi/${row.id}`);
@@ -504,6 +557,12 @@ export async function createTraining(
   }
 
   await audit({ action: "RECORD_CREATED", actorId: user.id, targetType: "TrainingPresentationRecord", targetId: row.id });
+  await notifyAdminsForRecordCreate({
+    user,
+    recordLabel: "Eğitim / Sunum",
+    recordTitle: parsed.data.title,
+    link: `/kayitlarim/egitim-sunum/${row.id}`,
+  });
   revalidatePath("/kayitlarim");
   revalidatePath("/panel");
   redirect(`/kayitlarim/egitim-sunum/${row.id}`);
@@ -561,6 +620,12 @@ export async function createContentRecord(
     delta: 1,
   });
   await audit({ action: "RECORD_CREATED", actorId: user.id, targetType: "ContentRecord", targetId: row.id });
+  await notifyAdminsForRecordCreate({
+    user,
+    recordLabel: "Dijital İçerik",
+    recordTitle: parsed.data.title,
+    link: `/kayitlarim/dokuman-icerik/${row.id}`,
+  });
   revalidatePath("/kayitlarim");
   revalidatePath("/panel");
   redirect(`/kayitlarim/dokuman-icerik/${row.id}`);
@@ -626,6 +691,12 @@ export async function createStakeholder(
     delta: 1,
   });
   await audit({ action: "RECORD_CREATED", actorId: user.id, targetType: "StakeholderRecord", targetId: row.id });
+  await notifyAdminsForRecordCreate({
+    user,
+    recordLabel: "Paydaş",
+    recordTitle: parsed.data.fullName,
+    link: `/kayitlarim/paydas/${row.id}`,
+  });
   revalidatePath("/kayitlarim");
   revalidatePath("/panel");
   redirect(`/kayitlarim/paydas/${row.id}`);

@@ -80,7 +80,11 @@ const HEADER_MAP: Record<string, "no" | "title" | "publishedAt" | "kind" | "exte
   "tur": "kind",
   "baglanti": "externalUrl",
   "icerik": "body",
-  "degerlendirme/yorum": "assessment",
+  // tr() `/` karakterini boşluğa çevirdiği için key boşluklu form;
+  // "Değerlendirme/Yorum" → "degerlendirme yorum".
+  "degerlendirme yorum": "assessment",
+  "degerlendirme": "assessment",
+  "yorum": "assessment",
   // English fallbacks (keep older template uploads working)
   "title": "title",
   "body": "body",

@@ -458,7 +458,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
                         </td>
                         <td className="p-4">
                           {isResult ? (
-                            <Badge variant="brand" className="font-semibold text-xs">
+                            <Badge variant="default" className="font-semibold text-xs">
                               Sonuç {item.scope === "MRDK" ? "(MRDK)" : "(Genel)"}
                             </Badge>
                           ) : (

@@ -63,6 +63,7 @@ const ACTION_LABELS: Record<AuditAction, string> = {
   KPI_BASELINE_CHANGED: "KPI baseline değişti",
   KPI_EVIDENCE_ADDED: "KPI kanıtı eklendi",
   KPI_METRIC_EVENT_CREATED: "KPI metriği işlendi",
+  KPI_FIXED_TARGET_SET: "Sabit KPI hedefi belirlendi",
 };
 
 type SearchParams = Promise<{ action?: string; actor?: string; target?: string }>;

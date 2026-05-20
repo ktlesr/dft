@@ -159,6 +159,7 @@ enum AuditAction {
   KPI_BASELINE_CHANGED
   KPI_EVIDENCE_ADDED
   KPI_METRIC_EVENT_CREATED
+  KPI_FIXED_TARGET_SET
 }
 
 enum KpiMetricCode {
@@ -644,6 +645,7 @@ model Report {
 
   @@index([groupId, kind, createdAt])
   @@index([authorId, createdAt])
+  @@map("GroupReport")
 }
 
 enum GroupNoteScope {

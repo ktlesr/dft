@@ -11,6 +11,8 @@ import { isAdmin } from "@/lib/rbac";
 import { storeAttachments, UploadError } from "@/lib/upload";
 import { meetingResultSchema, type MeetingResultFormState } from "./schemas";
 
+export type { MeetingResultFormState } from "./schemas";
+
 function zodErrors(err: z.ZodError): Record<string, string[]> {
   const out: Record<string, string[]> = {};
   for (const issue of err.issues) {

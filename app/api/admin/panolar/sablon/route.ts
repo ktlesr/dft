@@ -148,7 +148,7 @@ export async function GET(_req: NextRequest) {
     {},
     { col: "NOT", req: "", desc: "Tüm satırlar önce doğrulanır. Bir hata varsa hiç kayıt eklenmez." },
     { col: "SINIR", req: "", desc: "En fazla 1.000 satır, en fazla 5 MB dosya boyutu." },
-    { col: "KAPSAM", req: "", desc: "Bu şablon yalnızca Genel Pano paylaşımları içindir." },
+    { col: "KAPSAM", req: "", desc: "Bu şablon yalnızca Genel Pano kayıtları içindir." },
   ]);
 
   guide.views = [{ state: "frozen", ySplit: 1 }];

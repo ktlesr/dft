@@ -388,7 +388,7 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Son Paylaşımlar
+              Son Kayıtlar
             </CardTitle>
             <Button asChild size="sm" variant="ghost">
               <Link href="/kayitlarim?scope=all">

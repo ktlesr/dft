@@ -106,6 +106,7 @@ type AttachmentOwnerKey =
   | "contentId"
   | "stakeholderId"
   | "noticeId"
+  | "meetingResultId"
   | "discussionId";
 
 type StoreAttachmentsInput = {

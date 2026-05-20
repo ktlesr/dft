@@ -55,6 +55,14 @@ export async function GET(
       discussion: {
         select: { groupId: true, deletedAt: true },
       },
+      meetingResult: {
+        select: {
+          scope: true,
+          mrdkTarget: true,
+          targetGroupIds: true,
+          deletedAt: true,
+        },
+      },
       kpiCustomEvidence: {
         select: {
           kpi: {
@@ -130,10 +138,23 @@ function canView(
     content: { deletedAt: Date | null } | null;
     notice: { scope: "GENERAL" | "GROUP"; groupId: string | null; deletedAt: Date | null } | null;
     discussion: { groupId: string; deletedAt: Date | null } | null;
+    meetingResult: {
+      scope: string;
+      mrdkTarget: string | null;
+      targetGroupIds: string[];
+      deletedAt: Date | null;
+    } | null;
     kpiCustomEvidence: { kpi: { groupId: string; deletedAt: Date | null } } | null;
   },
   viewerGroupId: string | null,
 ): boolean {
+  if (att.meetingResult && !att.meetingResult.deletedAt) {
+    if (att.meetingResult.scope === "GENEL") return true;
+    if (att.meetingResult.scope === "MRDK") {
+      if (att.meetingResult.mrdkTarget === "ALL") return true;
+      return viewerGroupId !== null && att.meetingResult.targetGroupIds.includes(viewerGroupId);
+    }
+  }
   if (att.boardPost && !att.boardPost.deletedAt) {
     if (att.boardPost.scope === "GENERAL") return true;
     return att.boardPost.groupId !== null && att.boardPost.groupId === viewerGroupId;

@@ -160,6 +160,7 @@ enum AuditAction {
   KPI_EVIDENCE_ADDED
   KPI_METRIC_EVENT_CREATED
   KPI_FIXED_TARGET_SET
+  MEETING_RESULT_CREATED
 }
 
 enum KpiMetricCode {
@@ -260,6 +261,7 @@ model User {
   kpiEvidenceUploads KpiCustomEvidence[] @relation("KpiEvidenceUploader")
   auditLogs       AuditLog[]
   notifications   Notification[]
+  meetingResultsCreated MeetingResult[] @relation("MeetingResultCreator")
   approvedById    String?
   approvedBy      User?        @relation("UserApprover", fields: [approvedById], references: [id], onDelete: SetNull)
   approvedUsers   User[]       @relation("UserApprover")
@@ -461,6 +463,9 @@ model Attachment {
   discussion    Discussion? @relation(fields: [discussionId], references: [id], onDelete: Cascade)
   kpiCustomEvidence KpiCustomEvidence?
 
+  meetingResultId String?
+  meetingResult   MeetingResult? @relation(fields: [meetingResultId], references: [id], onDelete: Cascade)
+
   @@index([uploadedById])
   @@index([boardPostId])
   @@index([meetingId])
@@ -468,6 +473,7 @@ model Attachment {
   @@index([reportId])
   @@index([groupNoteId])
   @@index([documentId])
+  @@index([meetingResultId])
 }
 
 // ============================================================
@@ -1109,5 +1115,24 @@ model KpiFixedTarget {
 
   @@unique([groupId, metricCode])
   @@index([groupId])
+}
+
+model MeetingResult {
+  id               String       @id @default(cuid())
+  title            String
+  description      String?      @db.Text
+  startAt          DateTime
+  endAt            DateTime
+  scope            String       // "GENEL" | "MRDK"
+  mrdkTarget       String?      // "ALL" | "SPECIFIC"
+  targetGroupIds   String[]     @default([])
+  attachments      Attachment[]
+  createdById      String
+  createdBy        User         @relation("MeetingResultCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  deletedAt        DateTime?
+
+  @@index([createdById])
 }
 

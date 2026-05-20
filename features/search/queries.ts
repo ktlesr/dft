@@ -233,7 +233,7 @@ export async function globalSearch(user: CurrentUser, rawQuery: string): Promise
   if (records.length > 0) {
     groups.push({
       key: "records",
-      label: "Paylaşımlar",
+      label: "Kayıtlar",
       items: records.map((r) => ({
         id: r.id,
         title: r.title,

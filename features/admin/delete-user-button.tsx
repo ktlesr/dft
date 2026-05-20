@@ -53,7 +53,7 @@ export function DeleteUserButton({ userId, userName, compact = false }: Props) {
           <DialogDescription className="space-y-2 pt-1">
             <span className="block">
               <span className="font-semibold text-foreground">{userName}</span> hesabı ve bu
-              hesaba ait tüm kayıtlar (proje, etkinlik, pano paylaşımları, toplantılar,
+              hesaba ait tüm kayıtlar (proje, etkinlik, pano kayıtları, toplantılar,
               tutanaklar, raporlar, paydaşlar, dijital içerikler vb.) silinecek.
             </span>
             <span className="block font-medium text-destructive">Bu işlem geri alınamaz.</span>

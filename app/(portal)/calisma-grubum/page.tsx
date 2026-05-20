@@ -76,6 +76,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
     bildirimler,
     discussions,
     meetings,
+    meetingResults,
     reports,
     notes,
     kpiOverview,
@@ -122,12 +123,37 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
     prisma.meeting.findMany({
       where: { groupId: user.groupId, deletedAt: null },
       orderBy: { startAt: "desc" },
-      take: 10,
+      take: 20,
+      include: {
+        attachments: { select: { id: true, originalName: true, size: true } },
+      },
+    }),
+    prisma.meetingResult.findMany({
+      where: {
+        deletedAt: null,
+        OR: [
+          { scope: "GENEL" },
+          {
+            scope: "MRDK",
+            OR: [
+              { mrdkTarget: "ALL" },
+              {
+                mrdkTarget: "SPECIFIC",
+                targetGroupIds: { has: user.groupId },
+              },
+            ],
+          },
+        ],
+      },
+      orderBy: { startAt: "desc" },
+      include: {
+        attachments: { select: { id: true, originalName: true, size: true } },
+      },
     }),
     prisma.report.findMany({
       where: { groupId: user.groupId, deletedAt: null },
       orderBy: { createdAt: "desc" },
-      take: 10,
+      take: 20,
     }),
     prisma.groupNote.findMany({
       where: {
@@ -158,6 +184,28 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
   const canCreateNotes = canCreateAdvisorNote || canCreateKsNote;
   const advisorNotes = notes.filter((n) => n.kind === "ADVISOR_NOTE");
   const ksNotes = notes.filter((n) => n.kind === "KS_NOTE");
+
+  const combinedMeetings = [
+    ...meetings.map((m) => ({
+      id: m.id,
+      title: m.title,
+      description: m.description,
+      startAt: m.startAt,
+      endAt: m.endAt,
+      type: "MEETING" as const,
+      attachments: m.attachments,
+    })),
+    ...meetingResults.map((mr) => ({
+      id: mr.id,
+      title: mr.title,
+      description: mr.description,
+      startAt: mr.startAt,
+      endAt: mr.endAt,
+      type: "RESULT" as const,
+      scope: mr.scope,
+      attachments: mr.attachments,
+    })),
+  ].sort((a, b) => b.startAt.getTime() - a.startAt.getTime());
 
   return (
     <div className="mx-auto max-w-7xl">
@@ -213,7 +261,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Son paylaşımlar</CardTitle>
+                <CardTitle className="text-base">Son Kayıtlar</CardTitle>
               </CardHeader>
               <CardContent>
                 {discussions.length === 0 ? (
@@ -334,114 +382,6 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
           ) : (
             <ul className="space-y-2">
               {bildirimler.map((b) => {
-                const authorName = b.author.name?.trim() || b.author.email.split("@")[0];
-                return (
-                  <li key={b.id} className="rounded-md border p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          {b.pinned ? (
-                            <Pin className="h-3 w-3 shrink-0 text-amber-600" aria-label="Sabit" />
-                          ) : null}
-                          <p className="font-medium">{b.title}</p>
-                          <Badge variant="secondary" className="text-[10px]">
-                            {BOARD_KIND_LABELS[b.kind]}
-                          </Badge>
-                        </div>
-                        <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-xs text-muted-foreground">
-                          {b.body}
-                        </p>
-                        {b.tags.length > 0 ? (
-                          <div className="mt-2 flex flex-wrap gap-1">
-                            {b.tags.map((t) => (
-                              <Badge key={t} variant="outline" className="text-[10px]">
-                                #{t}
-                              </Badge>
-                            ))}
-                          </div>
-                        ) : null}
-                        {b.externalUrl ? (
-                          <p className="mt-1.5 truncate text-[11px]">
-                            <a
-                              href={b.externalUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary hover:underline"
-                            >
-                              {b.externalUrl}
-                            </a>
-                          </p>
-                        ) : null}
-                        <p className="mt-1.5 text-[11px] text-muted-foreground">
-                          {authorName} · {formatDateTime(b.publishedAt)}
-                        </p>
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </TabsContent>
-
-        <TabsContent value="toplantilar">
-          {meetings.length === 0 ? (
-            <EmptyState title="Henüz toplantı yok" icon={CalendarDays} />
-          ) : (
-            <ul className="space-y-2">
-              {meetings.map((m) => (
-                <li key={m.id} className="rounded-md border p-4">
-                  <p className="font-medium">{m.title}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{formatDateTime(m.startAt)}</p>
-                  {m.location ? (
-                    <p className="text-xs text-muted-foreground">📍 {m.location}</p>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          )}
-        </TabsContent>
-
-        <TabsContent value="raporlar">
-          {reports.length === 0 ? (
-            <EmptyState title="Henüz rapor yok" icon={FileText} />
-          ) : (
-            <ul className="space-y-2">
-              {reports.map((r) => (
-                <li key={r.id} className="rounded-md border p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="font-medium">{r.title}</p>
-                    <Badge variant="secondary">{REPORT_KIND_LABELS[r.kind]}</Badge>
-                  </div>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {formatDate(r.periodStart)} – {formatDate(r.periodEnd)}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </TabsContent>
-
-        <TabsContent value="kpi" className="space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-xs text-muted-foreground">
-              Bu sekmedeki KPI metrikleri grup uyelerinin girdigi kayitlardan otomatik hesaplanir.
-            </p>
-            <div className="flex items-center gap-2">
-              <Button asChild variant="outline" size="sm">
-                <Link href="/kpi">KPI Takip</Link>
-              </Button>
-              <Button asChild variant="brand" size="sm">
-                <Link href="/kpi/yeni">KPI Ekle</Link>
-              </Button>
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {kpiOverview.summaries.map((item) => (
-              <Card key={item.code}>
-                <CardContent className="p-4">
-                  <p className="line-clamp-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     {item.label}
                   </p>
                   <p className="mt-2 text-2xl font-semibold tracking-tight">

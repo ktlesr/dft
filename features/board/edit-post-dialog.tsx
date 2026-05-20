@@ -95,9 +95,9 @@ export function EditBoardPostDialog({ post }: { post: EditBoardPostInitial }) {
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Paylaşımı düzenle</DialogTitle>
+          <DialogTitle>Kayıt düzenle</DialogTitle>
           <DialogDescription>
-            Yalnızca yöneticiler geçmiş paylaşımları düzenleyebilir. Değişiklik anında yayına girer.
+            Yalnızca yöneticiler geçmiş kayıtları düzenleyebilir. Değişiklik anında yayına girer.
           </DialogDescription>
         </DialogHeader>
 

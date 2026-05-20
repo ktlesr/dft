@@ -29,7 +29,7 @@ import {
   STAKEHOLDER_KIND_LABELS,
 } from "@/lib/constants";
 
-export const metadata = { title: "Paylaşımlar" };
+export const metadata = { title: "Kayıtlar" };
 
 type SearchParams = Promise<{ tur?: string; q?: string; scope?: string }>;
 type ScopeMode = "mine" | "all";
@@ -56,9 +56,9 @@ export default async function PaylasimlarPage({ searchParams }: { searchParams: 
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
-        title="Paylaşımlar"
+        title="Kayıtlar"
         description="DFT üyeleri tarafından girilen kayıtların yer aldığı alandır."
-        breadcrumbs={[{ label: "Paylaşımlar" }]}
+        breadcrumbs={[{ label: "Kayıtlar" }]}
         actions={
           <Button asChild variant="brand">
             <Link href="/kayit/yeni">

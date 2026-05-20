@@ -37,7 +37,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/panel", label: "Ana Panel", icon: LayoutDashboard, exact: true },
       { href: "/dft-hakkinda", label: "DFT Hakkında", icon: Building2 },
       { href: "/kayit/yeni", label: "Yeni Kayıt Ekle", icon: PlusCircle },
-      { href: "/kayitlarim", label: "Paylaşımlar", icon: FileText },
+      { href: "/kayitlarim", label: "Kayıtlar", icon: FileText },
     ],
   },
   {
@@ -74,6 +74,12 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "KPI Ekle",
         icon: BarChart3,
         roles: ["MODERATOR", "ADMIN"],
+      },
+      {
+        href: "/toplanti-sonucu/yeni",
+        label: "Toplantı Sonucu Ekle",
+        icon: PlusCircle,
+        roles: ["ADMIN"],
       },
     ],
   },

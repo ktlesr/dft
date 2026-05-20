@@ -565,10 +565,10 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
         </TabsContent>
 
         <TabsContent value="raporlar">
-          <Tabs defaultValue="sablonlar" className="space-y-4">
+          <Tabs defaultValue="grup-raporlari" className="space-y-4">
             <TabsList>
-              <TabsTrigger value="sablonlar">Şablonlar</TabsTrigger>
               <TabsTrigger value="grup-raporlari">Raporlar</TabsTrigger>
+              <TabsTrigger value="sablonlar">Şablonlar</TabsTrigger>
             </TabsList>
 
             <TabsContent value="sablonlar">

@@ -20,16 +20,6 @@ const INITIAL: ReportFormState = { ok: true };
 export function ReportForm({ defaultKind = "YOL_HARITASI" }: { defaultKind?: keyof typeof REPORT_KIND_LABELS }) {
   const [state, action, pending] = useActionState(createReport, INITIAL);
 
-  // First Yol Haritası period per MASTER_PROMPT: 1 Haziran 2026 – 31 Ağustos 2026.
-  const defaults = {
-    YOL_HARITASI: { periodStart: "2026-06-01", periodEnd: "2026-08-31" },
-    DORT_AYLIK_1: { periodStart: "", periodEnd: "" },
-    DORT_AYLIK_2: { periodStart: "", periodEnd: "" },
-    DORT_AYLIK_3: { periodStart: "", periodEnd: "" },
-    KAPANIS: { periodStart: "", periodEnd: "" },
-  } as const;
-  const pd = defaults[defaultKind];
-
   return (
     <form action={action}>
       <Card>
@@ -59,13 +49,6 @@ export function ReportForm({ defaultKind = "YOL_HARITASI" }: { defaultKind?: key
 
             <Field name="title" label="Başlık" required error={state.errors?.title}>
               <Input id="title" name="title" required maxLength={200} />
-            </Field>
-
-            <Field name="periodStart" label="Dönem başlangıcı" error={state.errors?.periodStart}>
-              <Input id="periodStart" name="periodStart" type="date" defaultValue={pd.periodStart} />
-            </Field>
-            <Field name="periodEnd" label="Dönem bitişi" error={state.errors?.periodEnd}>
-              <Input id="periodEnd" name="periodEnd" type="date" defaultValue={pd.periodEnd} />
             </Field>
 
             <Field name="summary" label="Özet" error={state.errors?.summary} className="md:col-span-2">

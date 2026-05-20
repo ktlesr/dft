@@ -42,8 +42,6 @@ export async function createReport(
   const parsed = reportSchema.safeParse({
     kind: fd.get("kind"),
     title: fd.get("title"),
-    periodStart: fd.get("periodStart"),
-    periodEnd: fd.get("periodEnd"),
     summary: fd.get("summary"),
   });
   if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
@@ -56,8 +54,8 @@ export async function createReport(
       groupId: user.groupId,
       kind: parsed.data.kind,
       title: parsed.data.title,
-      periodStart: parsed.data.periodStart ?? null,
-      periodEnd: parsed.data.periodEnd ?? null,
+      periodStart: null,
+      periodEnd: null,
       summary: parsed.data.summary ?? null,
       body: null,
       outputs: null,

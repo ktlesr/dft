@@ -82,10 +82,10 @@ export const BOARD_KIND_BY_SCOPE = {
 } as const;
 
 export const REPORT_KIND_LABELS = {
-  YOL_HARITASI: "Yol Haritası",
-  DORT_AYLIK_1: "1. 4 Aylık Rapor",
-  DORT_AYLIK_2: "2. 4 Aylık Rapor",
-  DORT_AYLIK_3: "3. 4 Aylık Rapor",
+  YOL_HARITASI: "Yol Haritası Raporu",
+  DORT_AYLIK_1: "1. 4 Aylık İlerleme Raporu",
+  DORT_AYLIK_2: "2. 4 Aylık İlerleme Raporu",
+  DORT_AYLIK_3: "3. 4 Aylık İlerleme Raporu",
   KAPANIS: "Kapanış Raporu",
 } as const;
 

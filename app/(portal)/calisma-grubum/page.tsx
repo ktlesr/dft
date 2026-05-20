@@ -23,7 +23,7 @@ import { getFixedKpiOverview, listCustomKpisForUser } from "@/lib/kpi/queries";
 import { prisma } from "@/lib/prisma";
 import { canCreateOrApproveKpi, canReviseKpi } from "@/lib/rbac";
 import { BOARD_KIND_LABELS, GROUP_NOTE_KIND_LABELS, REPORT_KIND_LABELS } from "@/lib/constants";
-import { formatDate, formatDateTime } from "@/lib/utils";
+import { formatDateTime } from "@/lib/utils";
 import { listGroupDiscussions } from "@/features/forum/queries";
 import { UserCard } from "@/features/users/user-card";
 import { CustomKpiManagement } from "@/features/kpi/custom-kpi-management";
@@ -520,66 +520,72 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
         </TabsContent>
 
         <TabsContent value="raporlar">
-          <div className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Şablonlar</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {reportTemplates.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">Bu kapsamda görüntüleyebileceğiniz şablon bulunmuyor.</p>
-                ) : (
-                  <ul className="space-y-2">
-                    {reportTemplates.map((t) => (
-                      <li key={t.id} className="rounded-md border p-4">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <p className="font-medium">{t.title}</p>
-                            {t.description ? (
-                              <p className="mt-1 text-xs text-muted-foreground">{t.description}</p>
-                            ) : null}
-                          </div>
-                          <Badge variant={t.scope === "GENEL" ? "secondary" : "outline"}>
-                            {t.scope === "GENEL" ? "Genel" : "Belli Gruplar"}
-                          </Badge>
-                        </div>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {t.attachments.map((att) => (
-                            <a
-                              key={att.id}
-                              href={`/api/dosya/${att.id}`}
-                              className="inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/5"
-                              download
-                            >
-                              İndir: {att.originalName}
-                            </a>
-                          ))}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </CardContent>
-            </Card>
+          <Tabs defaultValue="sablonlar" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="sablonlar">Şablonlar</TabsTrigger>
+              <TabsTrigger value="grup-raporlari">Raporlar</TabsTrigger>
+            </TabsList>
 
-            {reports.length === 0 ? (
-              <EmptyState title="Henüz rapor yok" icon={FileText} />
-            ) : (
-              <ul className="space-y-2">
-                {reports.map((r) => (
-                  <li key={r.id} className="rounded-md border p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="font-medium">{r.title}</p>
-                      <Badge variant="secondary">{REPORT_KIND_LABELS[r.kind]}</Badge>
-                    </div>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {formatDate(r.periodStart)} – {formatDate(r.periodEnd)}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+            <TabsContent value="sablonlar">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Şablonlar</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {reportTemplates.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">Bu kapsamda görüntüleyebileceğiniz şablon bulunmuyor.</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {reportTemplates.map((t) => (
+                        <li key={t.id} className="rounded-md border p-4">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium">{t.title}</p>
+                              {t.description ? (
+                                <p className="mt-1 text-xs text-muted-foreground">{t.description}</p>
+                              ) : null}
+                            </div>
+                            <Badge variant={t.scope === "GENEL" ? "secondary" : "outline"}>
+                              {t.scope === "GENEL" ? "Genel" : "Belli Gruplar"}
+                            </Badge>
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {t.attachments.map((att) => (
+                              <a
+                                key={att.id}
+                                href={`/api/dosya/${att.id}`}
+                                className="inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/5"
+                                download
+                              >
+                                İndir: {att.originalName}
+                              </a>
+                            ))}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="grup-raporlari">
+              {reports.length === 0 ? (
+                <EmptyState title="Henüz rapor yok" icon={FileText} />
+              ) : (
+                <ul className="space-y-2">
+                  {reports.map((r) => (
+                    <li key={r.id} className="rounded-md border p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="font-medium">{r.title}</p>
+                        <Badge variant="secondary">{REPORT_KIND_LABELS[r.kind]}</Badge>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </TabsContent>
+          </Tabs>
         </TabsContent>
 
         <TabsContent value="kpi" className="space-y-4">

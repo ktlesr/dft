@@ -22,6 +22,7 @@ export type FixedKpiSummaryItem = {
   label: string;
   value: number;
   lastOccurredAt: Date | null;
+  targetValue?: number | null;
 };
 
 export type FixedKpiGroupRow = {
@@ -109,7 +110,7 @@ export async function getFixedKpiOverview(
 ): Promise<FixedKpiOverview> {
   const scope = await resolveScope(user, requestedGroupId);
 
-  const [metricRows, groupRowsRaw] = await Promise.all([
+  const [metricRows, groupRowsRaw, targets] = await Promise.all([
     prisma.kpiMetricEvent.groupBy({
       by: ["metricCode"],
       where: {
@@ -127,15 +128,23 @@ export async function getFixedKpiOverview(
       },
       _sum: { delta: true },
     }),
+    scope.whereGroupId
+      ? prisma.kpiFixedTarget.findMany({
+          where: { groupId: scope.whereGroupId },
+        })
+      : Promise.resolve([]),
   ]);
 
   const summaries = FIXED_KPI_CODES.map((code) => {
     const row = metricRows.find((r) => r.metricCode === code);
+    const targetObj = targets.find((t) => t.metricCode === code);
+    const targetValue = targetObj?.targetValue ? parseFloat(targetObj.targetValue.toString()) : null;
     return {
       code,
       label: FIXED_KPI_LABELS[code],
       value: clampValue(row?._sum.delta),
       lastOccurredAt: row?._max.occurredAt ?? null,
+      targetValue,
     };
   });
 

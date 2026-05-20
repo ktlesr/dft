@@ -73,7 +73,11 @@ export default async function KpiPage({ searchParams }: { searchParams: KpiPageS
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-semibold tracking-tight">{item.value}</p>
+              <p className="text-3xl font-semibold tracking-tight">
+                {item.targetValue !== undefined && item.targetValue !== null
+                  ? `${item.value} / ${item.targetValue}`
+                  : (overview.selectedGroupId ? `${item.value} / 0` : item.value)}
+              </p>
               <p className="mt-1 text-[11px] text-muted-foreground">
                 Son hareket: {item.lastOccurredAt ? formatDateTime(item.lastOccurredAt) : "-"}
               </p>
@@ -149,18 +153,18 @@ function shortLabel(code: (typeof FIXED_KPI_CODES)[number]) {
     case "KPI_PROJECT_IDEA_TOTAL":
       return "Proje Fikri";
     case "KPI_PROJECT_APPLICATION_DIRECT_TOTAL":
-      return "Başvuru (Bireysel/DFT)";
+      return "Proje Başvurusu";
     case "KPI_PROJECT_APPLICATION_GUIDANCE_TOTAL":
-      return "Başvuru (Danışmanlık)";
+      return "Danışmanlık/Rehberlik Başvurusu";
     case "KPI_SUCCESSFUL_PROJECT_TOTAL":
-      return "Başarılı";
+      return "Başarılı Proje";
     case "KPI_EVENT_ATTENDED_TOTAL":
-      return "Etkinlik Katılım";
+      return "Katılım Sağlanan Etkinlik";
     case "KPI_EVENT_ORGANIZED_TOTAL":
-      return "Etkinlik Düzenlenen";
+      return "Düzenlenen Etkinlik";
     case "KPI_CONTENT_TOTAL":
       return "Dijital İçerik";
     case "KPI_STAKEHOLDER_TOTAL":
-      return "Paydaş";
+      return "Paydaş Sayısı (Toplam)";
   }
 }

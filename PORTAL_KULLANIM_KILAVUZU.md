@@ -89,7 +89,7 @@ Projenin ve grubun çıktılarının hedeflenen kalite standartlarına uygunluğ
 4. **Toplantılar:** Takvim entegrasyonlu, lokasyonlu ve dosyalı olarak girilen toplantı arşivleridir. (Herkes kayıt ekleyemez, sadece admin ve ilgili yetkililer yetkilidir).
 5. **Raporlar:** Raporlar sekmesinden raportör tarafından eklenen dönem raporları okunur.
 6. **KPI Sekmesi:**
-   - **Sabit KPI'lar:** Tüm sistem için tanımlı olan 7 temel metrik. Grup Moderatörü bu sabit KPI'lar için hedef değer atayabilir. Bu hedefler ve gerçekleşme oranları tablo şeklinde gösterilir.
+   - **Sabit KPI'lar:** Tüm sistem için tanımlı olan 8 temel metrik. Grup Moderatörü bu sabit KPI'lar için hedef değer atayabilir. Bu hedefler ve gerçekleşme oranları tablo şeklinde gösterilir.
    - **Özel KPI'lar:** Moderatörün girdiği, grup üyelerinin kanıt yüklediği özel (Custom) KPI hedefleridir. Onay-bekleyen-reddedilen şeklinde 3 farklı durumu barındırır.
    - *Not: Tüm KPI formlarından hedef/başlangıç/bitiş tarih alanları kaldırılmış olup, sadece sayısal hedef/baseline değerleri üzerinden işlem yapılmaktadır.*
 7. **Danışman / KS Notları:** Notların tasniflenerek okunabildiği sekmedir.

@@ -444,7 +444,9 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
                   <p className="line-clamp-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     {item.label}
                   </p>
-                  <p className="mt-2 text-2xl font-semibold tracking-tight">{item.value}</p>
+                  <p className="mt-2 text-2xl font-semibold tracking-tight">
+                    {item.value} / {item.targetValue ?? 0}
+                  </p>
                 </CardContent>
               </Card>
             ))}

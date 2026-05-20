@@ -47,21 +47,31 @@ const { PrismaClient } = require('@prisma/client');
 const p = new PrismaClient();
 (async () => {
   try {
-    // Check current column type — bail out fast if it's already text.
-    const [{ data_type }] = await p.$queryRawUnsafe(
-      `SELECT data_type FROM information_schema.columns
+    // Check current column type — bail out fast if table/column is not there yet.
+    const rows = await p.$queryRawUnsafe(
+      `SELECT data_type, udt_name
+         FROM information_schema.columns
          WHERE table_schema = 'public'
-           AND table_name = 'Group'
-           AND column_name = 'code'`,
+           AND table_name IN ('Group', 'group')
+           AND column_name = 'code'
+         LIMIT 1`,
     );
-    if (data_type === 'USER-DEFINED') {
+    if (!Array.isArray(rows) || rows.length === 0) {
+      console.log('   Group.code column not present yet — skipping.');
+      return;
+    }
+
+    const data_type = rows[0]?.data_type;
+    const udt_name = rows[0]?.udt_name;
+
+    if (data_type === 'USER-DEFINED' && udt_name === 'GroupCode') {
       await p.$executeRawUnsafe(
         `ALTER TABLE "Group" ALTER COLUMN code TYPE text USING code::text`,
       );
       await p.$executeRawUnsafe(`DROP TYPE IF EXISTS "GroupCode"`);
       console.log('   Group.code altered to text; GroupCode enum dropped.');
     } else {
-      console.log('   Group.code already ' + data_type + ' — skipping.');
+      console.log('   Group.code already ' + data_type + ' (' + udt_name + ') — skipping.');
     }
   } catch (e) {
     // Swallow "relation does not exist" on a fresh DB — Prisma will

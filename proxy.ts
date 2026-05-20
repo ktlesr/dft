@@ -37,6 +37,7 @@ const PROTECTED_PREFIXES = [
   "/kayit",
   "/kayitlarim",
   "/calisma-grubum",
+  "/calisma-gruplari",
   "/belgeler",
   "/profilim",
   "/toplanti-bildirimi",

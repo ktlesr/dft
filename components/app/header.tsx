@@ -44,7 +44,7 @@ export function Header({ user, unreadNotifications = 0 }: HeaderProps) {
       {/* Mobile sidebar trigger */}
       <Sheet>
         <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="md:hidden" aria-label="Menüyü aç">
+          <Button type="button" variant="ghost" size="icon" className="md:hidden" aria-label="Menüyü aç">
             <Menu className="h-5 w-5" />
           </Button>
         </SheetTrigger>
@@ -86,7 +86,7 @@ export function Header({ user, unreadNotifications = 0 }: HeaderProps) {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-10 gap-2 px-2">
+            <Button type="button" variant="ghost" className="h-10 gap-2 px-2">
               <Avatar className="h-8 w-8">
                 {user.image ? (
                   <AvatarImage src={avatarUrl(user.id, user.image)} alt={user.name ?? user.email} />

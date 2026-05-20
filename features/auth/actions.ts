@@ -188,9 +188,13 @@ export async function resetAction(_prev: FormState, formData: FormData): Promise
 // --- SIGN OUT ---
 
 export async function signOutAction(): Promise<void> {
-  const current = await getCurrentUser();
-  await audit({ action: "USER_LOGOUT", actorId: current?.id });
-  await signOut({ redirect: false });
-  redirect("/giris");
+  const current = await getCurrentUser().catch(() => null);
+  await audit({ action: "USER_LOGOUT", actorId: current?.id }).catch(() => undefined);
+
+  try {
+    await signOut({ redirectTo: "/giris" });
+  } catch {
+    redirect("/giris");
+  }
 }
 

@@ -63,16 +63,18 @@ const ACCEPTED_MIME_PREFIXES = new Set<string>([
 ]);
 
 // ── Header normalisation (Turkish-aware) ─────────────────────────
+// Türkçe karakterler `toLowerCase()` ÇAĞRISINDAN ÖNCE ASCII'ye map'lenir;
+// aksi halde `"İ".toLowerCase()` → "i" + birleşen nokta (U+0307) olur ve
+// sonraki non-alnum temizliği başlığı kırar (ör. "İçerik" → "i cerik").
 function tr(s: string): string {
   return s
+    .replace(/[şŞ]/g, "s")
+    .replace(/[ıİ]/g, "i")
+    .replace(/[çÇ]/g, "c")
+    .replace(/[ğĞ]/g, "g")
+    .replace(/[öÖ]/g, "o")
+    .replace(/[üÜ]/g, "u")
     .toLowerCase()
-    .replace(/ş/g, "s")
-    .replace(/ı/g, "i")
-    .replace(/İ/g, "i")
-    .replace(/ç/g, "c")
-    .replace(/ğ/g, "g")
-    .replace(/ö/g, "o")
-    .replace(/ü/g, "u")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
 }

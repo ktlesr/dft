@@ -50,19 +50,24 @@ const ACCEPTED_UPLOAD_MIMES = new Set<string>([
 ]);
 
 // ── Turkish header → canonical key normalisation ────────────────
-// A minimal Turkish-aware collapse: lowercase, strip diacritics, remove
-// non-word characters. Keeps header matching tolerant to typos like
-// "paylaşımın i̇çeriği" vs "paylasimin icerigi".
+// A minimal Turkish-aware collapse: strip diacritics, lowercase, remove
+// non-word characters.
+//
+// ÖNEMLİ: Türkçe karakterleri ASCII'ye MAP'leme adımı `toLowerCase()`
+// ÇAĞRISINDAN ÖNCE yapılır. Çünkü JS'de `"İ".toLowerCase()` Unicode
+// kuralı gereği `"i"` + birleşen üst nokta (U+0307) üretir; bu nokta
+// alfanumerik olmadığı için sonraki `[^a-z0-9]+ → " "` adımında boşluğa
+// dönüşerek `"İçerik"` başlığını `"i cerik"` yapıyor ve HEADER_MAP'teki
+// `"icerik"` ile eşleşmiyordu. Önce ASCII'ye indirgeyince sorun çözüldü.
 function tr(s: string): string {
   return s
+    .replace(/[şŞ]/g, "s")
+    .replace(/[ıİ]/g, "i")
+    .replace(/[çÇ]/g, "c")
+    .replace(/[ğĞ]/g, "g")
+    .replace(/[öÖ]/g, "o")
+    .replace(/[üÜ]/g, "u")
     .toLowerCase()
-    .replace(/ş/g, "s")
-    .replace(/ı/g, "i")
-    .replace(/İ/g, "i")
-    .replace(/ç/g, "c")
-    .replace(/ğ/g, "g")
-    .replace(/ö/g, "o")
-    .replace(/ü/g, "u")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
 }

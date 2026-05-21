@@ -13,6 +13,7 @@ import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { createToken, hashToken } from "@/lib/tokens";
 import { sendMail, passwordResetEmail } from "@/lib/mail";
 import { notifyAdminsAboutNonAdminActivity } from "@/lib/notifications/admin-activity";
+import { getNotificationPrefs } from "@/lib/notifications/notification-prefs";
 import { forgotSchema, loginSchema, resetSchema } from "./schemas";
 
 export type FormState = {
@@ -95,16 +96,22 @@ export async function loginAction(_prev: FormState, formData: FormData): Promise
     metadata: { loginIdentifier },
   });
   if (user) {
-    await notifyAdminsAboutNonAdminActivity({
-      actorId: user.id,
-      actorRoles: user.roles.map((r) => r.role),
-      actorName: user.name,
-      actorEmail: user.email,
-      kind: "login_admin",
-      title: "Kullanıcı giriş yaptı",
-      body: user.name?.trim() || user.email,
-      link: "/yonetim/loglar",
-    });
+    // Admin'in /yonetim/ayarlar'dan açıp kapatabildiği toggle.
+    // Form-create bildirimleri (doküman, KPI, vs.) bu bayrağa bağlı değil
+    // — sadece login/logout zilini susturur.
+    const prefs = await getNotificationPrefs();
+    if (prefs.loginNotificationsEnabled) {
+      await notifyAdminsAboutNonAdminActivity({
+        actorId: user.id,
+        actorRoles: user.roles.map((r) => r.role),
+        actorName: user.name,
+        actorEmail: user.email,
+        kind: "login_admin",
+        title: "Kullanıcı giriş yaptı",
+        body: user.name?.trim() || user.email,
+        link: "/yonetim/loglar",
+      });
+    }
   }
 
   if (user?.status === "PENDING_APPROVAL") redirect("/onay-bekleniyor");
@@ -200,6 +207,29 @@ export async function resetAction(_prev: FormState, formData: FormData): Promise
 export async function signOutAction(): Promise<void> {
   const current = await getCurrentUser().catch(() => null);
   await audit({ action: "USER_LOGOUT", actorId: current?.id }).catch(() => undefined);
+
+  if (current) {
+    // Login ile aynı toggle'a bağlı; admin /yonetim/ayarlar'dan kapatabilir.
+    // `await getNotificationPrefs()` veya `notifyAdmins...` her ne sebeple
+    // çökerse çöksün signOut akışını bloklamamalıyız → tek `try/catch`.
+    try {
+      const prefs = await getNotificationPrefs();
+      if (prefs.logoutNotificationsEnabled) {
+        await notifyAdminsAboutNonAdminActivity({
+          actorId: current.id,
+          actorRoles: current.roles,
+          actorName: current.name,
+          actorEmail: current.email,
+          kind: "logout_admin",
+          title: "Kullanıcı çıkış yaptı",
+          body: current.name?.trim() || current.email,
+          link: "/yonetim/loglar",
+        });
+      }
+    } catch {
+      // bildirim sessizce atlanır — çıkış kullanıcı için akmaya devam etmeli
+    }
+  }
 
   try {
     await signOut({ redirectTo: "/giris" });

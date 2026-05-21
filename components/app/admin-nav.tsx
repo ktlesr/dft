@@ -6,6 +6,7 @@ import {
   Building2,
   FileArchive,
   Gauge,
+  Settings2,
   Users,
   MailPlus,
   Users2,
@@ -28,6 +29,7 @@ const ITEMS: AdminNavItem[] = [
   { href: "/yonetim/gruplar", label: "Gruplar", icon: Users2 },
   { href: "/yonetim/dft-hakkinda", label: "DFT Hakkında", icon: Building2 },
   { href: "/yonetim/sablonlar", label: "Şablonlar", icon: FileArchive },
+  { href: "/yonetim/ayarlar", label: "Ayarlar", icon: Settings2 },
   { href: "/yonetim/loglar", label: "Audit log", icon: ScrollText },
 ];
 

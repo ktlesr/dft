@@ -8,6 +8,7 @@ import { requireActiveUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { isAdmin, isModerator } from "@/lib/rbac";
 import { UploadError, storeAttachments } from "@/lib/upload";
+import { notifyAdminsAboutNonAdminActivity } from "@/lib/notifications/admin-activity";
 
 export type DocumentFormState = {
   ok: boolean;
@@ -105,6 +106,16 @@ export async function createDocument(
     targetType: "Document",
     targetId: row.id,
     metadata: { category },
+  });
+  await notifyAdminsAboutNonAdminActivity({
+    actorId: user.id,
+    actorRoles: user.roles,
+    actorName: user.name,
+    actorEmail: user.email,
+    kind: "document_admin",
+    title: "Yeni doküman yüklendi",
+    body: `${user.name?.trim() || user.email} · ${row.title}`,
+    link: "/belgeler",
   });
   revalidatePath("/belgeler");
   revalidatePath("/panel");

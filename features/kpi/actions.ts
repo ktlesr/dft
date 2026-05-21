@@ -18,6 +18,7 @@ import {
   UploadError,
   storeAttachments,
 } from "@/lib/upload";
+import { notifyAdminsAboutNonAdminActivity } from "@/lib/notifications/admin-activity";
 import {
   completeCustomKpiSchema,
   createCustomKpiSchema,
@@ -135,6 +136,16 @@ export async function createCustomKpi(
       groupId,
       assigneeType: input.assigneeType,
     },
+  });
+  await notifyAdminsAboutNonAdminActivity({
+    actorId: user.id,
+    actorRoles: user.roles,
+    actorName: user.name,
+    actorEmail: user.email,
+    kind: "kpi_custom_admin",
+    title: "Yeni KPI oluşturuldu",
+    body: `${user.name?.trim() || user.email} · ${input.name}`,
+    link: "/kpi",
   });
 
   revalidatePath("/kpi");

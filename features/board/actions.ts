@@ -12,6 +12,7 @@ import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { storage } from "@/lib/storage";
 import { UploadError, storeAttachments } from "@/lib/upload";
 import { BOARD_KIND_BY_SCOPE } from "@/lib/constants";
+import { notifyAdminsAboutNonAdminActivity } from "@/lib/notifications/admin-activity";
 import { boardPostEditSchema, boardPostSchema } from "./schemas";
 
 export type BoardFormState = {
@@ -118,6 +119,20 @@ export async function createBoardPost(
   }
 
   await audit({ action: "BOARD_POST_CREATED", actorId: user.id, targetType: "BoardPost", targetId: row.id });
+  await notifyAdminsAboutNonAdminActivity({
+    actorId: user.id,
+    actorRoles: user.roles,
+    actorName: user.name,
+    actorEmail: user.email,
+    kind: parsed.data.scope === "GENERAL" ? "board_general_admin" : "board_group_admin",
+    title:
+      parsed.data.scope === "GENERAL"
+        ? "Yeni genel pano paylaşımı"
+        : "Yeni grup paylaşımı",
+    body: `${user.name?.trim() || user.email} · ${row.title}`,
+    link:
+      parsed.data.scope === "GENERAL" ? "/panolar/genel" : "/calisma-grubum?tab=bildirimler",
+  });
   revalidatePath(parsed.data.scope === "GENERAL" ? "/panolar/genel" : "/panolar/grup");
   revalidatePath("/calisma-grubum");
   revalidatePath("/panel");

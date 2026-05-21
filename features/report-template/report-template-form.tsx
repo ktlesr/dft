@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { useActionState, useState } from "react";
 import { AlertCircle, Loader2 } from "lucide-react";
 
@@ -34,6 +35,18 @@ function groupLabel(group: GroupOption): string {
 export function ReportTemplateForm({ groups }: { groups: GroupOption[] }) {
   const [state, action, pending] = useActionState(createReportTemplate, INITIAL);
   const [scope, setScope] = useState<"GENEL" | "GROUPS">("GENEL");
+
+  // Başarılı submit sonrası "Şablon Dosyaları" yükleme kutusunda dosya
+  // adının asılı kalmaması için: pending→ok geçişinde AttachmentInput'u
+  // sıfırla. Hata varsa key'i bump etmiyoruz → kullanıcı dosyayı kaybetmez.
+  const [attachmentsResetKey, setAttachmentsResetKey] = React.useState(0);
+  const wasPendingRef = React.useRef(false);
+  React.useEffect(() => {
+    if (wasPendingRef.current && !pending && state.ok && !state.errors) {
+      setAttachmentsResetKey((k) => k + 1);
+    }
+    wasPendingRef.current = pending;
+  }, [pending, state]);
 
   return (
     <form action={action}>
@@ -100,7 +113,11 @@ export function ReportTemplateForm({ groups }: { groups: GroupOption[] }) {
 
           <div>
             <Label className="mb-1.5 block text-sm font-medium">Şablon Dosyaları (docx, xlsx, pptx, pdf)</Label>
-            <AttachmentInput disabled={pending} accept={TEMPLATE_ACCEPT} />
+            <AttachmentInput
+              disabled={pending}
+              accept={TEMPLATE_ACCEPT}
+              resetKey={attachmentsResetKey}
+            />
           </div>
 
           <div className="flex items-center justify-end gap-2 border-t pt-5">

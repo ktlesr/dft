@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { useActionState } from "react";
 import { CheckCircle2, Loader2, XCircle } from "lucide-react";
 
@@ -75,6 +76,24 @@ function KpiCard({
     completeCustomKpi,
     KPI_FORM_INITIAL,
   );
+
+  // Tamamlama formu state döndürüyor (redirect yok), bu yüzden başarılı
+  // submit sonrası AttachmentInput'taki staged dosya listesini sıfırlamak
+  // için aynı pattern. Sadece completion action takip ediliyor — target/
+  // baseline formlarının pending'i bu key'i bump etmemeli.
+  const [attachmentsResetKey, setAttachmentsResetKey] = React.useState(0);
+  const wasCompletionPendingRef = React.useRef(false);
+  React.useEffect(() => {
+    if (
+      wasCompletionPendingRef.current &&
+      !completionPending &&
+      completionState.ok &&
+      !completionState.errors
+    ) {
+      setAttachmentsResetKey((k) => k + 1);
+    }
+    wasCompletionPendingRef.current = completionPending;
+  }, [completionPending, completionState]);
 
   return (
     <Card>
@@ -216,7 +235,10 @@ function KpiCard({
                 <Input name="actualValue" inputMode="decimal" placeholder="Gerceklesen deger" />
               </div>
               <Textarea name="note" rows={2} placeholder="Not (opsiyonel)" />
-              <AttachmentInput disabled={completionPending} />
+              <AttachmentInput
+                disabled={completionPending}
+                resetKey={attachmentsResetKey}
+              />
               <FormMessage state={completionState} />
               <Button size="sm" type="submit" disabled={completionPending}>
                 {completionPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}

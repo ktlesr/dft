@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { useActionState } from "react";
 
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,8 @@ import {
 import { Field } from "@/features/shared/form-field";
 import { APPLICANT_ROLE_LABELS, MEMBER_FUNCTION_LABELS } from "@/lib/constants";
 import { createSuccessfulProject, type RecordFormState } from "./actions";
+import { CurrencyInput, CurrencySelect } from "./currency-input";
+import type { CurrencyCode } from "./schemas";
 import { FormShell } from "./form-shell";
 import { FundTypeFields } from "./fund-select";
 
@@ -21,6 +24,7 @@ const INITIAL: RecordFormState = { ok: true };
 
 export function SuccessfulProjectForm() {
   const [state, action, pending] = useActionState(createSuccessfulProject, INITIAL);
+  const [currency, setCurrency] = React.useState<CurrencyCode>("TRY");
 
   return (
     <form action={action}>
@@ -57,11 +61,25 @@ export function SuccessfulProjectForm() {
             </Select>
           </Field>
 
-          <Field name="totalBudget" label="Proje bütçesi" hint="Sayısal değer (₺)" error={state.errors?.totalBudget}>
-            <Input id="totalBudget" name="totalBudget" inputMode="decimal" />
+          <Field name="totalBudget" label="Proje bütçesi" hint="Tutarı yazdıkça otomatik biçimlendirilir." error={state.errors?.totalBudget}>
+            <div className="flex gap-2">
+              <CurrencyInput
+                id="totalBudget"
+                name="totalBudget"
+                placeholder="150.000"
+                currency={currency}
+                className="flex-1"
+              />
+              <CurrencySelect value={currency} onChange={setCurrency} />
+            </div>
           </Field>
-          <Field name="supportAmount" label="Destek miktarı" hint="Talep edilen destek (₺)" error={state.errors?.supportAmount}>
-            <Input id="supportAmount" name="supportAmount" inputMode="decimal" />
+          <Field name="supportAmount" label="Destek miktarı" hint="Talep edilen destek." error={state.errors?.supportAmount}>
+            <CurrencyInput
+              id="supportAmount"
+              name="supportAmount"
+              placeholder="100.000"
+              currency={currency}
+            />
           </Field>
 
           <Field name="applicationDate" label="Başvuru tarihi" error={state.errors?.applicationDate}>

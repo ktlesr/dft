@@ -152,6 +152,7 @@ export async function createProjectApplication(
     applicantRole: fd.get("applicantRole"),
     budget: fd.get("budget"),
     requestedSupport: fd.get("requestedSupport"),
+    currency: fd.get("currency"),
     applicationDate: fd.get("applicationDate"),
     memberFunction: fd.get("memberFunction"),
     partnerMemberIds: fd.getAll("partnerMemberIds").map(String),
@@ -177,6 +178,7 @@ export async function createProjectApplication(
       memberFunction: parsed.data.memberFunction,
       budget: decimalOrUndef(parsed.data.budget),
       requestedSupport: decimalOrUndef(parsed.data.requestedSupport),
+      currency: parsed.data.currency ?? "TRY",
       applicationDate: parsed.data.applicationDate ?? null,
       partnerMemberIds: parsed.data.partnerMemberIds,
       notes: parsed.data.notes ?? null,
@@ -238,6 +240,7 @@ export async function createSuccessfulProject(
     applicantRole: fd.get("applicantRole"),
     totalBudget: fd.get("totalBudget"),
     supportAmount: fd.get("supportAmount"),
+    currency: fd.get("currency"),
     applicationDate: fd.get("applicationDate"),
     acceptanceDate: fd.get("acceptanceDate"),
     memberFunction: fd.get("memberFunction"),
@@ -263,6 +266,7 @@ export async function createSuccessfulProject(
       memberFunction: parsed.data.memberFunction,
       totalBudget: decimalOrUndef(parsed.data.totalBudget),
       supportAmount: decimalOrUndef(parsed.data.supportAmount),
+      currency: parsed.data.currency ?? "TRY",
       applicationDate: parsed.data.applicationDate ?? null,
       // resultDate eski sütun. `acceptanceDate` (Proje Kabul Tarihi) ana yeni
       // alandır; legacy sütun olarak `resultDate`'ı da aynı değerle dolduruyoruz.
@@ -318,6 +322,7 @@ export async function createProjectIdea(
     grantProvider: fd.get("grantProvider"),
     potentialProgram: fd.get("potentialProgram"),
     budget: fd.get("budget"),
+    currency: fd.get("currency"),
     summary: fd.get("summary"),
   });
   if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
@@ -329,6 +334,7 @@ export async function createProjectIdea(
       grantProvider: parsed.data.grantProvider ?? null,
       potentialProgram: parsed.data.potentialProgram ?? null,
       budget: decimalOrUndef(parsed.data.budget),
+      currency: parsed.data.currency ?? "TRY",
       summary: parsed.data.summary ?? null,
       // stage NOT NULL (default FIKIR). Yeni form aşama sormaz.
     },

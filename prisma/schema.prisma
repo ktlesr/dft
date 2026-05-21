@@ -728,6 +728,8 @@ model ProjectApplicationRecord {
   applicationDate DateTime?
   budget          Decimal?                 @db.Decimal(18, 2)
   requestedSupport Decimal?                @db.Decimal(18, 2)
+  // Para birimi: TRY | EUR | USD (yeni form). Eski kayıtlarda NULL → TRY say.
+  currency        String?                  @default("TRY")
   status          ProjectApplicationStatus @default(PLANLANIYOR)
   // Legacy enum (BIREYSEL / DFT_ILE_BIRLIKTE). Yeni formda `memberFunction`
   // (Bireysel / DFT ile Birlikte / Danışmanlık) kullanılıyor.
@@ -763,6 +765,8 @@ model SuccessfulProjectRecord {
   resultDate      DateTime?
   totalBudget     Decimal?     @db.Decimal(18, 2)
   supportAmount   Decimal?     @db.Decimal(18, 2)
+  // Para birimi: TRY | EUR | USD (yeni form). Eski kayıtlarda NULL → TRY say.
+  currency        String?      @default("TRY")
   role            String?
   kind            String?
   resultDocument  String?
@@ -797,6 +801,8 @@ model ProjectIdeaRecord {
   potentialProgram String?
   grantProvider  String?          // Faz 8: İlgili / potansiyel hibe sağlayıcısı
   budget         Decimal?         @db.Decimal(18, 2) // Faz 8: tahmini bütçe
+  // Para birimi: TRY | EUR | USD (yeni form). Eski kayıtlarda NULL → TRY say.
+  currency       String?          @default("TRY")
   callTopic      String?
   stage          ProjectIdeaStage @default(FIKIR)
   potentialPartners String?

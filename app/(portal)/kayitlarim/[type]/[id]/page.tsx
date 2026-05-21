@@ -12,6 +12,8 @@ import { prisma } from "@/lib/prisma";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { isAdmin } from "@/lib/rbac";
 import { softDeleteRecord } from "@/features/records/actions";
+import { CURRENCY_SYMBOLS } from "@/features/records/currency-input";
+import type { CurrencyCode } from "@/features/records/schemas";
 import { RECORD_LABELS, isRecordType, type RecordTypeSlug } from "@/features/records/types";
 import {
   APPLICANT_ROLE_LABELS,
@@ -31,6 +33,29 @@ export const dynamic = "force-dynamic";
 type Params = Promise<{ type: string; id: string }>;
 
 type FieldRow = { label: string; value: React.ReactNode };
+
+/**
+ * Para birimi sembolü ile birlikte tutar gösterimi.
+ * "150000.50" + "TRY" → "150.000,50 ₺". Boş tutar `null` döner; field
+ * row'u "—" göstersin.
+ */
+function formatMoney(amount: unknown, currency: string | null | undefined): string | null {
+  if (amount === null || amount === undefined) return null;
+  const raw = typeof amount === "string" ? amount : amount.toString();
+  if (!raw) return null;
+  const num = Number(raw);
+  if (!Number.isFinite(num)) return null;
+  const code: CurrencyCode = (currency as CurrencyCode) in CURRENCY_SYMBOLS
+    ? (currency as CurrencyCode)
+    : "TRY";
+  // Türkçe locale binlik nokta + ondalık virgül; ondalık varsa 2 hane göster.
+  const hasDecimals = raw.includes(".") || raw.includes(",");
+  const formatted = new Intl.NumberFormat("tr-TR", {
+    minimumFractionDigits: hasDecimals ? 2 : 0,
+    maximumFractionDigits: 2,
+  }).format(num);
+  return `${formatted} ${CURRENCY_SYMBOLS[code]}`;
+}
 
 async function loadRecord(type: RecordTypeSlug, id: string) {
   const include = { attachments: true };
@@ -200,8 +225,8 @@ function describe(
           { label: "Program adı", value: r.programName ?? r.program },
           { label: "İlgili kurum / kuruluş", value: r.applicantOrg },
           { label: "Kurumun rolü", value: applicantRoleLabel(r.applicantRole) },
-          { label: "Proje bütçesi", value: r.budget?.toString() ?? null },
-          { label: "Destek miktarı", value: r.requestedSupport?.toString() ?? null },
+          { label: "Proje bütçesi", value: formatMoney(r.budget, r.currency) },
+          { label: "Destek miktarı", value: formatMoney(r.requestedSupport, r.currency) },
           { label: "Başvuru tarihi", value: formatDate(r.applicationDate) },
           {
             label: "DFT üyesinin fonksiyonu",
@@ -221,8 +246,8 @@ function describe(
           { label: "Program adı", value: r.programName ?? r.program },
           { label: "İlgili kurum / kuruluş", value: r.applicantOrg },
           { label: "Kurumun rolü", value: applicantRoleLabel(r.applicantRole) },
-          { label: "Proje bütçesi", value: r.totalBudget?.toString() ?? null },
-          { label: "Destek miktarı", value: r.supportAmount?.toString() ?? null },
+          { label: "Proje bütçesi", value: formatMoney(r.totalBudget, r.currency) },
+          { label: "Destek miktarı", value: formatMoney(r.supportAmount, r.currency) },
           { label: "Başvuru tarihi", value: formatDate(r.applicationDate) },
           { label: "Proje kabul tarihi", value: formatDate(r.acceptanceDate ?? r.resultDate) },
           { label: "DFT üyesinin fonksiyonu", value: memberFunctionLabel(r.memberFunction) },
@@ -241,7 +266,7 @@ function describe(
         fields: [
           { label: "Hibe sağlayıcısı", value: r.grantProvider },
           { label: "İlgili program", value: r.potentialProgram },
-          { label: "Proje bütçesi", value: r.budget?.toString() ?? null },
+          { label: "Proje bütçesi", value: formatMoney(r.budget, r.currency) },
           { label: "Proje özeti", value: r.summary },
           // Legacy alanlar — yalnızca dolu ise.
           { label: "Aşama (legacy)", value: stageLegacy },

@@ -425,7 +425,13 @@ export async function completeCustomKpi(
 
 function toDecimal(raw: string | undefined) {
   if (!raw) return null;
-  return new Prisma.Decimal(raw);
+  // `optionalDecimal` Türkçe locale uyumu için virgül ondalık ayracını
+  // da kabul ediyor (`10,5`). Decimal.js sadece nokta ayraçını parse
+  // ediyor → virgülü normalize ediyoruz. Aksi halde `Invalid argument`
+  // fırlatıp action 500 dönüyordu (üretimde "Server Components render
+  // error" olarak görünür).
+  const normalized = raw.replace(/,/g, ".");
+  return new Prisma.Decimal(normalized);
 }
 
 async function requireKpiForGroup(user: SessionUser, kpiId: string) {

@@ -46,6 +46,14 @@ const optionalDecimal = z
     "Sayısal bir değer girin (örn. 150000).",
   );
 
+/** Para birimi — yeni form kabul ettiği değerler. Boş/eksik → TRY varsayılan. */
+export const CURRENCY_CODES = ["TRY", "EUR", "USD"] as const;
+export type CurrencyCode = (typeof CURRENCY_CODES)[number];
+const optionalCurrency = z
+  .enum(CURRENCY_CODES)
+  .optional()
+  .or(z.literal("").transform(() => undefined));
+
 const optionalInt = z
   .string()
   .optional()
@@ -124,6 +132,7 @@ export const projectApplicationSchema = z.object({
   applicantRole: optionalApplicantRole,
   budget: optionalDecimal,
   requestedSupport: optionalDecimal,
+  currency: optionalCurrency,
   applicationDate: optionalDate,
   memberFunction: memberFunctionRequired,
   partnerMemberIds: memberIdsArray,
@@ -145,6 +154,7 @@ export const successfulProjectSchema = z.object({
   applicantRole: optionalApplicantRole,
   totalBudget: optionalDecimal,
   supportAmount: optionalDecimal,
+  currency: optionalCurrency,
   applicationDate: optionalDate,
   acceptanceDate: optionalDate,
   memberFunction: memberFunctionRequired,
@@ -159,6 +169,7 @@ export const projectIdeaSchema = z.object({
   grantProvider: optionalString(200),
   potentialProgram: optionalString(150),
   budget: optionalDecimal,
+  currency: optionalCurrency,
   summary: longText(5000),
 });
 export type ProjectIdeaInput = z.infer<typeof projectIdeaSchema>;

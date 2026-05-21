@@ -49,6 +49,19 @@ const optionalDecimal = z
 /** Para birimi — yeni form kabul ettiği değerler. Boş/eksik → TRY varsayılan. */
 export const CURRENCY_CODES = ["TRY", "EUR", "USD"] as const;
 export type CurrencyCode = (typeof CURRENCY_CODES)[number];
+
+/**
+ * Para birimi sembolleri. **Server component'lardan da import edilebilsin
+ * diye `"use client"` modülü olan `currency-input.tsx` yerine burada
+ * tutuluyor** — RSC boundary'i nedeniyle client modülden import edilen
+ * non-component değerler bazı build modlarında `undefined` görünebiliyor.
+ */
+export const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
+  TRY: "₺",
+  EUR: "€",
+  USD: "$",
+};
+
 const optionalCurrency = z
   .enum(CURRENCY_CODES)
   .optional()

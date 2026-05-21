@@ -12,8 +12,7 @@ import { prisma } from "@/lib/prisma";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { isAdmin } from "@/lib/rbac";
 import { softDeleteRecord } from "@/features/records/actions";
-import { CURRENCY_SYMBOLS } from "@/features/records/currency-input";
-import type { CurrencyCode } from "@/features/records/schemas";
+import { CURRENCY_SYMBOLS, type CurrencyCode } from "@/features/records/schemas";
 import { RECORD_LABELS, isRecordType, type RecordTypeSlug } from "@/features/records/types";
 import {
   APPLICANT_ROLE_LABELS,
@@ -38,23 +37,27 @@ type FieldRow = { label: string; value: React.ReactNode };
  * Para birimi sembolü ile birlikte tutar gösterimi.
  * "150000.50" + "TRY" → "150.000,50 ₺". Boş tutar `null` döner; field
  * row'u "—" göstersin.
+ *
+ * Sembol çözümü "fail-safe": currency null/undefined/geçersizse TRY'ye
+ * düşer; çıktıda asla `undefined` literal'ı görünmez.
  */
 function formatMoney(amount: unknown, currency: string | null | undefined): string | null {
   if (amount === null || amount === undefined) return null;
-  const raw = typeof amount === "string" ? amount : amount.toString();
+  const raw = typeof amount === "string" ? amount : String(amount);
   if (!raw) return null;
   const num = Number(raw);
   if (!Number.isFinite(num)) return null;
-  const code: CurrencyCode = (currency as CurrencyCode) in CURRENCY_SYMBOLS
-    ? (currency as CurrencyCode)
-    : "TRY";
-  // Türkçe locale binlik nokta + ondalık virgül; ondalık varsa 2 hane göster.
+
+  const symbol =
+    (typeof currency === "string" && CURRENCY_SYMBOLS[currency as CurrencyCode]) ||
+    CURRENCY_SYMBOLS.TRY;
+
   const hasDecimals = raw.includes(".") || raw.includes(",");
   const formatted = new Intl.NumberFormat("tr-TR", {
     minimumFractionDigits: hasDecimals ? 2 : 0,
     maximumFractionDigits: 2,
   }).format(num);
-  return `${formatted} ${CURRENCY_SYMBOLS[code]}`;
+  return `${formatted} ${symbol}`;
 }
 
 async function loadRecord(type: RecordTypeSlug, id: string) {

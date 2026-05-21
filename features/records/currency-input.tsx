@@ -11,17 +11,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { CURRENCY_CODES, type CurrencyCode } from "./schemas";
+import { CURRENCY_CODES, CURRENCY_SYMBOLS, type CurrencyCode } from "./schemas";
 
-/* ──────────────────────────────────────────────────────────────
- * Para birimi sembolleri. Detay sayfasında ortak kullanılabilir
- * diye burada export ediliyor.
- * ────────────────────────────────────────────────────────────── */
-export const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
-  TRY: "₺",
-  EUR: "€",
-  USD: "$",
-};
+// `CURRENCY_SYMBOLS` artık schemas.ts'de — server component'lardan da
+// güvenle import edilebilsin diye. Geriye dönük uyum için re-export.
+export { CURRENCY_SYMBOLS };
 
 /* ──────────────────────────────────────────────────────────────
  * Helpers (saf, test edilebilir):
@@ -213,6 +207,10 @@ export const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputPro
 /**
  * Para birimi seçici. Form içinde tek instance — birden çok bütçe alanı
  * varsa hepsi aynı currency state'ini paylaşır.
+ *
+ * Form submit garantisi için explicit `<input type="hidden">` ekliyoruz;
+ * Radix Select'in dahili BubbleSelect mekanizmasına dayanmıyoruz (bazı
+ * versiyonlarda value submit edilmiyordu → action'a `undefined` gidiyordu).
  */
 export function CurrencySelect({
   name = "currency",
@@ -226,17 +224,20 @@ export function CurrencySelect({
   id?: string;
 }) {
   return (
-    <Select value={value} onValueChange={(v) => onChange(v as CurrencyCode)} name={name}>
-      <SelectTrigger id={id} className="w-32">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {CURRENCY_CODES.map((c) => (
-          <SelectItem key={c} value={c}>
-            {CURRENCY_SYMBOLS[c]} {c}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <>
+      <Select value={value} onValueChange={(v) => onChange(v as CurrencyCode)}>
+        <SelectTrigger id={id} className="w-32">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {CURRENCY_CODES.map((c) => (
+            <SelectItem key={c} value={c}>
+              {CURRENCY_SYMBOLS[c]} {c}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <input type="hidden" name={name} value={value} readOnly />
+    </>
   );
 }

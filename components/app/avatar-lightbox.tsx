@@ -22,16 +22,23 @@ export function AvatarLightbox({
   children,
   largeSrc,
   alt,
+  name,
   className,
 }: {
   children: React.ReactNode;
   largeSrc?: string;
   alt: string;
+  /** Kullanıcının tam adı — verilirse görselin alt kısmında dekoratif bir
+   *  isim plakası olarak gösterilir. */
+  name?: string;
   className?: string;
 }) {
   if (!largeSrc) {
     return <>{children}</>;
   }
+
+  // Görsel alt etiketi: ad varsa erişilebilirlik için birleştir.
+  const imgAlt = name ? `${alt} — ${name}` : alt;
 
   return (
     <DialogPrimitive.Root>
@@ -68,9 +75,22 @@ export function AvatarLightbox({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={largeSrc}
-            alt={alt}
+            alt={imgAlt}
             className="max-h-[85vh] max-w-[90vw] rounded-lg object-contain shadow-2xl"
           />
+          {/* Dekoratif isim plakası — görselin alt kısmında, koyu gradyan
+              üzerine altı çizili beyaz ad. Pointer ve klavyeden bağımsız;
+              tek amacı görsel kimliği vurgulamak. */}
+          {name ? (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 bottom-0 flex h-[22%] items-end justify-center rounded-b-lg bg-[linear-gradient(to_top,rgba(20,24,32,0.95)_0%,rgba(20,24,32,0.95)_28%,rgba(20,24,32,0)_100%)]"
+            >
+              <p className="pb-5 text-center text-lg font-semibold text-white underline underline-offset-4 md:text-xl">
+                {name}
+              </p>
+            </div>
+          ) : null}
           <DialogPrimitive.Close
             className="absolute -right-3 -top-3 rounded-full bg-background p-1.5 text-foreground shadow-lg ring-1 ring-border transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             aria-label="Kapat"

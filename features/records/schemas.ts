@@ -210,16 +210,30 @@ export const EVENT_ROLES = [
 ] as const;
 export type EventRoleCode = (typeof EVENT_ROLES)[number];
 
-export const eventSchema = z.object({
-  name: trimmed(2, 200),
-  organizer: optionalString(200),
-  date: requiredDate,
-  kind: z.enum(EVENT_KINDS),
-  format: z.enum(EVENT_FORMATS),
-  role: z.enum(EVENT_ROLES),
-  externalUrl: optionalHttpsUrl,
-  summary: longText(5000),
-});
+export const eventSchema = z
+  .object({
+    name: trimmed(2, 200),
+    organizer: optionalString(200),
+    // `date` artık başlangıç tarih+saatini taşır (form datetime-local
+    // gönderir). `requiredDate` zaten ISO ve date-only formatlarını
+    // kabul ettiği için legacy yüklemeler bozulmaz.
+    date: requiredDate,
+    endAt: optionalDate,
+    kind: z.enum(EVENT_KINDS),
+    format: z.enum(EVENT_FORMATS),
+    role: z.enum(EVENT_ROLES),
+    externalUrl: optionalHttpsUrl,
+    summary: longText(5000),
+  })
+  .superRefine((v, ctx) => {
+    if (v.endAt && v.endAt < v.date) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["endAt"],
+        message: "Bitiş tarihi başlangıçtan önce olamaz.",
+      });
+    }
+  });
 export type EventInput = z.infer<typeof eventSchema>;
 
 /* ════════════ 5) Bilgi Çoğaltımı (legacy — Faz 6'da sadeleştirildi) ════════════ */

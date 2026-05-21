@@ -36,8 +36,23 @@ export function EventForm() {
           <Field name="organizer" label="Etkinliği düzenleyen kuruluş" error={state.errors?.organizer}>
             <Input id="organizer" name="organizer" maxLength={200} />
           </Field>
-          <Field name="date" label="Etkinlik tarihi" required error={state.errors?.date}>
-            <Input id="date" name="date" type="date" required />
+          <Field
+            name="date"
+            label="Etkinlik başlangıcı"
+            hint="Tarih ve saat."
+            required
+            error={state.errors?.date}
+          >
+            <Input id="date" name="date" type="datetime-local" required />
+          </Field>
+
+          <Field
+            name="endAt"
+            label="Etkinlik bitişi (opsiyonel)"
+            hint="Tek günlük / saatlik etkinliklerde boş bırakılabilir."
+            error={state.errors?.endAt}
+          >
+            <Input id="endAt" name="endAt" type="datetime-local" />
           </Field>
 
           <Field name="kind" label="Etkinlik türü" required error={state.errors?.kind}>

@@ -385,6 +385,7 @@ export async function createEventRecord(
     name: fd.get("name"),
     organizer: fd.get("organizer"),
     date: fd.get("date"),
+    endAt: fd.get("endAt"),
     kind: fd.get("kind"),
     format: fd.get("format"),
     role: fd.get("role"),
@@ -398,7 +399,9 @@ export async function createEventRecord(
       ownerId: user.id,
       name: parsed.data.name,
       organizer: parsed.data.organizer ?? null,
+      // `date` legacy alanı artık başlangıç tarih+saatini taşıyor.
       date: parsed.data.date,
+      endAt: parsed.data.endAt ?? null,
       // `kind`, `format`, `role` enum kodlarını string olarak saklarız.
       kind: parsed.data.kind,
       format: parsed.data.format,

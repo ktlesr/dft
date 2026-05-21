@@ -825,7 +825,12 @@ model EventRecord {
   owner       User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   name        String
   kind        String?
+  // `date` legacy: Başlangıç tarih+saat olarak yeniden yorumlanıyor.
+  // Eski kayıtlar bu kolonu salt-tarih (gece yarısı UTC) olarak içerebilir;
+  // form artık datetime-local üzerinden gönderiyor.
   date        DateTime
+  // Faz 12: Etkinlik bitiş tarih+saati (opsiyonel).
+  endAt       DateTime?
   location    String?
   role        String?
   topic       String?

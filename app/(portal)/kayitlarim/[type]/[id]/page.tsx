@@ -286,11 +286,19 @@ function describe(
       const kindLabel = r.kind ? (EVENT_KIND_LABELS as Record<string, string>)[r.kind] ?? r.kind : null;
       const formatLabel = r.format ? (EVENT_FORMAT_LABELS as Record<string, string>)[r.format] ?? r.format : null;
       const roleLabel = r.role ? (EVENT_ROLE_LABELS as Record<string, string>)[r.role] ?? r.role : null;
+      // Legacy kayıtlarda `date` salt-tarih (00:00) idi; yeni kayıtlarda
+      // tarih+saat. Eğer endAt boş VE start saat=00:00 ise eski kayıt
+      // varsayıyoruz ve sadece tarihi gösteriyoruz.
+      const start = new Date(r.date);
+      const isLegacyDateOnly =
+        !r.endAt && start.getHours() === 0 && start.getMinutes() === 0;
+      const startLabel = isLegacyDateOnly ? formatDate(r.date) : formatDateTime(r.date);
       return {
         title: r.name,
         fields: [
           { label: "Düzenleyen kuruluş", value: r.organizer },
-          { label: "Tarih", value: formatDate(r.date) },
+          { label: isLegacyDateOnly ? "Tarih" : "Başlangıç", value: startLabel },
+          { label: "Bitiş", value: r.endAt ? formatDateTime(r.endAt) : null },
           { label: "Etkinlik türü", value: kindLabel },
           { label: "Etkinlik yöntemi", value: formatLabel },
           { label: "Rolünüz", value: roleLabel },

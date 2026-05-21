@@ -10,7 +10,12 @@ import {
   MAX_UPLOAD_BYTES,
 } from "@/lib/constants";
 
-const ACCEPT = Array.from(ALLOWED_UPLOAD_MIME).join(",");
+// Bazı OS dosya seçici diyalogları (özellikle Windows) bir MIME türünü
+// dosya uzantısına otomatik eşlemiyor; .rar/.zip/.7z gibi arşivlerde
+// kullanıcı "Tüm dosyalar"a geçmeden dosyayı göremiyor. Uzantıları açıkça
+// listeleyerek bunu önlüyoruz.
+const ACCEPT_EXTENSIONS = ".zip,.rar,.7z";
+const ACCEPT = `${Array.from(ALLOWED_UPLOAD_MIME).join(",")},${ACCEPT_EXTENSIONS}`;
 
 function formatBytes(n: number) {
   if (n < 1024) return `${n} B`;
@@ -23,11 +28,19 @@ export function AttachmentInput({
   className,
   disabled,
   accept = ACCEPT,
+  resetKey,
 }: {
   name?: string;
   className?: string;
   disabled?: boolean;
   accept?: string;
+  /**
+   * Bump this number to clear the staged files (e.g. after a successful
+   * form submission, so the upload area doesn't keep showing the file
+   * name as if it were still pending). Opt-in: callers that don't pass
+   * `resetKey` retain the previous behavior.
+   */
+  resetKey?: number;
 }) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [files, setFiles] = React.useState<File[]>([]);
@@ -39,6 +52,16 @@ export function AttachmentInput({
     next.forEach((f) => dt.items.add(f));
     inputRef.current.files = dt.files;
   };
+
+  // İlk render'da çalışmasını istemiyoruz — sadece prop *değiştiğinde* tetiklensin.
+  // useEffect deps'inde `resetKey` var; undefined geçerken hiç tetiklenmez.
+  const initialResetKey = React.useRef(resetKey);
+  React.useEffect(() => {
+    if (resetKey === undefined) return;
+    if (resetKey === initialResetKey.current) return;
+    sync([]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetKey]);
 
   const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const list = Array.from(e.target.files ?? []);

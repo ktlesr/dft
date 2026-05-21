@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { useActionState } from "react";
 import { FileText, Loader2, Save, Trash2 } from "lucide-react";
 
@@ -23,6 +24,19 @@ function humanSize(bytes: number) {
 
 export function AboutEditForm({ current }: { current: AboutContent }) {
   const [state, action, pending] = useActionState(saveAboutContent, INITIAL);
+
+  // Başarılı kayıttan sonra "Yeni belge yükle" alanında dosya adı asılı kalıyordu
+  // (AttachmentInput'un iç state'i kalıcı). `resetKey`'i submit pending→ok
+  // geçişinde bump ediyoruz; AttachmentInput o anda staged file listesini
+  // temizler. Başarısız kayıtta key bump etmiyoruz → kullanıcı dosyayı kaybetmez.
+  const [attachmentsResetKey, setAttachmentsResetKey] = React.useState(0);
+  const wasPendingRef = React.useRef(false);
+  React.useEffect(() => {
+    if (wasPendingRef.current && !pending && state.ok && !state.errors) {
+      setAttachmentsResetKey((k) => k + 1);
+    }
+    wasPendingRef.current = pending;
+  }, [pending, state]);
 
   return (
     <form action={action} className="space-y-6">
@@ -130,7 +144,11 @@ export function AboutEditForm({ current }: { current: AboutContent }) {
             <p className="text-xs text-muted-foreground">
               Tek seferde en fazla 10 dosya, dosya başına 15 MB.
             </p>
-            <AttachmentInput name="newAttachments" disabled={pending} />
+            <AttachmentInput
+              name="newAttachments"
+              disabled={pending}
+              resetKey={attachmentsResetKey}
+            />
           </div>
         </CardContent>
       </Card>

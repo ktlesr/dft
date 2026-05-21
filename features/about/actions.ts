@@ -66,6 +66,10 @@ const MIME_EQUIVALENTS: Record<string, string[]> = {
   "application/vnd.ms-excel": ["application/x-cfb"],
   "application/vnd.ms-powerpoint": ["application/x-cfb"],
   "image/jpeg": ["image/jpg"],
+  "application/vnd.rar": ["application/x-rar-compressed"],
+  "application/x-rar-compressed": ["application/vnd.rar"],
+  "application/x-rar": ["application/x-rar-compressed", "application/vnd.rar"],
+  "application/x-7z-compressed": ["application/x-7z-compressed"],
 };
 
 async function verifyMagic(file: File): Promise<boolean> {

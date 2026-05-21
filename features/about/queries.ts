@@ -37,3 +37,25 @@ export async function listAboutStorageKeys(): Promise<Set<string>> {
   if (!parsed.success) return new Set();
   return new Set(parsed.data.attachments.map((a) => a.storageKey));
 }
+
+/**
+ * Resolve the persisted metadata for a given storage key — used by the
+ * download route to set Content-Disposition / Content-Type from the
+ * **uploaded** filename + MIME, not from the on-disk hash filename which
+ * has no extension (causing browsers to save "abc123..." with no
+ * extension). Returns null if the key isn't part of the about content.
+ */
+export async function findAboutFile(
+  storageKey: string,
+): Promise<{ originalName: string; mimeType: string; size: number } | null> {
+  const row = await prisma.appSetting.findUnique({
+    where: { key: APP_SETTING_KEY },
+  });
+  if (!row) return null;
+  const parsed = aboutContentSchema.safeParse(row.value);
+  if (!parsed.success) return null;
+  const hit = parsed.data.attachments.find((a) => a.storageKey === storageKey);
+  return hit
+    ? { originalName: hit.originalName, mimeType: hit.mimeType, size: hit.size }
+    : null;
+}

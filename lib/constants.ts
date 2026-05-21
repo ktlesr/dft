@@ -240,6 +240,12 @@ export const ALLOWED_UPLOAD_MIME = new Set<string>([
   "image/webp",
   "image/svg+xml",
   "application/zip",
+  // Arşiv formatları — tarayıcılar RAR'ı farklı MIME ile bildirebilir
+  // (vnd.rar yeni IANA, x-rar-compressed/x-rar eski varyantlar).
+  "application/vnd.rar",
+  "application/x-rar-compressed",
+  "application/x-rar",
+  "application/x-7z-compressed",
 ]);
 
 export const MAX_UPLOAD_BYTES = Number(process.env.MAX_UPLOAD_BYTES ?? 15 * 1024 * 1024);

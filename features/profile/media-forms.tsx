@@ -24,6 +24,7 @@ export function ProfilePhotoUploader({
   targetUserId,
   currentPhotoUrl,
   largePhotoUrl,
+  ownerName,
   fallback,
   label = "Profil fotoğrafı",
 }: {
@@ -31,6 +32,9 @@ export function ProfilePhotoUploader({
   currentPhotoUrl: string | null;
   /** 1024px lightbox sürümü; undefined ise resme tıklamak hiçbir şey yapmaz. */
   largePhotoUrl?: string | null;
+  /** Lightbox modal'ında alt kısımda görünecek ad (örn. "Doç. Dr. ...").
+   *  Verilmezse plaka render edilmez. */
+  ownerName?: string;
   fallback: string;
   label?: string;
 }) {
@@ -52,7 +56,12 @@ export function ProfilePhotoUploader({
   return (
     <form ref={formRef} action={action} className="flex items-start gap-4">
       {targetUserId ? <input type="hidden" name="userId" value={targetUserId} /> : null}
-      <AvatarLightbox largeSrc={largePhotoUrl ?? undefined} alt={label} className="rounded-lg">
+      <AvatarLightbox
+        largeSrc={largePhotoUrl ?? undefined}
+        alt={label}
+        name={ownerName}
+        className="rounded-lg"
+      >
         <div
           className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted text-2xl font-semibold text-muted-foreground shadow-sm ring-4 ring-background sm:h-36 sm:w-36"
         >

@@ -124,6 +124,11 @@ export default async function ProfilePage() {
               <ProfilePhotoUploader
                 currentPhotoUrl={userRow?.image ? `/api/profil/foto/${user.id}?v=${encodeURIComponent(userRow.image)}` : null}
                 largePhotoUrl={userRow?.image ? `/api/profil/foto/${user.id}?size=lg&v=${encodeURIComponent(userRow.image)}` : null}
+                ownerName={
+                  userRow?.profile?.title
+                    ? `${userRow.profile.title} ${userRow?.name ?? user.email}`
+                    : userRow?.name ?? user.email
+                }
                 fallback={initials(userRow?.name ?? null, user.email)}
               />
               <Separator />

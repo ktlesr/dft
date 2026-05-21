@@ -84,6 +84,7 @@ export function PostCard({ post, caps }: { post: PostRow; caps: Caps }) {
           <AvatarLightbox
             largeSrc={avatarUrlLarge(post.author.id, post.author.image)}
             alt={post.author.name ?? post.author.email}
+            name={post.author.name ?? post.author.email}
           >
             <Avatar className="h-7 w-7 shrink-0">
               {post.author.image ? (

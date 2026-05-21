@@ -342,6 +342,11 @@ export default async function AdminUserDetail({
                 targetUserId={user.id}
                 currentPhotoUrl={user.image ? `/api/profil/foto/${user.id}?v=${encodeURIComponent(user.image)}` : null}
                 largePhotoUrl={user.image ? `/api/profil/foto/${user.id}?size=lg&v=${encodeURIComponent(user.image)}` : null}
+                ownerName={
+                  user.profile?.title
+                    ? `${user.profile.title} ${user.name ?? user.email}`
+                    : user.name ?? user.email
+                }
                 fallback={initials(user.name, user.email)}
               />
             </CardContent>

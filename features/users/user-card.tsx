@@ -95,6 +95,7 @@ export function UserCard({
         <AvatarLightbox
           largeSrc={avatarUrlLarge(user.id, user.image)}
           alt={displayName}
+          name={titledName}
           className="rounded-lg"
         >
           <Avatar className="h-32 w-32 rounded-lg shadow-sm ring-4 ring-background sm:h-36 sm:w-36">

@@ -73,6 +73,7 @@ export default async function DiscussionPage({ params }: { params: Params }) {
             <AvatarLightbox
               largeSrc={avatarUrlLarge(discussion.author.id, discussion.author.image)}
               alt={topicAuthorName}
+              name={topicAuthorName}
             >
               <Avatar className="h-10 w-10">
                 {discussion.author.image ? (
@@ -182,6 +183,7 @@ export default async function DiscussionPage({ params }: { params: Params }) {
                         <AvatarLightbox
                           largeSrc={avatarUrlLarge(r.author.id, r.author.image)}
                           alt={replyAuthorName}
+                          name={replyAuthorName}
                         >
                           <Avatar className="h-8 w-8">
                             {r.author.image ? (

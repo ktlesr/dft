@@ -239,9 +239,13 @@ export const ALLOWED_UPLOAD_MIME = new Set<string>([
   "image/jpeg",
   "image/webp",
   "image/svg+xml",
+  // Arşiv formatları — tarayıcılar/OS aynı dosyayı farklı MIME ile bildirebilir.
+  // ZIP: yeni IANA (application/zip) + Windows registry'sinden gelen
+  // legacy varyant (application/x-zip-compressed) — Chrome/Edge Windows'ta
+  // bu legacy değeri bildiriyor.
   "application/zip",
-  // Arşiv formatları — tarayıcılar RAR'ı farklı MIME ile bildirebilir
-  // (vnd.rar yeni IANA, x-rar-compressed/x-rar eski varyantlar).
+  "application/x-zip-compressed",
+  // RAR: vnd.rar yeni IANA, x-rar-compressed / x-rar eski varyantlar.
   "application/vnd.rar",
   "application/x-rar-compressed",
   "application/x-rar",

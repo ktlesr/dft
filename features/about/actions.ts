@@ -66,6 +66,7 @@ const MIME_EQUIVALENTS: Record<string, string[]> = {
   "application/vnd.ms-excel": ["application/x-cfb"],
   "application/vnd.ms-powerpoint": ["application/x-cfb"],
   "image/jpeg": ["image/jpg"],
+  "application/x-zip-compressed": ["application/zip"],
   "application/vnd.rar": ["application/x-rar-compressed"],
   "application/x-rar-compressed": ["application/vnd.rar"],
   "application/x-rar": ["application/x-rar-compressed", "application/vnd.rar"],

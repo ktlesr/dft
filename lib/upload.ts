@@ -56,6 +56,9 @@ const MIME_EQUIVALENTS: Record<string, string[]> = {
   "application/vnd.ms-powerpoint": ["application/x-cfb"],
   // JPEG sometimes reported as `image/jpeg`, sometimes as `image/jpg`
   "image/jpeg": ["image/jpg"],
+  // ZIP: Windows registry'si .zip için legacy `application/x-zip-compressed`
+  // raporluyor; file-type kütüphanesi her zaman `application/zip` dönüyor.
+  "application/x-zip-compressed": ["application/zip"],
   // RAR: file-type kütüphanesi varyantların hepsini `application/x-rar-compressed`
   // olarak raporluyor; tarayıcı (özellikle Windows) ise yeni `application/vnd.rar`
   // veya legacy `application/x-rar` bildirebilir → hepsini denk tut.

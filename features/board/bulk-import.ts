@@ -99,6 +99,43 @@ const HEADER_MAP: Record<string, "no" | "title" | "publishedAt" | "kind" | "exte
   "assessment": "assessment",
 };
 
+/**
+ * "Bağlantı" hücresinden URL çıkarma. Hücre içeriği şunlardan biri olabilir:
+ *  - boş
+ *  - tek URL (http(s):// veya çıplak `example.com`)
+ *  - birden fazla URL (boşluk/virgül/yeni satırla ayrılmış)
+ *  - URL + ek metin / yalnızca düz yazı
+ *
+ * Strateji: cell içinden tüm URL benzeri parçaları yakala, sonuna takılan
+ * noktalama (`),.;` vb.) varsa kırp, scheme yoksa `https://` ekle, sırayla
+ * döndür. Düz yazı varsa boş dizi döner — importer bunu hata değil "URL yok"
+ * olarak kabul eder.
+ *
+ * Bilinen TLD listesini uzun tutmamak için: scheme veya `www.` görünce
+ * URL kabul ediyoruz; çıplak domain'lerde 2+ harfli son ek istiyoruz.
+ */
+const URL_REGEX =
+  /(?:https?:\/\/|www\.)[^\s,;<>"']+|[a-z0-9-]+(?:\.[a-z0-9-]+){1,}(?:\/[^\s,;<>"']*)?/gi;
+
+function extractUrls(raw: string): string[] {
+  if (!raw) return [];
+  const matches = raw.match(URL_REGEX) ?? [];
+  const cleaned: string[] = [];
+  for (const m of matches) {
+    // Sondaki noktalamayı kırp — paranteze/cümle sonuna yapışan URL'ler için.
+    let url = m.replace(/[.,;:!?\])"'>]+$/u, "");
+    if (!url) continue;
+    if (!/^https?:\/\//i.test(url)) {
+      url = `https://${url.replace(/^\/+/, "")}`;
+    }
+    // 2048 limit (DB ve form yerlerinde sınır) → kırp.
+    if (url.length > 2048) url = url.slice(0, 2048);
+    cleaned.push(url);
+  }
+  // Tekrarları kaldır, sıra korunur.
+  return Array.from(new Set(cleaned));
+}
+
 // Kind label (Turkish) → enum. Built from BOARD_KIND_BY_SCOPE.GENERAL so
 // adding a new public kind in one place keeps everything in sync.
 const KIND_LABEL_TO_ENUM: Record<string, (typeof BOARD_KIND_BY_SCOPE.GENERAL)[number]> = (() => {
@@ -128,18 +165,15 @@ const rowSchema = z.object({
     .max(10_000, "Değerlendirme çok uzun.")
     .optional()
     .transform((v) => (v && v.length > 0 ? v : undefined)),
+  // Bağlantı hücresi serbest metin: tek URL, birden fazla URL, scheme'siz
+  // URL veya düz yazı kabul edilir. Sonradan `extractUrls()` ile işlenir;
+  // bu yüzden burada sadece uzunluk sınırı koyuyoruz.
   externalUrl: z
     .string()
     .trim()
-    .max(2048)
+    .max(4096, "Bağlantı hücresi çok uzun.")
     .optional()
-    .transform((v) => (v && v.length > 0 ? v : undefined))
-    .refine(
-      (v) =>
-        v === undefined ||
-        /^https?:\/\/[\w\-._~:/?#[\]@!$&'()*+,;=%]+$/i.test(v),
-      "Geçerli bir URL girin (http:// veya https://).",
-    ),
+    .transform((v) => (v && v.length > 0 ? v : undefined)),
   publishedAt: z
     .date()
     .optional()
@@ -338,20 +372,33 @@ export async function bulkImportBoardPosts(
   }
 
   const now = new Date();
-  const data = validRows.map((v) => ({
-    scope: "GENERAL" as const,
-    kind: v.kind,
-    title: v.title,
-    body: v.body,
-    assessment: v.assessment ?? null,
-    tags: [] as string[],
-    externalUrl: v.externalUrl ?? null,
-    pinned: false,
-    status: "PUBLISHED" as const,
-    authorId: user.id,
-    groupId: null,
-    publishedAt: v.publishedAt ?? now,
-  }));
+  const data = validRows.map((v) => {
+    // Bağlantı hücresinden URL'leri çıkar:
+    //  - İlk URL → externalUrl (post kartındaki "Harici bağlantı" butonu)
+    //  - 2. ve sonrası → body sonuna "İlgili bağlantılar" başlığıyla eklenir
+    //    (DB tek URL alanı tutuyor; veri kaybı olmasın diye gövdeye taşınır)
+    //  - URL yok / düz yazı → externalUrl null, hata vermez
+    const urls = v.externalUrl ? extractUrls(v.externalUrl) : [];
+    const [first, ...rest] = urls;
+    let body = v.body;
+    if (rest.length > 0) {
+      body = `${body}\n\nİlgili bağlantılar:\n${rest.join("\n")}`.slice(0, 10_000);
+    }
+    return {
+      scope: "GENERAL" as const,
+      kind: v.kind,
+      title: v.title,
+      body,
+      assessment: v.assessment ?? null,
+      tags: [] as string[],
+      externalUrl: first ?? null,
+      pinned: false,
+      status: "PUBLISHED" as const,
+      authorId: user.id,
+      groupId: null,
+      publishedAt: v.publishedAt ?? now,
+    };
+  });
 
   const result = await prisma.$transaction(async (tx) => {
     return tx.boardPost.createMany({ data });

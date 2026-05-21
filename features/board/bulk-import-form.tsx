@@ -12,10 +12,15 @@ import { bulkImportBoardPosts, type BulkImportState } from "./bulk-import";
 
 const INITIAL: BulkImportState = { ok: true };
 
-export function BulkImportForm() {
+export function BulkImportForm({ kategori }: { kategori?: string }) {
   const [state, action, pending] = useActionState(bulkImportBoardPosts, INITIAL);
   const formRef = React.useRef<HTMLFormElement>(null);
   const [fileName, setFileName] = React.useState<string>("");
+  // Kategori varsa şablon endpoint'ine query olarak iletilir; aksi halde
+  // mevcut genel şablon indirilir.
+  const templateHref = kategori
+    ? `/api/admin/panolar/sablon?kategori=${encodeURIComponent(kategori)}`
+    : "/api/admin/panolar/sablon";
 
   React.useEffect(() => {
     // Reset file input after a successful import so the admin can upload
@@ -38,7 +43,7 @@ export function BulkImportForm() {
             </p>
           </div>
           <Button asChild variant="secondary">
-            <a href="/api/admin/panolar/sablon" download>
+            <a href={templateHref} download>
               <Download className="h-4 w-4" />
               Şablonu indir (.xlsx)
             </a>

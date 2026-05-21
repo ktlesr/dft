@@ -10,26 +10,27 @@ export const dynamic = "force-dynamic";
 /**
  * GET /api/admin/panolar/sablon
  *
- * Bulk general-board import template. Columns mirror the human-facing
- * layout the DFT team already uses in their internal planning sheet
- * (see Faz 6 notes):
+ * Bulk general-board import template.
  *
- *   No                                               // display only — ignored on import
- *   Paylaşım İsmi                                    // title         (required)
- *   Paylaşım Tarihi                                  // publishedAt   (optional)
- *   Paylaşım Türü                                    // kind          (required, dropdown)
- *   İlgili Bağlantı                                  // externalUrl   (optional)
- *   Paylaşımın İçeriği                               // body          (required)
- *   Değerlendirme/Yorum                             // assessment   (optional, long text)
+ * Generic (default) layout — tüm GENERAL türlerini (Haber, Çağrı/Hibe,
+ * Doküman Paylaşımı) destekler:
  *
- * Tür dropdown values are the user-facing labels; the import action
- * reverses them into BoardPostKind enums.
+ *   No · Başlık · Tarih · Tür · Bağlantı · İçerik · Değerlendirme/Yorum
+ *
+ * `?kategori=cagri-hibe-etkinlik` ile çağrılırsa **Çağrı/Hibe Duyurusu
+ * özel şablonu** üretilir: Tür sütunu kaldırılır, başlık etiketleri
+ * "Çağrı/Hibe Adı" + "Son Başvuru Tarihi" olur. Importer böyle bir
+ * dosyada Tür sütununu görmediği için tüm satırları ANNOUNCEMENT olarak
+ * kaydeder (bkz. [features/board/bulk-import.ts]).
  */
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return new NextResponse("Unauthorized", { status: 401 });
   if (user.status !== "ACTIVE") return new NextResponse("Forbidden", { status: 403 });
   if (!isAdmin(user)) return new NextResponse("Forbidden", { status: 403 });
+
+  const kategori = req.nextUrl.searchParams.get("kategori");
+  const isCallGrant = kategori === "cagri-hibe-etkinlik";
 
   const ExcelJS = (await import("exceljs")).default;
   const wb = new ExcelJS.Workbook();
@@ -40,19 +41,26 @@ export async function GET(_req: NextRequest) {
   const ws = wb.addWorksheet("Paylasimlar", {
     views: [{ state: "frozen", ySplit: 1 }],
   });
-  ws.columns = [
-    { header: "No", key: "no", width: 6 },
-    { header: "Başlık", key: "title", width: 36 },
-    { header: "Tarih", key: "publishedAt", width: 16 },
-    { header: "Tür", key: "kind", width: 22 },
-    { header: "Bağlantı", key: "externalUrl", width: 36 },
-    { header: "İçerik", key: "body", width: 60 },
-    {
-      header: "Değerlendirme/Yorum",
-      key: "assessment",
-      width: 60,
-    },
-  ];
+
+  // Çağrı/Hibe modunda Tür sütunu yok; başlık/tarih etiketleri özel.
+  ws.columns = isCallGrant
+    ? [
+        { header: "No", key: "no", width: 6 },
+        { header: "Çağrı/Hibe Adı", key: "title", width: 36 },
+        { header: "Son Başvuru Tarihi", key: "publishedAt", width: 18 },
+        { header: "Bağlantı", key: "externalUrl", width: 36 },
+        { header: "Açıklama", key: "body", width: 60 },
+        { header: "Değerlendirme/Yorum", key: "assessment", width: 60 },
+      ]
+    : [
+        { header: "No", key: "no", width: 6 },
+        { header: "Başlık", key: "title", width: 36 },
+        { header: "Tarih", key: "publishedAt", width: 16 },
+        { header: "Tür", key: "kind", width: 22 },
+        { header: "Bağlantı", key: "externalUrl", width: 36 },
+        { header: "İçerik", key: "body", width: 60 },
+        { header: "Değerlendirme/Yorum", key: "assessment", width: 60 },
+      ];
 
   // Header styling
   const header = ws.getRow(1);
@@ -73,39 +81,55 @@ export async function GET(_req: NextRequest) {
     };
   });
 
-  // Sample row (user can overwrite / delete)
-  ws.addRow({
-    no: 1,
-    title: "Örnek paylaşım başlığı",
-    publishedAt: new Date(),
-    kind: BOARD_KIND_LABELS.NEWS, // "Haber/Etkinlik"
-    externalUrl: "",
-    body: "Bu örnek satırı silip kendi kayıtlarınızı girebilirsiniz.",
-    assessment: "İsteğe bağlı — değerlendirme/yorum.",
-  });
-  ws.getCell("C2").numFmt = "dd.mm.yyyy";
-
-  // Data validations (rows 2..1001)
-  const kindLabels = BOARD_KIND_BY_SCOPE.GENERAL.map((k) => BOARD_KIND_LABELS[k]);
-  const kindsList = `"${kindLabels.join(",")}"`;
-  const lastRow = 1001;
-
-  for (let r = 2; r <= lastRow; r++) {
-    ws.getCell(`C${r}`).numFmt = "dd.mm.yyyy";
-    ws.getCell(`D${r}`).dataValidation = {
-      type: "list",
-      allowBlank: true,
-      formulae: [kindsList],
-      showErrorMessage: true,
-      errorTitle: "Geçersiz tür",
-      error: `İzinli değerler: ${kindLabels.join(", ")}`,
-    };
+  // Sample row
+  if (isCallGrant) {
+    ws.addRow({
+      no: 1,
+      title: "Örnek Çağrı/Hibe adı",
+      publishedAt: new Date(),
+      externalUrl: "",
+      body: "Bu örnek satırı silip kendi kayıtlarınızı girebilirsiniz.",
+      assessment: "İsteğe bağlı — değerlendirme/yorum.",
+    });
+    ws.getCell("C2").numFmt = "dd.mm.yyyy";
+  } else {
+    ws.addRow({
+      no: 1,
+      title: "Örnek paylaşım başlığı",
+      publishedAt: new Date(),
+      kind: BOARD_KIND_LABELS.NEWS,
+      externalUrl: "",
+      body: "Bu örnek satırı silip kendi kayıtlarınızı girebilirsiniz.",
+      assessment: "İsteğe bağlı — değerlendirme/yorum.",
+    });
+    ws.getCell("C2").numFmt = "dd.mm.yyyy";
   }
 
-  // Wrap body + assessment cells by default
-  for (let r = 2; r <= lastRow; r++) {
-    ws.getCell(`F${r}`).alignment = { wrapText: true, vertical: "top" };
-    ws.getCell(`G${r}`).alignment = { wrapText: true, vertical: "top" };
+  const lastRow = 1001;
+  const kindLabels = BOARD_KIND_BY_SCOPE.GENERAL.map((k) => BOARD_KIND_LABELS[k]);
+
+  if (isCallGrant) {
+    // Tarih sütunu C; body/assessment E,F.
+    for (let r = 2; r <= lastRow; r++) {
+      ws.getCell(`C${r}`).numFmt = "dd.mm.yyyy";
+      ws.getCell(`E${r}`).alignment = { wrapText: true, vertical: "top" };
+      ws.getCell(`F${r}`).alignment = { wrapText: true, vertical: "top" };
+    }
+  } else {
+    const kindsList = `"${kindLabels.join(",")}"`;
+    for (let r = 2; r <= lastRow; r++) {
+      ws.getCell(`C${r}`).numFmt = "dd.mm.yyyy";
+      ws.getCell(`D${r}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: [kindsList],
+        showErrorMessage: true,
+        errorTitle: "Geçersiz tür",
+        error: `İzinli değerler: ${kindLabels.join(", ")}`,
+      };
+      ws.getCell(`F${r}`).alignment = { wrapText: true, vertical: "top" };
+      ws.getCell(`G${r}`).alignment = { wrapText: true, vertical: "top" };
+    }
   }
 
   // ── Aciklama (guide) sheet ─────────────────────────────────────
@@ -117,39 +141,46 @@ export async function GET(_req: NextRequest) {
   ];
   guide.getRow(1).font = { bold: true };
 
-  guide.addRows([
-    { col: "No", req: "Hayır", desc: "Sadece görünüm amaçlıdır; içe aktarmada kullanılmaz." },
-    { col: "Paylaşım İsmi", req: "Evet", desc: "Başlık. 2–200 karakter." },
-    {
-      col: "Paylaşım Tarihi",
-      req: "Hayır",
-      desc: "Tarih hücresi (dd.mm.yyyy). Boş bırakılırsa içe aktarma anındaki tarih kullanılır.",
-    },
-    {
-      col: "Paylaşım Türü",
-      req: "Evet",
-      desc: `Açılır listeden seçin. İzinli değerler: ${kindLabels.join(", ")}`,
-    },
-    {
-      col: "İlgili Bağlantı",
-      req: "Hayır",
-      desc: "Tam URL (http:// veya https:// ile başlamalı).",
-    },
-    {
-      col: "Paylaşımın İçeriği",
-      req: "Evet",
-      desc: "İçerik metni. 2–10.000 karakter. Hücre içinde satır için ALT+Enter.",
-    },
-    {
-      col: "Değerlendirme/Yorum",
-      req: "Hayır",
-      desc: "Editör notu / değerlendirme. En fazla 10.000 karakter.",
-    },
-    {},
-    { col: "NOT", req: "", desc: "Tüm satırlar önce doğrulanır. Bir hata varsa hiç kayıt eklenmez." },
-    { col: "SINIR", req: "", desc: "En fazla 1.000 satır, en fazla 5 MB dosya boyutu." },
-    { col: "KAPSAM", req: "", desc: "Bu şablon yalnızca Genel Pano kayıtları içindir." },
-  ]);
+  if (isCallGrant) {
+    guide.addRows([
+      { col: "No", req: "Hayır", desc: "Sadece görünüm amaçlıdır; içe aktarmada kullanılmaz." },
+      { col: "Çağrı/Hibe Adı", req: "Evet", desc: "Başlık. 2–200 karakter." },
+      {
+        col: "Son Başvuru Tarihi",
+        req: "Hayır",
+        desc: "Tarih hücresi (dd.mm.yyyy). Boş bırakılırsa içe aktarma anındaki tarih kullanılır.",
+      },
+      { col: "Bağlantı", req: "Hayır", desc: "Tam URL (http:// veya https:// ile başlamalı)." },
+      { col: "Açıklama", req: "Evet", desc: "Çağrı/hibe açıklaması. 2–10.000 karakter." },
+      { col: "Değerlendirme/Yorum", req: "Hayır", desc: "Editör notu / değerlendirme. En fazla 10.000 karakter." },
+      {},
+      { col: "NOT", req: "", desc: "Tüm satırlar Çağrı/Hibe Duyurusu olarak kaydedilir." },
+      { col: "NOT", req: "", desc: "Tüm satırlar önce doğrulanır. Bir hata varsa hiç kayıt eklenmez." },
+      { col: "SINIR", req: "", desc: "En fazla 1.000 satır, en fazla 5 MB dosya boyutu." },
+    ]);
+  } else {
+    guide.addRows([
+      { col: "No", req: "Hayır", desc: "Sadece görünüm amaçlıdır; içe aktarmada kullanılmaz." },
+      { col: "Paylaşım İsmi", req: "Evet", desc: "Başlık. 2–200 karakter." },
+      {
+        col: "Paylaşım Tarihi",
+        req: "Hayır",
+        desc: "Tarih hücresi (dd.mm.yyyy). Boş bırakılırsa içe aktarma anındaki tarih kullanılır.",
+      },
+      {
+        col: "Paylaşım Türü",
+        req: "Evet",
+        desc: `Açılır listeden seçin. İzinli değerler: ${kindLabels.join(", ")}`,
+      },
+      { col: "İlgili Bağlantı", req: "Hayır", desc: "Tam URL (http:// veya https:// ile başlamalı)." },
+      { col: "Paylaşımın İçeriği", req: "Evet", desc: "İçerik metni. 2–10.000 karakter. Hücre içinde satır için ALT+Enter." },
+      { col: "Değerlendirme/Yorum", req: "Hayır", desc: "Editör notu / değerlendirme. En fazla 10.000 karakter." },
+      {},
+      { col: "NOT", req: "", desc: "Tüm satırlar önce doğrulanır. Bir hata varsa hiç kayıt eklenmez." },
+      { col: "SINIR", req: "", desc: "En fazla 1.000 satır, en fazla 5 MB dosya boyutu." },
+      { col: "KAPSAM", req: "", desc: "Bu şablon yalnızca Genel Pano kayıtları içindir." },
+    ]);
+  }
 
   guide.views = [{ state: "frozen", ySplit: 1 }];
   for (let r = 2; r <= guide.rowCount; r++) {
@@ -168,13 +199,16 @@ export async function GET(_req: NextRequest) {
   const buf = await wb.xlsx.writeBuffer();
   const bytes = new Uint8Array(buf as ArrayBuffer);
 
+  const filename = isCallGrant
+    ? "cagri-hibe-toplu-sablon.xlsx"
+    : "genel-pano-toplu-sablon.xlsx";
+
   return new NextResponse(bytes, {
     status: 200,
     headers: {
       "Content-Type":
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition":
-        "attachment; filename*=UTF-8''genel-pano-toplu-sablon.xlsx",
+      "Content-Disposition": `attachment; filename*=UTF-8''${filename}`,
       "Cache-Control": "private, no-store",
       "X-Content-Type-Options": "nosniff",
     },

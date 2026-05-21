@@ -290,6 +290,36 @@ export async function togglePin(id: string): Promise<void> {
   revalidatePath(post.scope === "GENERAL" ? "/panolar/genel" : "/panolar/grup");
 }
 
+/**
+ * Admin yönetim panelinden tüm Çağrı/Hibe Duyurusu kayıtlarını topluca
+ * soft-delete eder. Geri alınabilir (kayıt deletedAt + status REMOVED;
+ * row korunur). Sadece admin çağırabilir; audit'e tek satır yazılır.
+ */
+export async function removeAllAnnouncements(): Promise<{ count: number }> {
+  const user = await requireAdmin();
+
+  const result = await prisma.boardPost.updateMany({
+    where: {
+      scope: "GENERAL",
+      kind: "ANNOUNCEMENT",
+      deletedAt: null,
+    },
+    data: { deletedAt: new Date(), status: "REMOVED" },
+  });
+
+  await audit({
+    action: "BOARD_POST_REMOVED",
+    actorId: user.id,
+    targetType: "BoardPost",
+    metadata: { bulk: true, scope: "GENERAL", kind: "ANNOUNCEMENT", count: result.count },
+  });
+
+  revalidatePath("/panolar/genel");
+  revalidatePath("/yonetim/duyurular");
+  revalidatePath("/panel");
+  return { count: result.count };
+}
+
 /** Soft-delete a post. Author, group moderator, or admin can remove. */
 export async function removeBoardPost(id: string): Promise<void> {
   const user = await requireActiveUser();

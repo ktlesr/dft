@@ -92,7 +92,13 @@ export default async function GeneralBoardPage({ searchParams }: { searchParams:
           <>
             {admin ? (
               <Button asChild variant="secondary">
-                <Link href="/panolar/genel/toplu">
+                <Link
+                  href={
+                    isCallGrantCategory
+                      ? "/panolar/genel/toplu?kategori=cagri-hibe-etkinlik"
+                      : "/panolar/genel/toplu"
+                  }
+                >
                   <Upload className="h-4 w-4" />
                   Toplu yükle
                 </Link>

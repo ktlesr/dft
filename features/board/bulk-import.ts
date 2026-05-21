@@ -76,10 +76,15 @@ function tr(s: string): string {
 const HEADER_MAP: Record<string, "no" | "title" | "publishedAt" | "kind" | "externalUrl" | "body" | "assessment"> = {
   "no": "no",
   "baslik": "title",
+  // Çağrı/Hibe özel şablonu — başlık ve tarih farklı etiketle gelir.
+  "cagri hibe adi": "title",
   "tarih": "publishedAt",
+  "son basvuru tarihi": "publishedAt",
   "tur": "kind",
   "baglanti": "externalUrl",
   "icerik": "body",
+  // Çağrı/Hibe açıklama sütunu — title/body ile aynı veriyi taşır.
+  "aciklama": "body",
   // tr() `/` karakterini boşluğa çevirdiği için key boşluklu form;
   // "Değerlendirme/Yorum" → "degerlendirme yorum".
   "degerlendirme yorum": "assessment",
@@ -244,13 +249,20 @@ export async function bulkImportBoardPosts(
     if (key) colIndex[key] = col;
   });
 
-  const requiredCols: Array<keyof typeof colIndex> = ["title", "kind", "body"];
+  // Çağrı/Hibe özel şablonu Tür sütununu içermez — bu durumda tüm
+  // satırlar otomatik ANNOUNCEMENT olarak kaydedilir. Onun dışında Tür
+  // zorunlu kalır (yanlış kaydı önler).
+  const callGrantMode = !("kind" in colIndex);
+
+  const requiredCols: Array<keyof typeof colIndex> = callGrantMode
+    ? ["title", "body"]
+    : ["title", "kind", "body"];
   const missing = requiredCols.filter((c) => !(c in colIndex));
   if (missing.length > 0) {
     const labelFor: Record<string, string> = {
-      title: "Paylaşım İsmi",
+      title: "Çağrı/Hibe Adı veya Paylaşım İsmi",
       kind: "Paylaşım Türü",
-      body: "Paylaşımın İçeriği",
+      body: "Açıklama veya Paylaşımın İçeriği",
     };
     return {
       ok: false,
@@ -267,7 +279,11 @@ export async function bulkImportBoardPosts(
     if (!row || row.cellCount === 0) continue;
 
     const raw = {
-      kind: cellToString(row.getCell(colIndex.kind!).value).trim(),
+      // Tür sütunu yoksa (Çağrı/Hibe özel şablonu) tüm satırlar
+      // ANNOUNCEMENT olarak kaydedilir.
+      kind: callGrantMode
+        ? BOARD_KIND_LABELS.ANNOUNCEMENT
+        : cellToString(row.getCell(colIndex.kind!).value).trim(),
       title: cellToString(row.getCell(colIndex.title!).value).trim(),
       body: cellToString(row.getCell(colIndex.body!).value).trim(),
       externalUrl: colIndex.externalUrl
@@ -281,7 +297,7 @@ export async function bulkImportBoardPosts(
         : undefined,
     };
 
-    if (!raw.kind && !raw.title && !raw.body) continue;
+    if (!raw.title && !raw.body) continue;
     dataRowCount += 1;
 
     if (dataRowCount > MAX_BULK_IMPORT_ROWS) {

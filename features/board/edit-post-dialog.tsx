@@ -57,6 +57,15 @@ export function EditBoardPostDialog({ post }: { post: EditBoardPostInitial }) {
   const [removeIds, setRemoveIds] = React.useState<Set<string>>(new Set());
   const allowedKinds = BOARD_KIND_BY_SCOPE[post.scope];
 
+  // Çağrı/Hibe Duyurusu özel davranışı: yeni-kayıt formuyla aynı görünsün
+  // → "Tür" alanı kilitli (hidden input), etiketler "Çağrı/Hibe Adı" /
+  // "Son Başvuru Tarihi" / "Açıklama". Aksi halde mevcut genel davranış.
+  const isCallGrant = post.scope === "GENERAL" && post.kind === "ANNOUNCEMENT";
+  const showKindField = !isCallGrant;
+  const titleLabel = isCallGrant ? "Çağrı/Hibe Adı" : "Paylaşım ismi";
+  const publishedAtLabel = isCallGrant ? "Son Başvuru Tarihi" : "Paylaşım tarihi";
+  const bodyLabel = isCallGrant ? "Açıklama" : "Paylaşımın içeriği";
+
   // Dialog her açıldığında "silinecek dosya" seçimini sıfırla.
   React.useEffect(() => {
     if (open) setRemoveIds(new Set());
@@ -103,6 +112,8 @@ export function EditBoardPostDialog({ post }: { post: EditBoardPostInitial }) {
 
         <form action={action} className="space-y-4">
           <input type="hidden" name="id" value={post.id} />
+          {/* Çağrı/Hibe modunda Tür kilitli — hidden input ile gönder. */}
+          {!showKindField ? <input type="hidden" name="kind" value={post.kind} /> : null}
 
           {!state.ok && (state.message || state.errors) ? (
             <Alert variant="destructive">
@@ -114,25 +125,27 @@ export function EditBoardPostDialog({ post }: { post: EditBoardPostInitial }) {
           ) : null}
 
           <div className="grid grid-cols-2 gap-4">
-            <Field name="kind" label="Tür" required error={state.errors?.kind}>
-              <Select name="kind" defaultValue={post.kind}>
-                <SelectTrigger id="kind">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {allowedKinds.map((k) => (
-                    <SelectItem key={k} value={k}>
-                      {BOARD_KIND_LABELS[k]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
+            {showKindField ? (
+              <Field name="kind" label="Tür" required error={state.errors?.kind}>
+                <Select name="kind" defaultValue={post.kind}>
+                  <SelectTrigger id="kind">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allowedKinds.map((k) => (
+                      <SelectItem key={k} value={k}>
+                        {BOARD_KIND_LABELS[k]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            ) : null}
 
             {post.scope === "GENERAL" ? (
               <Field
                 name="publishedAt"
-                label="Paylaşım tarihi"
+                label={publishedAtLabel}
                 hint="Boş bırakırsanız mevcut tarih korunur."
                 error={state.errors?.publishedAt}
               >
@@ -156,7 +169,7 @@ export function EditBoardPostDialog({ post }: { post: EditBoardPostInitial }) {
             )}
           </div>
 
-          <Field name="title" label="Paylaşım ismi" required error={state.errors?.title}>
+          <Field name="title" label={titleLabel} required error={state.errors?.title}>
             <Input id="title" name="title" required maxLength={200} defaultValue={post.title} />
           </Field>
 
@@ -172,7 +185,7 @@ export function EditBoardPostDialog({ post }: { post: EditBoardPostInitial }) {
             </Field>
           ) : null}
 
-          <Field name="body" label="Paylaşımın içeriği" required error={state.errors?.body}>
+          <Field name="body" label={bodyLabel} required error={state.errors?.body}>
             <Textarea id="body" name="body" rows={5} required maxLength={10_000} defaultValue={post.body} />
           </Field>
 

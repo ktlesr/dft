@@ -9,6 +9,7 @@ import {
   MAX_ATTACHMENTS_PER_REQUEST,
   MAX_UPLOAD_BYTES,
 } from "@/lib/constants";
+import { coerceUploadMime } from "@/lib/upload-mime";
 
 // Bazı OS dosya seçici diyalogları (özellikle Windows) bir MIME türünü
 // dosya uzantısına otomatik eşlemiyor; .rar/.zip/.7z gibi arşivlerde
@@ -104,7 +105,12 @@ export function AttachmentInput({
         <ul className="divide-y rounded-md border">
           {files.map((f, idx) => {
             const tooLarge = f.size > MAX_UPLOAD_BYTES;
-            const badMime = !ALLOWED_UPLOAD_MIME.has(f.type);
+            // Sunucu tarafıyla aynı MIME türetme: tarayıcı boş/octet-stream
+            // bildiriyorsa uzantıdan kanonik MIME'a düş (.zip/.rar/.7z için).
+            // Yoksa Chrome Windows'taki "deneme.rar → boş MIME" akışında
+            // client-side preview "dosya türü desteklenmiyor" yazıyor ama
+            // sunucu kabul ediyor; tutarsızlığı kapatıyoruz.
+            const badMime = !ALLOWED_UPLOAD_MIME.has(coerceUploadMime(f));
             const invalid = tooLarge || badMime;
             return (
               <li key={`${f.name}-${idx}`} className="flex items-center gap-3 px-3 py-2">

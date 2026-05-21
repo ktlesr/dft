@@ -7,6 +7,7 @@ import {
   MAX_ATTACHMENTS_PER_REQUEST,
   MAX_UPLOAD_BYTES,
 } from "@/lib/constants";
+import { coerceUploadMime } from "@/lib/upload-mime";
 
 export { MAX_ATTACHMENTS_PER_REQUEST };
 
@@ -72,9 +73,13 @@ const MIME_EQUIVALENTS: Record<string, string[]> = {
 /**
  * Verify that the uploaded bytes actually match the declared MIME.
  * Rejects the infamous "image/png headed PHP file" attack.
+ *
+ * `declaredMime` is the **coerced** MIME (after uzantı fallback) — boş
+ * string veya octet-stream gelirse magic-byte sniff zaten reddeder, ama
+ * .rar/.zip gibi standartlaştırılmış uzantılarda kanonik MIME ile çağrılır.
  */
-async function verifyMagicBytes(file: File): Promise<void> {
-  if (MAGIC_BYTE_EXEMPT.has(file.type)) return;
+async function verifyMagicBytes(file: File, declaredMime: string): Promise<void> {
+  if (MAGIC_BYTE_EXEMPT.has(declaredMime)) return;
 
   // Dynamic import: file-type ships as ESM and is only needed on the
   // upload path (keeps it out of the client bundle for good measure).
@@ -89,14 +94,13 @@ async function verifyMagicBytes(file: File): Promise<void> {
     throw new UploadError("mime_mismatch", `Dosya türü tespit edilemedi: ${file.name}`);
   }
 
-  const declared = file.type;
-  const equivalents = MIME_EQUIVALENTS[declared] ?? [];
-  const ok = detected.mime === declared || equivalents.includes(detected.mime);
+  const equivalents = MIME_EQUIVALENTS[declaredMime] ?? [];
+  const ok = detected.mime === declaredMime || equivalents.includes(detected.mime);
 
   if (!ok) {
     throw new UploadError(
       "mime_mismatch",
-      `Dosya içeriği declared türle uyuşmuyor: declared=${declared} detected=${detected.mime}`,
+      `Dosya içeriği declared türle uyuşmuyor: declared=${declaredMime} detected=${detected.mime}`,
     );
   }
 }
@@ -139,27 +143,37 @@ export async function storeAttachments(
   if (nonEmpty.length === 0) return [];
   if (nonEmpty.length > MAX_ATTACHMENTS_PER_REQUEST) throw new UploadError("too_many");
 
+  // Her dosya için "coerced" MIME hesapla: tarayıcı boş/octet-stream
+  // bildiriyorsa uzantıdan kanonik türü türet (sadece arşivler için).
+  // Allow-list, magic-byte, ve storage.put aynı değeri kullanır →
+  // download tarafı doğru MIME ile servis edebilir.
+  const coerced = nonEmpty.map((f) => coerceUploadMime(f));
+
   // Phase 1: cheap header checks — reject early before touching disk.
-  for (const f of nonEmpty) {
+  for (let i = 0; i < nonEmpty.length; i++) {
+    const f = nonEmpty[i]!;
+    const mime = coerced[i]!;
     if (f.size > MAX_UPLOAD_BYTES) throw new UploadError("too_large", f.name);
-    if (!ALLOWED_UPLOAD_MIME.has(f.type)) throw new UploadError("mime_not_allowed", f.type);
+    if (!ALLOWED_UPLOAD_MIME.has(mime)) throw new UploadError("mime_not_allowed", mime || f.name);
   }
 
   // Phase 2: magic-byte sniff — verify declared MIME matches the actual bytes.
   // Protects against "image/png headed PHP file" style uploads.
-  for (const f of nonEmpty) {
-    await verifyMagicBytes(f);
+  for (let i = 0; i < nonEmpty.length; i++) {
+    await verifyMagicBytes(nonEmpty[i]!, coerced[i]!);
   }
 
   const created: Array<{ id: string; originalName: string; size: number; mimeType: string }> = [];
   const persistedKeys: string[] = [];
 
   try {
-    for (const f of nonEmpty) {
+    for (let i = 0; i < nonEmpty.length; i++) {
+      const f = nonEmpty[i]!;
+      const mime = coerced[i]!;
       const buf = new Uint8Array(await f.arrayBuffer());
       const stored = await storage.put({
         bytes: buf,
-        mimeType: f.type,
+        mimeType: mime,
         originalName: f.name,
       });
       persistedKeys.push(stored.storageKey);

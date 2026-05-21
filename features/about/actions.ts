@@ -12,6 +12,7 @@ import {
   MAX_ATTACHMENTS_PER_REQUEST,
   MAX_UPLOAD_BYTES,
 } from "@/lib/constants";
+import { coerceUploadMime } from "@/lib/upload-mime";
 import {
   APP_SETTING_KEY,
   DEFAULT_ABOUT,
@@ -73,15 +74,14 @@ const MIME_EQUIVALENTS: Record<string, string[]> = {
   "application/x-7z-compressed": ["application/x-7z-compressed"],
 };
 
-async function verifyMagic(file: File): Promise<boolean> {
-  if (MAGIC_BYTE_EXEMPT.has(file.type)) return true;
+async function verifyMagic(file: File, declaredMime: string): Promise<boolean> {
+  if (MAGIC_BYTE_EXEMPT.has(declaredMime)) return true;
   const { fileTypeFromBuffer } = await import("file-type");
   const head = new Uint8Array(await file.slice(0, 4096).arrayBuffer());
   const detected = await fileTypeFromBuffer(head);
   if (!detected) return false;
-  const declared = file.type;
-  const eq = MIME_EQUIVALENTS[declared] ?? [];
-  return detected.mime === declared || eq.includes(detected.mime);
+  const eq = MIME_EQUIVALENTS[declaredMime] ?? [];
+  return detected.mime === declaredMime || eq.includes(detected.mime);
 }
 
 /** Save text fields + add newly uploaded files + remove ticked files. */
@@ -121,10 +121,15 @@ export async function saveAboutContent(
   if (newFiles.length > MAX_ATTACHMENTS_PER_REQUEST) {
     return { ok: false, message: `Tek seferde en fazla ${MAX_ATTACHMENTS_PER_REQUEST} dosya yükleyin.` };
   }
-  for (const f of newFiles) {
+  // `coerceUploadMime` boş/octet-stream'i .zip/.rar/.7z uzantılarından
+  // kanonik MIME'a çevirir; storage + DB hep aynı değeri görsün.
+  const coercedMimes = newFiles.map((f) => coerceUploadMime(f));
+  for (let i = 0; i < newFiles.length; i++) {
+    const f = newFiles[i]!;
+    const mime = coercedMimes[i]!;
     if (f.size > MAX_UPLOAD_BYTES) return { ok: false, message: `Dosya çok büyük: ${f.name}` };
-    if (!ALLOWED_UPLOAD_MIME.has(f.type)) return { ok: false, message: `Dosya türü desteklenmiyor: ${f.name}` };
-    const okMagic = await verifyMagic(f);
+    if (!ALLOWED_UPLOAD_MIME.has(mime)) return { ok: false, message: `Dosya türü desteklenmiyor: ${f.name}` };
+    const okMagic = await verifyMagic(f, mime);
     if (!okMagic) return { ok: false, message: `Dosya içeriği başlıkla uyuşmuyor: ${f.name}` };
   }
 
@@ -132,11 +137,13 @@ export async function saveAboutContent(
   const uploadedKeys: string[] = [];
   const addedFiles: AboutFile[] = [];
   try {
-    for (const f of newFiles) {
+    for (let i = 0; i < newFiles.length; i++) {
+      const f = newFiles[i]!;
+      const mime = coercedMimes[i]!;
       const buf = new Uint8Array(await f.arrayBuffer());
       const stored = await storage.put({
         bytes: buf,
-        mimeType: f.type,
+        mimeType: mime,
         originalName: f.name,
       });
       uploadedKeys.push(stored.storageKey);

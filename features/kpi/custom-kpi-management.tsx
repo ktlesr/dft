@@ -17,9 +17,8 @@ import {
   reviseCustomKpiBaseline,
   reviseCustomKpiTarget,
   setCustomKpiApproval,
-  type KpiFormState,
 } from "@/features/kpi/actions";
-import { KPI_FORM_INITIAL } from "@/features/kpi/form-state";
+import { KPI_FORM_INITIAL, type KpiFormState } from "@/features/kpi/form-state";
 import type { CustomKpiListItem } from "@/lib/kpi/queries";
 
 export function CustomKpiManagement({

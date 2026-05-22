@@ -30,12 +30,14 @@ import {
 import { FIXED_KPI_CODES } from "@/lib/kpi/constants";
 
 // Tip ve başlangıç sabiti `form-state.ts`'e taşındı; Next.js 16 `"use server"`
-// modülünden non-async export'u yasakladığı için. Geriye dönük uyumluluk için
-// re-export ediyoruz (type-only re-export değer üretmediği için güvenli; const
-// re-export'u burada YAPMIYORUZ — KPI_FORM_INITIAL'a ihtiyacı olan tüm
-// dosyalar artık doğrudan `form-state.ts`'den çekiyor).
+// modülünden non-async export'u yasakladığı için.
+//
+// ÖNEMLİ: Buradan `export type { KpiFormState }` re-export'u YAPMIYORUZ.
+// Turbopack o pattern'i runtime'da değer referansı olarak çözdüğü için
+// "KpiFormState is not defined" hatası fırlatıyor (.next/server/chunks/ssr/
+// _0onha0p._.js'de görüldü). Tüketici dosyalar tipi doğrudan
+// `./form-state`'den import etsin.
 import type { KpiFormState } from "./form-state";
-export type { KpiFormState };
 
 function zodErrors(err: z.ZodError): Record<string, string[]> {
   const out: Record<string, string[]> = {};

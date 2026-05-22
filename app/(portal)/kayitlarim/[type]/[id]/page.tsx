@@ -147,7 +147,7 @@ export default async function RecordDetailPage({ params }: { params: Params }) {
             {fields.map((f) => (
               <div key={f.label} className={isLong(f.value) ? "md:col-span-2" : undefined}>
                 <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{f.label}</dt>
-                <dd className="mt-1 text-sm text-foreground">{f.value ?? "—"}</dd>
+                <dd className="mt-1 text-sm text-foreground">{renderFieldValue(f.value)}</dd>
               </div>
             ))}
           </dl>
@@ -188,6 +188,55 @@ export default async function RecordDetailPage({ params }: { params: Params }) {
 
 function isLong(v: React.ReactNode) {
   return typeof v === "string" && v.length > 80;
+}
+
+const INLINE_URL_RE = /\b((?:https?:\/\/|www\.)[^\s<>()]+)/gi;
+const TRAILING_URL_PUNCTUATION_RE = /[.,!?;:)\]]+$/;
+
+function renderFieldValue(value: React.ReactNode) {
+  if (typeof value !== "string") return value ?? "—";
+  return linkifyText(value);
+}
+
+function linkifyText(text: string) {
+  const matches = Array.from(text.matchAll(INLINE_URL_RE));
+  if (matches.length === 0) return text || "—";
+
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+
+  matches.forEach((match, i) => {
+    const index = match.index ?? 0;
+    const rawUrl = match[0];
+    const trailing = rawUrl.match(TRAILING_URL_PUNCTUATION_RE)?.[0] ?? "";
+    const label = trailing ? rawUrl.slice(0, -trailing.length) : rawUrl;
+    const href = label.startsWith("www.") ? `https://${label}` : label;
+
+    if (index > lastIndex) {
+      parts.push(text.slice(lastIndex, index));
+    }
+
+    parts.push(
+      <a
+        key={`${href}-${i}`}
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="break-all text-primary underline-offset-4 hover:underline"
+      >
+        {label}
+      </a>,
+    );
+
+    if (trailing) parts.push(trailing);
+    lastIndex = index + rawUrl.length;
+  });
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return <span className="whitespace-pre-wrap">{parts}</span>;
 }
 
 function externalLink(url: string | null) {

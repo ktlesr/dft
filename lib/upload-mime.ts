@@ -25,10 +25,27 @@ const EXT_TO_MIME: Record<string, string> = {
 
 export function coerceUploadMime(file: { name: string; type: string }): string {
   const declared = (file.type || "").toLowerCase();
-  if (declared && declared !== "application/octet-stream") return declared;
-
   const dot = file.name.lastIndexOf(".");
-  if (dot < 0) return file.type || "";
+  if (dot < 0) return declared || "";
   const ext = file.name.slice(dot + 1).toLowerCase();
-  return EXT_TO_MIME[ext] ?? file.type ?? "";
+  const canonical = EXT_TO_MIME[ext];
+
+  // Browsers/OSes can emit non-standard archive MIME strings
+  // (e.g. `application/x-compressed`, `application/rar`) or generic
+  // octet-stream. For known archive extensions, force canonical MIME.
+  if (!declared || declared === "application/octet-stream") {
+    return canonical ?? declared;
+  }
+  if (canonical && (declared === "application/x-compressed" || declared === "application/rar")) {
+    return canonical;
+  }
+  if (
+    canonical &&
+    declared.startsWith("application/x-") &&
+    (declared.includes("rar") || declared.includes("zip") || declared.includes("7z"))
+  ) {
+    return canonical;
+  }
+
+  return declared;
 }

@@ -63,8 +63,8 @@ const MIME_EQUIVALENTS: Record<string, string[]> = {
   // RAR: file-type kütüphanesi varyantların hepsini `application/x-rar-compressed`
   // olarak raporluyor; tarayıcı (özellikle Windows) ise yeni `application/vnd.rar`
   // veya legacy `application/x-rar` bildirebilir → hepsini denk tut.
-  "application/vnd.rar": ["application/x-rar-compressed"],
-  "application/x-rar-compressed": ["application/vnd.rar"],
+  "application/vnd.rar": ["application/x-rar-compressed", "application/x-rar"],
+  "application/x-rar-compressed": ["application/vnd.rar", "application/x-rar"],
   "application/x-rar": ["application/x-rar-compressed", "application/vnd.rar"],
   // 7z varyantı (file-type bunu döner; tarayıcılar farklı varyantı bildirebilir).
   "application/x-7z-compressed": ["application/x-7z-compressed"],

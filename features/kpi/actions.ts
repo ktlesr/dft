@@ -27,6 +27,7 @@ import {
   setCustomKpiApprovalSchema,
   setFixedKpiTargetSchema,
 } from "./schemas";
+import { FIXED_KPI_CODES } from "@/lib/kpi/constants";
 
 export type KpiFormState = {
   ok: boolean;
@@ -547,6 +548,13 @@ async function notifyGroupModeratorsAndAdmins({
   });
 }
 
+/**
+ * Sabit KPI'lar için grup hedef değerini set eder (moderator için kendi
+ * grubunda). Action gövdesi try/catch ile sarmalandı: Prisma veya Decimal
+ * fırlatırsa generic "Server Components render error" yerine kullanıcıya
+ * görünür `state.message` döner ve dialog açık kalır → "tekrar dene"
+ * tam-sayfa hatası yaşanmaz. Gerçek hata server console'a düşer.
+ */
 export async function setFixedKpiTarget(
   _prev: KpiFormState,
   fd: FormData,
@@ -570,58 +578,71 @@ export async function setFixedKpiTarget(
   const input = parsed.data;
   const metricCode = input.metricCode as KpiMetricCode;
 
-  const targetValue = toDecimal(input.targetValue)!;
+  // Metric code'un gerçekten Prisma enum'unda olduğunu doğrula — schema
+  // sadece "min 1 char" diyor; geçersiz değer Prisma'da TypeError fırlatır.
+  if (!FIXED_KPI_CODES.includes(metricCode as (typeof FIXED_KPI_CODES)[number])) {
+    return { ok: false, message: "Geçersiz metrik kodu." };
+  }
+
+  let targetValue;
+  try {
+    targetValue = toDecimal(input.targetValue);
+    if (!targetValue) {
+      return { ok: false, errors: { targetValue: ["Hedef değer zorunludur."] } };
+    }
+  } catch (e) {
+    console.error("[setFixedKpiTarget] toDecimal failed", {
+      raw: input.targetValue,
+      error: (e as Error)?.message,
+    });
+    return { ok: false, message: "Sayısal değer çözümlenemedi. Yalnızca rakam girin (örn. 10000)." };
+  }
+
   const targetDate = new Date();
 
-  const existing = await prisma.kpiFixedTarget.findUnique({
-    where: {
-      groupId_metricCode: {
+  try {
+    const existing = await prisma.kpiFixedTarget.findUnique({
+      where: { groupId_metricCode: { groupId, metricCode } },
+    });
+
+    const baselineValue = existing?.baselineValue ?? targetValue;
+    const baselineDate = existing?.baselineDate ?? targetDate;
+
+    await prisma.kpiFixedTarget.upsert({
+      where: { groupId_metricCode: { groupId, metricCode } },
+      update: { targetValue, targetDate, baselineValue, baselineDate },
+      create: { groupId, metricCode, targetValue, targetDate, baselineValue, baselineDate },
+    });
+
+    await audit({
+      action: "KPI_FIXED_TARGET_SET",
+      actorId: user.id,
+      targetType: "KpiFixedTarget",
+      targetId: `${groupId}:${metricCode}`,
+      metadata: {
         groupId,
         metricCode,
+        targetValue: targetValue.toString(),
+        targetDate: targetDate.toISOString(),
+        baselineValue: baselineValue?.toString() ?? null,
+        baselineDate: baselineDate?.toISOString() ?? null,
       },
-    },
-  });
-
-  const baselineValue = existing?.baselineValue ?? targetValue;
-  const baselineDate = existing?.baselineDate ?? targetDate;
-
-  await prisma.kpiFixedTarget.upsert({
-    where: {
-      groupId_metricCode: {
-        groupId,
-        metricCode,
-      },
-    },
-    update: {
-      targetValue,
-      targetDate,
-      baselineValue,
-      baselineDate,
-    },
-    create: {
+    });
+  } catch (e) {
+    // Prisma / DB hatası: server log'una detay düş, kullanıcıya temiz mesaj.
+    const err = e as { code?: string; message?: string };
+    console.error("[setFixedKpiTarget] DB write failed", {
       groupId,
       metricCode,
-      targetValue,
-      targetDate,
-      baselineValue,
-      baselineDate,
-    },
-  });
-
-  await audit({
-    action: "KPI_FIXED_TARGET_SET",
-    actorId: user.id,
-    targetType: "KpiFixedTarget",
-    targetId: `${groupId}:${metricCode}`,
-    metadata: {
-      groupId,
-      metricCode,
-      targetValue: targetValue.toString(),
-      targetDate: targetDate.toISOString(),
-      baselineValue: baselineValue?.toString() ?? null,
-      baselineDate: baselineDate?.toISOString() ?? null,
-    },
-  });
+      targetValue: targetValue?.toString(),
+      code: err?.code,
+      message: err?.message,
+    });
+    return {
+      ok: false,
+      message: "Hedef kaydedilemedi. Lütfen tekrar deneyin; sorun devam ederse yöneticiye bildirin.",
+    };
+  }
 
   revalidatePath("/calisma-grubum");
   revalidatePath("/kpi");

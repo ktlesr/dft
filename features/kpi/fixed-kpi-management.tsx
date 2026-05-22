@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { useActionState, useState } from "react";
 import { Edit3, Loader2, Target, Trophy } from "lucide-react";
 
@@ -51,16 +52,23 @@ export function FixedKpiManagement({
   fixedTargets,
 }: FixedKpiManagementProps) {
   const [selectedKpi, setSelectedKpi] = useState<FixedKpiCode | null>(null);
+  // Server action'ı doğrudan useActionState'e veriyoruz; inline async wrapper
+  // (React 19'da kapanışta state setter çağırmak useActionState yaşam
+  // döngüsüyle yarış oluşturabiliyor — server response client'a ulaşmadan
+  // form unmount olabiliyordu). Başarı sonrası dialog'u useEffect ile,
+  // pending → ok geçişini izleyerek kapatıyoruz.
   const [formState, formAction, isPending] = useActionState(
-    async (prev: any, fd: FormData) => {
-      const res = await setFixedKpiTarget(prev, fd);
-      if (res.ok) {
-        setSelectedKpi(null);
-      }
-      return res;
-    },
-    KPI_FORM_INITIAL
+    setFixedKpiTarget,
+    KPI_FORM_INITIAL,
   );
+
+  const wasPendingRef = React.useRef(false);
+  React.useEffect(() => {
+    if (wasPendingRef.current && !isPending && formState.ok && !formState.errors) {
+      setSelectedKpi(null);
+    }
+    wasPendingRef.current = isPending;
+  }, [isPending, formState]);
 
   const getTargetForCode = (code: FixedKpiCode) => {
     return fixedTargets.find((t) => t.metricCode === code) || null;

@@ -117,6 +117,18 @@ async function notifyAdminsForRecordCreate(input: {
 
 /* ────────── owner-only helpers used by update/delete ────────── */
 
+function projectApplicationMetricCode(memberFunction: string | null | undefined): KpiMetricCode {
+  return memberFunction === "DANISMANLIK"
+    ? "KPI_PROJECT_APPLICATION_GUIDANCE_TOTAL"
+    : "KPI_PROJECT_APPLICATION_DIRECT_TOTAL";
+}
+
+function eventMetricCode(role: string | null | undefined): KpiMetricCode | null {
+  if (role === KPI_EVENT_ATTENDED_ROLE) return "KPI_EVENT_ATTENDED_TOTAL";
+  if (role === KPI_EVENT_ORGANIZED_ROLE) return "KPI_EVENT_ORGANIZED_TOTAL";
+  return null;
+}
+
 async function mustOwnOr403<T extends { ownerId: string; deletedAt: Date | null } | null>(
   row: T,
   userId: string,
@@ -718,6 +730,496 @@ export async function createStakeholder(
 /* ══════════════════════════════════════════════════════════════════
  * Soft delete (type-aware)
  * ══════════════════════════════════════════════════════════════════*/
+
+export async function updateProjectApplication(
+  id: string,
+  _prev: RecordFormState,
+  fd: FormData,
+): Promise<RecordFormState> {
+  const user = await requireActiveUser();
+  const row = await prisma.projectApplicationRecord.findUnique({ where: { id } });
+  await mustOwnOr403(row, user.id, user.roles);
+
+  const parsed = projectApplicationSchema.safeParse({
+    projectName: fd.get("projectName"),
+    fundCategory: fd.get("fundCategory"),
+    fundSubType: fd.get("fundSubType"),
+    grantProvider: fd.get("grantProvider"),
+    programName: fd.get("programName"),
+    applicantOrg: fd.get("applicantOrg"),
+    applicantRole: fd.get("applicantRole"),
+    budget: fd.get("budget"),
+    requestedSupport: fd.get("requestedSupport"),
+    currency: fd.get("currency"),
+    applicationDate: fd.get("applicationDate"),
+    isPhased: fd.get("isPhased"),
+    applicationPhase: fd.get("applicationPhase"),
+    memberFunction: fd.get("memberFunction"),
+    partnerMemberIds: fd.getAll("partnerMemberIds").map(String),
+    notes: fd.get("notes"),
+  });
+  if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
+
+  try {
+    await storeAttachments({
+      files: filesFromFormData(fd),
+      uploadedById: user.id,
+      owner: { projectAppId: id },
+    });
+  } catch (e) {
+    if (e instanceof UploadError) return { ok: false, message: uploadMessage(e) };
+    throw e;
+  }
+
+  await prisma.projectApplicationRecord.update({
+    where: { id },
+    data: {
+      projectName: parsed.data.projectName,
+      program: parsed.data.programName ?? null,
+      kind: legacyKindForMemberFunction(parsed.data.memberFunction),
+      fundCategory: parsed.data.fundCategory ?? null,
+      fundSubType: parsed.data.fundSubType ?? null,
+      grantProvider: parsed.data.grantProvider ?? null,
+      programName: parsed.data.programName ?? null,
+      applicantOrg: parsed.data.applicantOrg ?? null,
+      applicantRole: parsed.data.applicantRole ?? null,
+      memberFunction: parsed.data.memberFunction,
+      budget: decimalOrUndef(parsed.data.budget),
+      requestedSupport: decimalOrUndef(parsed.data.requestedSupport),
+      currency: parsed.data.currency ?? "TRY",
+      applicationDate: parsed.data.applicationDate ?? null,
+      isPhased: parsed.data.isPhased,
+      applicationPhase: parsed.data.applicationPhase ?? null,
+      partnerMemberIds: parsed.data.partnerMemberIds,
+      notes: parsed.data.notes ?? null,
+    },
+  });
+
+  const oldMetricCode = projectApplicationMetricCode(row?.memberFunction);
+  const newMetricCode = projectApplicationMetricCode(parsed.data.memberFunction);
+  if (oldMetricCode !== newMetricCode) {
+    await trackKpiEvent({
+      metricCode: oldMetricCode,
+      sourceType: "PROJECT_APPLICATION",
+      sourceId: id,
+      actorUserId: user.id,
+      groupId: user.groupId,
+      delta: -1,
+    });
+    await trackKpiEvent({
+      metricCode: newMetricCode,
+      sourceType: "PROJECT_APPLICATION",
+      sourceId: id,
+      actorUserId: user.id,
+      groupId: user.groupId,
+      delta: 1,
+    });
+  }
+  await audit({ action: "RECORD_UPDATED", actorId: user.id, targetType: "ProjectApplicationRecord", targetId: id });
+  revalidatePath("/kayitlarim");
+  revalidatePath(`/kayitlarim/proje-basvurusu/${id}`);
+  redirect(`/kayitlarim/proje-basvurusu/${id}`);
+}
+
+export async function updateSuccessfulProject(
+  id: string,
+  _prev: RecordFormState,
+  fd: FormData,
+): Promise<RecordFormState> {
+  const user = await requireActiveUser();
+  const row = await prisma.successfulProjectRecord.findUnique({ where: { id } });
+  await mustOwnOr403(row, user.id, user.roles);
+
+  const parsed = successfulProjectSchema.safeParse({
+    projectName: fd.get("projectName"),
+    fundCategory: fd.get("fundCategory"),
+    fundSubType: fd.get("fundSubType"),
+    grantProvider: fd.get("grantProvider"),
+    programName: fd.get("programName"),
+    applicantOrg: fd.get("applicantOrg"),
+    applicantRole: fd.get("applicantRole"),
+    totalBudget: fd.get("totalBudget"),
+    supportAmount: fd.get("supportAmount"),
+    currency: fd.get("currency"),
+    applicationDate: fd.get("applicationDate"),
+    acceptanceDate: fd.get("acceptanceDate"),
+    memberFunction: fd.get("memberFunction"),
+    summary: fd.get("summary"),
+  });
+  if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
+
+  try {
+    await storeAttachments({
+      files: filesFromFormData(fd),
+      uploadedById: user.id,
+      owner: { successProjectId: id },
+    });
+  } catch (e) {
+    if (e instanceof UploadError) return { ok: false, message: uploadMessage(e) };
+    throw e;
+  }
+
+  await prisma.successfulProjectRecord.update({
+    where: { id },
+    data: {
+      projectName: parsed.data.projectName,
+      program: parsed.data.programName ?? null,
+      fundCategory: parsed.data.fundCategory ?? null,
+      fundSubType: parsed.data.fundSubType ?? null,
+      grantProvider: parsed.data.grantProvider ?? null,
+      programName: parsed.data.programName ?? null,
+      applicantOrg: parsed.data.applicantOrg ?? null,
+      applicantRole: parsed.data.applicantRole ?? null,
+      memberFunction: parsed.data.memberFunction,
+      totalBudget: decimalOrUndef(parsed.data.totalBudget),
+      supportAmount: decimalOrUndef(parsed.data.supportAmount),
+      currency: parsed.data.currency ?? "TRY",
+      applicationDate: parsed.data.applicationDate ?? null,
+      resultDate: parsed.data.acceptanceDate ?? null,
+      acceptanceDate: parsed.data.acceptanceDate ?? null,
+      summary: parsed.data.summary ?? null,
+    },
+  });
+
+  await audit({ action: "RECORD_UPDATED", actorId: user.id, targetType: "SuccessfulProjectRecord", targetId: id });
+  revalidatePath("/kayitlarim");
+  revalidatePath(`/kayitlarim/basarili-proje/${id}`);
+  redirect(`/kayitlarim/basarili-proje/${id}`);
+}
+
+export async function updateProjectIdea(
+  id: string,
+  _prev: RecordFormState,
+  fd: FormData,
+): Promise<RecordFormState> {
+  const user = await requireActiveUser();
+  const row = await prisma.projectIdeaRecord.findUnique({ where: { id } });
+  await mustOwnOr403(row, user.id, user.roles);
+
+  const parsed = projectIdeaSchema.safeParse({
+    title: fd.get("title"),
+    grantProvider: fd.get("grantProvider"),
+    potentialProgram: fd.get("potentialProgram"),
+    budget: fd.get("budget"),
+    currency: fd.get("currency"),
+    summary: fd.get("summary"),
+  });
+  if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
+
+  try {
+    await storeAttachments({
+      files: filesFromFormData(fd),
+      uploadedById: user.id,
+      owner: { projectIdeaId: id },
+    });
+  } catch (e) {
+    if (e instanceof UploadError) return { ok: false, message: uploadMessage(e) };
+    throw e;
+  }
+
+  await prisma.projectIdeaRecord.update({
+    where: { id },
+    data: {
+      title: parsed.data.title,
+      grantProvider: parsed.data.grantProvider ?? null,
+      potentialProgram: parsed.data.potentialProgram ?? null,
+      budget: decimalOrUndef(parsed.data.budget),
+      currency: parsed.data.currency ?? "TRY",
+      summary: parsed.data.summary ?? null,
+    },
+  });
+
+  await audit({ action: "RECORD_UPDATED", actorId: user.id, targetType: "ProjectIdeaRecord", targetId: id });
+  revalidatePath("/kayitlarim");
+  revalidatePath(`/kayitlarim/proje-fikri/${id}`);
+  redirect(`/kayitlarim/proje-fikri/${id}`);
+}
+
+export async function updateEventRecord(
+  id: string,
+  _prev: RecordFormState,
+  fd: FormData,
+): Promise<RecordFormState> {
+  const user = await requireActiveUser();
+  const row = await prisma.eventRecord.findUnique({ where: { id } });
+  await mustOwnOr403(row, user.id, user.roles);
+
+  const parsed = eventSchema.safeParse({
+    name: fd.get("name"),
+    organizer: fd.get("organizer"),
+    date: fd.get("date"),
+    endAt: fd.get("endAt"),
+    kind: fd.get("kind"),
+    format: fd.get("format"),
+    role: fd.get("role"),
+    externalUrl: fd.get("externalUrl"),
+    summary: fd.get("summary"),
+  });
+  if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
+
+  try {
+    await storeAttachments({
+      files: filesFromFormData(fd),
+      uploadedById: user.id,
+      owner: { eventId: id },
+    });
+  } catch (e) {
+    if (e instanceof UploadError) return { ok: false, message: uploadMessage(e) };
+    throw e;
+  }
+
+  await prisma.eventRecord.update({
+    where: { id },
+    data: {
+      name: parsed.data.name,
+      organizer: parsed.data.organizer ?? null,
+      date: parsed.data.date,
+      endAt: parsed.data.endAt ?? null,
+      kind: parsed.data.kind,
+      format: parsed.data.format,
+      role: parsed.data.role,
+      externalUrl: parsed.data.externalUrl ?? null,
+      summary: parsed.data.summary ?? null,
+    },
+  });
+
+  const oldMetricCode = eventMetricCode(row?.role);
+  const newMetricCode = eventMetricCode(parsed.data.role);
+  if (oldMetricCode !== newMetricCode) {
+    if (oldMetricCode) {
+      await trackKpiEvent({
+        metricCode: oldMetricCode,
+        sourceType: "EVENT",
+        sourceId: id,
+        actorUserId: user.id,
+        groupId: user.groupId,
+        delta: -1,
+      });
+    }
+    if (newMetricCode) {
+      await trackKpiEvent({
+        metricCode: newMetricCode,
+        sourceType: "EVENT",
+        sourceId: id,
+        actorUserId: user.id,
+        groupId: user.groupId,
+        delta: 1,
+      });
+    }
+  }
+  await audit({ action: "RECORD_UPDATED", actorId: user.id, targetType: "EventRecord", targetId: id });
+  revalidatePath("/kayitlarim");
+  revalidatePath(`/kayitlarim/etkinlik/${id}`);
+  redirect(`/kayitlarim/etkinlik/${id}`);
+}
+
+export async function updateDissemination(
+  id: string,
+  _prev: RecordFormState,
+  fd: FormData,
+): Promise<RecordFormState> {
+  const user = await requireActiveUser();
+  const row = await prisma.disseminationRecord.findUnique({ where: { id } });
+  await mustOwnOr403(row, user.id, user.roles);
+
+  const parsed = disseminationSchema.safeParse({
+    title: fd.get("title"),
+    date: fd.get("date"),
+    location: fd.get("location"),
+    kind: fd.get("kind"),
+    audience: fd.get("audience"),
+    participantCount: fd.get("participantCount"),
+    relatedTopic: fd.get("relatedTopic"),
+    summary: fd.get("summary"),
+    notes: fd.get("notes"),
+  });
+  if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
+
+  try {
+    await storeAttachments({
+      files: filesFromFormData(fd),
+      uploadedById: user.id,
+      owner: { disseminationId: id },
+    });
+  } catch (e) {
+    if (e instanceof UploadError) return { ok: false, message: uploadMessage(e) };
+    throw e;
+  }
+
+  await prisma.disseminationRecord.update({
+    where: { id },
+    data: {
+      title: parsed.data.title,
+      date: parsed.data.date,
+      location: parsed.data.location ?? null,
+      kind: parsed.data.kind ?? null,
+      audience: parsed.data.audience ?? null,
+      participantCount: parsed.data.participantCount ?? null,
+      relatedTopic: parsed.data.relatedTopic ?? null,
+      summary: parsed.data.summary ?? null,
+      notes: parsed.data.notes ?? null,
+    },
+  });
+
+  await audit({ action: "RECORD_UPDATED", actorId: user.id, targetType: "DisseminationRecord", targetId: id });
+  revalidatePath("/kayitlarim");
+  revalidatePath(`/kayitlarim/bilgi-cogaltimi/${id}`);
+  redirect(`/kayitlarim/bilgi-cogaltimi/${id}`);
+}
+
+export async function updateTraining(
+  id: string,
+  _prev: RecordFormState,
+  fd: FormData,
+): Promise<RecordFormState> {
+  const user = await requireActiveUser();
+  const row = await prisma.trainingPresentationRecord.findUnique({ where: { id } });
+  await mustOwnOr403(row, user.id, user.roles);
+
+  const parsed = trainingSchema.safeParse({
+    title: fd.get("title"),
+    date: fd.get("date"),
+    location: fd.get("location"),
+    audience: fd.get("audience"),
+    participantCount: fd.get("participantCount"),
+    role: fd.get("role"),
+    summary: fd.get("summary"),
+    notes: fd.get("notes"),
+  });
+  if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
+
+  try {
+    await storeAttachments({
+      files: filesFromFormData(fd),
+      uploadedById: user.id,
+      owner: { trainingId: id },
+    });
+  } catch (e) {
+    if (e instanceof UploadError) return { ok: false, message: uploadMessage(e) };
+    throw e;
+  }
+
+  await prisma.trainingPresentationRecord.update({
+    where: { id },
+    data: {
+      title: parsed.data.title,
+      date: parsed.data.date,
+      location: parsed.data.location ?? null,
+      audience: parsed.data.audience ?? null,
+      participantCount: parsed.data.participantCount ?? null,
+      role: parsed.data.role ?? null,
+      summary: parsed.data.summary ?? null,
+      notes: parsed.data.notes ?? null,
+    },
+  });
+
+  await audit({ action: "RECORD_UPDATED", actorId: user.id, targetType: "TrainingPresentationRecord", targetId: id });
+  revalidatePath("/kayitlarim");
+  revalidatePath(`/kayitlarim/egitim-sunum/${id}`);
+  redirect(`/kayitlarim/egitim-sunum/${id}`);
+}
+
+export async function updateContentRecord(
+  id: string,
+  _prev: RecordFormState,
+  fd: FormData,
+): Promise<RecordFormState> {
+  const user = await requireActiveUser();
+  const row = await prisma.contentRecord.findUnique({ where: { id } });
+  await mustOwnOr403(row, user.id, user.roles);
+
+  const parsed = contentSchema.safeParse({
+    title: fd.get("title"),
+    kind: fd.get("kind"),
+    externalUrl: fd.get("externalUrl"),
+    tags: fd.get("tags"),
+    summary: fd.get("summary"),
+  });
+  if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
+
+  try {
+    await storeAttachments({
+      files: filesFromFormData(fd),
+      uploadedById: user.id,
+      owner: { contentId: id },
+    });
+  } catch (e) {
+    if (e instanceof UploadError) return { ok: false, message: uploadMessage(e) };
+    throw e;
+  }
+
+  await prisma.contentRecord.update({
+    where: { id },
+    data: {
+      title: parsed.data.title,
+      kind: parsed.data.kind,
+      externalUrl: parsed.data.externalUrl ?? null,
+      tags: parsed.data.tags,
+      summary: parsed.data.summary ?? null,
+    },
+  });
+
+  await audit({ action: "RECORD_UPDATED", actorId: user.id, targetType: "ContentRecord", targetId: id });
+  revalidatePath("/kayitlarim");
+  revalidatePath(`/kayitlarim/dokuman-icerik/${id}`);
+  redirect(`/kayitlarim/dokuman-icerik/${id}`);
+}
+
+export async function updateStakeholder(
+  id: string,
+  _prev: RecordFormState,
+  fd: FormData,
+): Promise<RecordFormState> {
+  const user = await requireActiveUser();
+  const row = await prisma.stakeholderRecord.findUnique({ where: { id } });
+  await mustOwnOr403(row, user.id, user.roles);
+
+  const parsed = stakeholderSchema.safeParse({
+    fullName: fd.get("fullName"),
+    positionTitle: fd.get("positionTitle"),
+    kind: fd.get("kind"),
+    organization: fd.get("organization"),
+    linkedinUrl: fd.get("linkedinUrl"),
+    email: fd.get("email"),
+    city: fd.get("city"),
+    country: fd.get("country"),
+    tags: fd.get("tags"),
+    description: fd.get("description"),
+  });
+  if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
+
+  try {
+    await storeAttachments({
+      files: filesFromFormData(fd),
+      uploadedById: user.id,
+      owner: { stakeholderId: id },
+    });
+  } catch (e) {
+    if (e instanceof UploadError) return { ok: false, message: uploadMessage(e) };
+    throw e;
+  }
+
+  await prisma.stakeholderRecord.update({
+    where: { id },
+    data: {
+      fullName: parsed.data.fullName,
+      positionTitle: parsed.data.positionTitle ?? null,
+      kind: parsed.data.kind,
+      organization: parsed.data.organization ?? null,
+      linkedinUrl: parsed.data.linkedinUrl ?? null,
+      email: parsed.data.email ?? null,
+      city: parsed.data.city ?? null,
+      country: parsed.data.country ?? null,
+      tags: parsed.data.tags,
+      description: parsed.data.description ?? null,
+    },
+  });
+
+  await audit({ action: "RECORD_UPDATED", actorId: user.id, targetType: "StakeholderRecord", targetId: id });
+  revalidatePath("/kayitlarim");
+  revalidatePath(`/kayitlarim/paydas/${id}`);
+  redirect(`/kayitlarim/paydas/${id}`);
+}
 
 export async function softDeleteRecord(type: string, id: string): Promise<void> {
   const user = await requireActiveUser();

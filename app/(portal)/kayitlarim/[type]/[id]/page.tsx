@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, Paperclip, Trash2 } from "lucide-react";
+import { ArrowLeft, Paperclip, Pencil, Trash2 } from "lucide-react";
 
 import { PageHeader } from "@/components/app/page-header";
 import { Card, CardContent } from "@/components/ui/card";
@@ -94,6 +94,7 @@ export default async function RecordDetailPage({ params }: { params: Params }) {
   // ayrıcalığı yalnızca sahibe ve admin'e aittir; bu kontrol aşağıdaki
   // delete eylemi (`softDeleteRecord` → `mustOwnOr403`) içinde yapılıyor.
   const canDelete = row.ownerId === user.id || isAdmin(user);
+  const canEdit = canDelete;
 
   const deleteAction = async () => {
     "use server";
@@ -121,6 +122,14 @@ export default async function RecordDetailPage({ params }: { params: Params }) {
               </Link>
             </Button>
             {canDelete ? (
+              <Button asChild variant="outline">
+                <Link href={`/kayitlarim/${type}/${id}/duzenle`}>
+                  <Pencil className="h-4 w-4" />
+                  Düzenle
+                </Link>
+              </Button>
+            ) : null}
+            {canEdit ? (
               <form action={deleteAction}>
                 <Button type="submit" variant="outline" className="text-destructive hover:text-destructive">
                   <Trash2 className="h-4 w-4" />

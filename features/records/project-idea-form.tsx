@@ -13,23 +13,44 @@ import { FormShell } from "./form-shell";
 
 const INITIAL: RecordFormState = { ok: true };
 
-export function ProjectIdeaForm() {
-  const [state, action, pending] = useActionState(createProjectIdea, INITIAL);
-  const [currency, setCurrency] = React.useState<CurrencyCode>("TRY");
+type ProjectIdeaDefaults = {
+  title: string;
+  grantProvider: string | null;
+  potentialProgram: string | null;
+  budget: number;
+  currency: CurrencyCode;
+  summary: string | null;
+};
+
+type RecordAction = (prev: RecordFormState, fd: FormData) => Promise<RecordFormState>;
+
+export function ProjectIdeaForm({
+  defaults,
+  action: actionFn = createProjectIdea,
+  cancelHref,
+  submitLabel,
+}: {
+  defaults?: ProjectIdeaDefaults;
+  action?: RecordAction;
+  cancelHref?: string;
+  submitLabel?: string;
+} = {}) {
+  const [state, action, pending] = useActionState(actionFn, INITIAL);
+  const [currency, setCurrency] = React.useState<CurrencyCode>(defaults?.currency ?? "TRY");
 
   return (
     <form action={action}>
-      <FormShell state={state} pending={pending}>
+      <FormShell state={state} pending={pending} cancelHref={cancelHref} submitLabel={submitLabel}>
         <div className="grid gap-4 md:grid-cols-2">
           <Field name="title" label="Proje başlığı" required error={state.errors?.title} className="md:col-span-2">
-            <Input id="title" name="title" required maxLength={200} placeholder="Projeniz için öngördüğünüz kısa başlık" />
+            <Input id="title" name="title" required maxLength={200} defaultValue={defaults?.title} placeholder="Projeniz için öngördüğünüz kısa başlık" />
           </Field>
 
           <Field name="grantProvider" label="İlgili / potansiyel hibe sağlayıcısı" error={state.errors?.grantProvider}>
-            <Input id="grantProvider" name="grantProvider" maxLength={200} />
+            <Input id="grantProvider" name="grantProvider" maxLength={200} defaultValue={defaults?.grantProvider ?? ""} />
           </Field>
           <Field name="potentialProgram" label="İlgili / potansiyel program" error={state.errors?.potentialProgram}>
-            <Input id="potentialProgram" name="potentialProgram" maxLength={150} />
+            <Input id="potentialProgram" name="potentialProgram" maxLength={150} defaultValue={defaults?.potentialProgram ?? ""} />
           </Field>
 
           <Field name="budget" label="Proje bütçesi" hint="Tutarı yazdıkça otomatik biçimlendirilir." error={state.errors?.budget} className="md:col-span-2">
@@ -39,6 +60,7 @@ export function ProjectIdeaForm() {
                 name="budget"
                 placeholder="150.000"
                 currency={currency}
+                defaultValue={defaults?.budget ?? 0}
                 className="flex-1"
               />
               <CurrencySelect value={currency} onChange={setCurrency} />
@@ -52,7 +74,7 @@ export function ProjectIdeaForm() {
             error={state.errors?.summary}
             className="md:col-span-2"
           >
-            <Textarea id="summary" name="summary" rows={6} maxLength={5000} />
+            <Textarea id="summary" name="summary" rows={6} maxLength={5000} defaultValue={defaults?.summary ?? ""} />
           </Field>
         </div>
       </FormShell>

@@ -744,6 +744,9 @@ model ProjectApplicationRecord {
   applicantOrg    String?                  // İlgili kurum / kuruluş
   applicantRole   String?                  // Başvuru Sahibi/Koordinatör/Lider | Ortak | İştirakçi
   memberFunction  String?                  // BIREYSEL | DFT_ILE_BIRLIKTE | DANISMANLIK
+  // Phase 13: phased application flag and selected phase (1/2)
+  isPhased        Boolean                  @default(false)
+  applicationPhase String?                 // PHASE_1 | PHASE_2
   attachments     Attachment[]
   createdAt       DateTime                 @default(now())
   updatedAt       DateTime                 @updatedAt

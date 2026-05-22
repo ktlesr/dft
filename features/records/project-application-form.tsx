@@ -16,7 +16,7 @@ import { Field } from "@/features/shared/form-field";
 import { APPLICANT_ROLE_LABELS, MEMBER_FUNCTION_LABELS } from "@/lib/constants";
 import { createProjectApplication, type RecordFormState } from "./actions";
 import { CurrencyInput, CurrencySelect } from "./currency-input";
-import type { CurrencyCode } from "./schemas";
+import { PROJECT_APPLICATION_PHASES, type CurrencyCode } from "./schemas";
 import { FormShell } from "./form-shell";
 import { FundTypeFields } from "./fund-select";
 
@@ -25,6 +25,7 @@ const INITIAL: RecordFormState = { ok: true };
 export function ProjectApplicationForm() {
   const [state, action, pending] = useActionState(createProjectApplication, INITIAL);
   const [currency, setCurrency] = React.useState<CurrencyCode>("TRY");
+  const [isPhased, setIsPhased] = React.useState<"EVET" | "HAYIR">("HAYIR");
 
   return (
     <form action={action}>
@@ -90,6 +91,37 @@ export function ProjectApplicationForm() {
           <Field name="applicationDate" label="Başvuru tarihi" error={state.errors?.applicationDate}>
             <Input id="applicationDate" name="applicationDate" type="date" />
           </Field>
+          <Field
+            name="isPhased"
+            label="Proje başvurusu aşamalı mı?"
+            required
+            error={state.errors?.isPhased}
+          >
+            <Select name="isPhased" value={isPhased} onValueChange={(v) => setIsPhased(v as "EVET" | "HAYIR")}>
+              <SelectTrigger id="isPhased">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="HAYIR">Hayır</SelectItem>
+                <SelectItem value="EVET">Evet</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+          {isPhased === "EVET" ? (
+            <Field name="applicationPhase" label="Aşama" required error={state.errors?.applicationPhase}>
+              <Select name="applicationPhase">
+                <SelectTrigger id="applicationPhase">
+                  <SelectValue placeholder="Aşama seçiniz" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={PROJECT_APPLICATION_PHASES[0]}>1. AŞAMA</SelectItem>
+                  <SelectItem value={PROJECT_APPLICATION_PHASES[1]}>2. AŞAMA</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+          ) : (
+            <input type="hidden" name="applicationPhase" value="" />
+          )}
           <Field name="memberFunction" label="DFT üyesinin fonksiyonu" required error={state.errors?.memberFunction}>
             <Select name="memberFunction" defaultValue="BIREYSEL">
               <SelectTrigger id="memberFunction">

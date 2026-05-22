@@ -231,6 +231,8 @@ function describe(
           { label: "Proje bütçesi", value: formatMoney(r.budget, r.currency) },
           { label: "Destek miktarı", value: formatMoney(r.requestedSupport, r.currency) },
           { label: "Başvuru tarihi", value: formatDate(r.applicationDate) },
+          { label: "Aşamalı başvuru", value: r.isPhased ? "Evet" : "Hayır" },
+          { label: "Başvuru aşaması", value: r.isPhased ? (r.applicationPhase === "PHASE_2" ? "2. AŞAMA" : "1. AŞAMA") : null },
           {
             label: "DFT üyesinin fonksiyonu",
             value: memberFunctionLabel(r.memberFunction) ?? PROJECT_APPLICATION_KIND_LABELS[r.kind],

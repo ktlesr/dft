@@ -133,26 +133,55 @@ const optionalApplicantRole = z
   .optional()
   .or(z.literal("").transform(() => undefined));
 
+export const PROJECT_APPLICATION_PHASES = ["PHASE_1", "PHASE_2"] as const;
+export type ProjectApplicationPhase = (typeof PROJECT_APPLICATION_PHASES)[number];
+
+const phasedSelection = z
+  .enum(["EVET", "HAYIR"])
+  .optional()
+  .transform((v) => v === "EVET");
+
+const optionalProjectApplicationPhase = z
+  .enum(PROJECT_APPLICATION_PHASES)
+  .optional()
+  .or(z.literal("").transform(() => undefined));
+
 /* ════════════ 1) Proje Başvurusu (Faz 8) ════════════ */
 
-export const projectApplicationSchema = z.object({
-  projectName: trimmed(2, 200),
-  fundCategory: optionalFundCategory,
-  fundSubType: optionalString(150),
-  grantProvider: optionalString(200),
-  programName: optionalString(200),
-  applicantOrg: optionalString(200),
-  applicantRole: optionalApplicantRole,
-  budget: optionalDecimal,
-  requestedSupport: optionalDecimal,
-  currency: optionalCurrency,
-  applicationDate: optionalDate,
-  memberFunction: memberFunctionRequired,
-  partnerMemberIds: memberIdsArray,
-  // Field label in UI is "Proje Özeti" but the DB column stays `notes`
-  // to avoid a breaking schema rename.
-  notes: longText(5000),
-});
+export const projectApplicationSchema = z
+  .object({
+    projectName: trimmed(2, 200),
+    fundCategory: optionalFundCategory,
+    fundSubType: optionalString(150),
+    grantProvider: optionalString(200),
+    programName: optionalString(200),
+    applicantOrg: optionalString(200),
+    applicantRole: optionalApplicantRole,
+    budget: optionalDecimal,
+    requestedSupport: optionalDecimal,
+    currency: optionalCurrency,
+    applicationDate: optionalDate,
+    memberFunction: memberFunctionRequired,
+    isPhased: phasedSelection,
+    applicationPhase: optionalProjectApplicationPhase,
+    partnerMemberIds: memberIdsArray,
+    // Field label in UI is "Proje Özeti" but the DB column stays `notes`
+    // to avoid a breaking schema rename.
+    notes: longText(5000),
+  })
+  .superRefine((v, ctx) => {
+    if (v.isPhased && !v.applicationPhase) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["applicationPhase"],
+        message: "Aşama seçimi zorunludur.",
+      });
+    }
+  })
+  .transform((v) => ({
+    ...v,
+    applicationPhase: v.isPhased ? v.applicationPhase : undefined,
+  }));
 export type ProjectApplicationInput = z.infer<typeof projectApplicationSchema>;
 
 /* ════════════ 2) Başarılı Proje (Faz 8) ════════════ */

@@ -11,7 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Field } from "@/features/shared/form-field";
-import { KPI_FORM_INITIAL, createCustomKpi, type KpiFormState } from "./actions";
+import { createCustomKpi, type KpiFormState } from "./actions";
+import { KPI_FORM_INITIAL } from "./form-state";
 
 type KpiAssignableUser = {
   id: string;

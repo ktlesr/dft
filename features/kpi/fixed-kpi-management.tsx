@@ -23,7 +23,8 @@ import {
   FIXED_KPI_LABELS,
   type FixedKpiCode,
 } from "@/lib/kpi/constants";
-import { KPI_FORM_INITIAL, setFixedKpiTarget } from "@/features/kpi/actions";
+import { setFixedKpiTarget } from "@/features/kpi/actions";
+import { KPI_FORM_INITIAL } from "@/features/kpi/form-state";
 
 interface KpiFixedTargetItem {
   id?: string;

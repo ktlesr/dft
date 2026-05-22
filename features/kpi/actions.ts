@@ -29,13 +29,13 @@ import {
 } from "./schemas";
 import { FIXED_KPI_CODES } from "@/lib/kpi/constants";
 
-export type KpiFormState = {
-  ok: boolean;
-  message?: string;
-  errors?: Record<string, string[]>;
-};
-
-export const KPI_FORM_INITIAL: KpiFormState = { ok: true };
+// Tip ve başlangıç sabiti `form-state.ts`'e taşındı; Next.js 16 `"use server"`
+// modülünden non-async export'u yasakladığı için. Geriye dönük uyumluluk için
+// re-export ediyoruz (type-only re-export değer üretmediği için güvenli; const
+// re-export'u burada YAPMIYORUZ — KPI_FORM_INITIAL'a ihtiyacı olan tüm
+// dosyalar artık doğrudan `form-state.ts`'den çekiyor).
+import type { KpiFormState } from "./form-state";
+export type { KpiFormState };
 
 function zodErrors(err: z.ZodError): Record<string, string[]> {
   const out: Record<string, string[]> = {};

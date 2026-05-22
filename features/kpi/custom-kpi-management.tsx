@@ -13,13 +13,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { AttachmentInput } from "@/features/shared/attachment-input";
 import {
-  KPI_FORM_INITIAL,
   completeCustomKpi,
   reviseCustomKpiBaseline,
   reviseCustomKpiTarget,
   setCustomKpiApproval,
   type KpiFormState,
 } from "@/features/kpi/actions";
+import { KPI_FORM_INITIAL } from "@/features/kpi/form-state";
 import type { CustomKpiListItem } from "@/lib/kpi/queries";
 
 export function CustomKpiManagement({

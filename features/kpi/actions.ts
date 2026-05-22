@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { audit } from "@/lib/audit";
-import { requireActiveUser } from "@/lib/current-user";
+import { requireActiveUser, requireAdmin } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import {
   canChangeKpiBaseline,
@@ -437,6 +437,13 @@ function toDecimal(raw: string | undefined) {
   return new Prisma.Decimal(normalized);
 }
 
+function decimalFromAdminForm(value: FormDataEntryValue | null) {
+  const raw = typeof value === "string" ? value.trim() : "";
+  if (!raw) return null;
+  if (!/^-?\d+([.,]\d+)?$/.test(raw)) return null;
+  return new Prisma.Decimal(raw.replace(/,/g, "."));
+}
+
 async function requireKpiForGroup(user: SessionUser, kpiId: string) {
   const row = await prisma.kpiCustom.findUnique({
     where: { id: kpiId },
@@ -471,6 +478,7 @@ function revalidateKpiPages() {
   revalidatePath("/kpi");
   revalidatePath("/kpi/yeni");
   revalidatePath("/calisma-grubum");
+  revalidatePath("/yonetim/kpi-hedefleri");
 }
 
 async function notifyKpiCreatedByAndAssignees({
@@ -649,4 +657,134 @@ export async function setFixedKpiTarget(
   revalidatePath("/calisma-grubum");
   revalidatePath("/kpi");
   return { ok: true, message: "Hedef başarıyla güncellendi." };
+}
+
+export async function adminUpdateFixedKpiTarget(fd: FormData): Promise<void> {
+  const user = await requireAdmin();
+  const groupId = String(fd.get("groupId") ?? "");
+  const metricCode = String(fd.get("metricCode") ?? "") as KpiMetricCode;
+  const intent = String(fd.get("intent") ?? "update");
+
+  if (!groupId || !FIXED_KPI_CODES.includes(metricCode as (typeof FIXED_KPI_CODES)[number])) {
+    return;
+  }
+
+  const groupExists = await prisma.group.count({ where: { id: groupId } });
+  if (groupExists === 0) return;
+
+  const now = new Date();
+  const baselineValue = intent === "reset" ? new Prisma.Decimal(0) : decimalFromAdminForm(fd.get("baselineValue"));
+  const targetValue = intent === "reset" ? new Prisma.Decimal(0) : decimalFromAdminForm(fd.get("targetValue"));
+  if (!baselineValue || !targetValue) return;
+
+  await prisma.kpiFixedTarget.upsert({
+    where: { groupId_metricCode: { groupId, metricCode } },
+    update: {
+      baselineValue,
+      baselineDate: now,
+      targetValue,
+      targetDate: now,
+    },
+    create: {
+      groupId,
+      metricCode,
+      baselineValue,
+      baselineDate: now,
+      targetValue,
+      targetDate: now,
+    },
+  });
+
+  await audit({
+    action: "KPI_FIXED_TARGET_SET",
+    actorId: user.id,
+    targetType: "KpiFixedTarget",
+    targetId: `${groupId}:${metricCode}`,
+    metadata: {
+      source: "admin_panel",
+      intent,
+      groupId,
+      metricCode,
+      baselineValue: baselineValue.toString(),
+      targetValue: targetValue.toString(),
+    },
+  });
+
+  revalidateKpiPages();
+}
+
+export async function adminUpdateCustomKpiTargets(fd: FormData): Promise<void> {
+  const user = await requireAdmin();
+  const kpiId = String(fd.get("kpiId") ?? "");
+  const intent = String(fd.get("intent") ?? "update");
+  if (!kpiId) return;
+
+  const row = await prisma.kpiCustom.findUnique({
+    where: { id: kpiId },
+    select: {
+      id: true,
+      baselineValue: true,
+      targetValue: true,
+      deletedAt: true,
+    },
+  });
+  if (!row || row.deletedAt) return;
+
+  const baselineValue = intent === "reset" ? new Prisma.Decimal(0) : decimalFromAdminForm(fd.get("baselineValue"));
+  const targetValue = intent === "reset" ? new Prisma.Decimal(0) : decimalFromAdminForm(fd.get("targetValue"));
+  if (!baselineValue || !targetValue) return;
+
+  const now = new Date();
+  await prisma.$transaction(async (tx) => {
+    await tx.kpiCustom.update({
+      where: { id: row.id },
+      data: {
+        baselineValue,
+        baselineDate: now,
+        targetValue,
+        targetDate: now,
+      },
+    });
+
+    if (row.baselineValue?.toString() !== baselineValue.toString()) {
+      await tx.kpiBaselineHistory.create({
+        data: {
+          kpiId: row.id,
+          field: "TARGET_VALUE",
+          oldValue: row.baselineValue?.toString() ?? undefined,
+          newValue: baselineValue.toString(),
+          changedById: user.id,
+          reason: intent === "reset" ? "Admin panelinden baseline sifirlandi." : "Admin panelinden baseline degistirildi.",
+        },
+      });
+    }
+
+    if (row.targetValue?.toString() !== targetValue.toString()) {
+      await tx.kpiCustomRevision.create({
+        data: {
+          kpiId: row.id,
+          field: "TARGET_VALUE",
+          oldValue: row.targetValue?.toString() ?? undefined,
+          newValue: targetValue.toString(),
+          changedById: user.id,
+          reason: intent === "reset" ? "Admin panelinden hedef sifirlandi." : "Admin panelinden hedef degistirildi.",
+        },
+      });
+    }
+  });
+
+  await audit({
+    action: "KPI_CUSTOM_REVISED",
+    actorId: user.id,
+    targetType: "KpiCustom",
+    targetId: row.id,
+    metadata: {
+      source: "admin_panel",
+      intent,
+      baselineValue: baselineValue.toString(),
+      targetValue: targetValue.toString(),
+    },
+  });
+
+  revalidateKpiPages();
 }

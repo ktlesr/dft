@@ -63,39 +63,41 @@ export function AvatarLightbox({
         />
         <DialogPrimitive.Content
           className={cn(
-            "fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-fit max-w-[90vw] max-h-[85vh] outline-none",
+            "fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-full max-w-[90vw] sm:max-w-max max-h-[85vh] outline-none flex items-center justify-center",
             "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
           )}
           aria-describedby={undefined}
         >
           <DialogPrimitive.Title className="sr-only">{alt}</DialogPrimitive.Title>
-          {/* Image gets its own focus so screen readers can navigate; the
-              button next to it is the explicit close affordance. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={largeSrc}
-            alt={imgAlt}
-            className="max-h-[85vh] max-w-full rounded-lg object-contain shadow-2xl"
-          />
-          {/* Dekoratif isim plakası — görselin alt kısmında, koyu gradyan
-              üzerine altı çizili beyaz ad. Pointer ve klavyeden bağımsız;
-              tek amacı görsel kimliği vurgulamak. */}
-          {name ? (
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-x-0 bottom-0 flex h-[22%] items-end justify-center rounded-b-lg bg-[linear-gradient(to_top,rgba(20,24,32,0.95)_0%,rgba(20,24,32,0.95)_28%,rgba(20,24,32,0)_100%)]"
+          <div className="relative max-h-[85vh] max-w-full">
+            {/* Image gets its own focus so screen readers can navigate; the
+                button next to it is the explicit close affordance. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={largeSrc}
+              alt={imgAlt}
+              className="max-h-[85vh] max-w-full rounded-lg object-contain shadow-2xl block"
+            />
+            {/* Dekoratif isim plakası — görselin alt kısmında, koyu gradyan
+                üzerine altı çizili beyaz ad. Pointer ve klavyeden bağımsız;
+                tek amacı görsel kimliği vurgulamak. */}
+            {name ? (
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-x-0 bottom-0 flex h-[22%] items-end justify-center rounded-b-lg bg-[linear-gradient(to_top,rgba(20,24,32,0.95)_0%,rgba(20,24,32,0.95)_28%,rgba(20,24,32,0)_100%)]"
+              >
+                <p className="pb-5 text-center text-lg font-semibold text-white underline underline-offset-4 md:text-xl">
+                  {name}
+                </p>
+              </div>
+            ) : null}
+            <DialogPrimitive.Close
+              className="absolute right-2 top-2 z-10 rounded-full bg-background/80 p-1.5 text-foreground backdrop-blur-sm shadow-lg ring-1 ring-border transition-colors hover:bg-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              aria-label="Kapat"
             >
-              <p className="pb-5 text-center text-lg font-semibold text-white underline underline-offset-4 md:text-xl">
-                {name}
-              </p>
-            </div>
-          ) : null}
-          <DialogPrimitive.Close
-            className="absolute right-2 top-2 z-10 rounded-full bg-background/80 p-1.5 text-foreground backdrop-blur-sm shadow-lg ring-1 ring-border transition-colors hover:bg-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            aria-label="Kapat"
-          >
-            <X className="h-4 w-4" />
-          </DialogPrimitive.Close>
+              <X className="h-4 w-4" />
+            </DialogPrimitive.Close>
+          </div>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>

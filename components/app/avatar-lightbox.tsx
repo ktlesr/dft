@@ -92,7 +92,7 @@ export function AvatarLightbox({
             </div>
           ) : null}
           <DialogPrimitive.Close
-            className="absolute -right-3 -top-3 rounded-full bg-background p-1.5 text-foreground shadow-lg ring-1 ring-border transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            className="absolute right-2 top-2 z-10 rounded-full bg-background/80 p-1.5 text-foreground backdrop-blur-sm shadow-lg ring-1 ring-border transition-colors hover:bg-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             aria-label="Kapat"
           >
             <X className="h-4 w-4" />

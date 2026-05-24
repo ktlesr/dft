@@ -68,7 +68,7 @@ export default async function DftAboutPage() {
             <BrandVertical className="h-32 shrink-0 md:h-36" />
             <div className="min-w-0 flex-1">
               <h2 className="text-xl font-semibold tracking-tight">{about.title}</h2>
-              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+              <p className="mt-3 max-w-4xl text-sm leading-relaxed text-muted-foreground">
                 {about.summary}
               </p>
               <div className="mt-5">

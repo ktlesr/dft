@@ -69,12 +69,14 @@ export default async function AdminUserDetail({
         approvedBy: { select: { name: true, email: true } },
         _count: {
           select: {
-            projectApps: { where: { deletedAt: null } },
             events: { where: { deletedAt: null } },
-            boardPosts: { where: { deletedAt: null } },
-            meetings: { where: { deletedAt: null } },
-            minutes: { where: { deletedAt: null } },
-            reports: { where: { deletedAt: null } },
+            projectIdeas: { where: { deletedAt: null } },
+            successProjects: { where: { deletedAt: null } },
+            projectApps: { where: { deletedAt: null } },
+            contents: { where: { deletedAt: null } },
+            stakeholders: { where: { deletedAt: null } },
+            notices: { where: { deletedAt: null } },
+            discussions: { where: { deletedAt: null } },
           },
         },
       },
@@ -209,13 +211,15 @@ export default async function AdminUserDetail({
 
             <Separator className="my-6" />
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Katkı özeti</p>
-            <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <Stat label="Proje başvurusu" value={user._count.projectApps} />
-              <Stat label="Etkinlik" value={user._count.events} />
-              <Stat label="Pano paylaşımı" value={user._count.boardPosts} />
-              <Stat label="Toplantı" value={user._count.meetings} />
-              <Stat label="Tutanak" value={user._count.minutes} />
-              <Stat label="Rapor" value={user._count.reports} />
+            <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <Stat label="Etkinlik kaydı" value={user._count.events} />
+              <Stat label="Proje fikri kaydı" value={user._count.projectIdeas} />
+              <Stat label="Başarılı proje kaydı" value={user._count.successProjects} />
+              <Stat label="Proje başvurusu kaydı" value={user._count.projectApps} />
+              <Stat label="Dijital içerik kaydı" value={user._count.contents} />
+              <Stat label="Paydaş kaydı" value={user._count.stakeholders} />
+              <Stat label="Bildirim ekleme" value={user._count.notices} />
+              <Stat label="Forumda konu açma" value={user._count.discussions} />
             </div>
           </CardContent>
         </Card>

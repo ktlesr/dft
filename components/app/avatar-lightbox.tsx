@@ -63,9 +63,8 @@ export function AvatarLightbox({
         />
         <DialogPrimitive.Content
           className={cn(
-            "fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
+            "fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-fit max-w-[90vw] max-h-[85vh] outline-none",
             "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
-            "outline-none",
           )}
           aria-describedby={undefined}
         >
@@ -76,7 +75,7 @@ export function AvatarLightbox({
           <img
             src={largeSrc}
             alt={imgAlt}
-            className="max-h-[85vh] max-w-[90vw] rounded-lg object-contain shadow-2xl"
+            className="max-h-[85vh] max-w-full rounded-lg object-contain shadow-2xl"
           />
           {/* Dekoratif isim plakası — görselin alt kısmında, koyu gradyan
               üzerine altı çizili beyaz ad. Pointer ve klavyeden bağımsız;

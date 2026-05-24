@@ -35,7 +35,7 @@ export default async function PortalLayout({ children }: { children: React.React
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background overflow-x-hidden w-full">
       <Sidebar
         user={sidebarUser}
         className="hidden md:sticky md:top-0 md:flex md:h-screen md:self-start"

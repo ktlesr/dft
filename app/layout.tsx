@@ -54,8 +54,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (
-    <html lang="tr" suppressHydrationWarning>
-      <body className="min-h-screen bg-background font-sans antialiased">
+    <html lang="tr" suppressHydrationWarning className="overflow-x-hidden max-w-full">
+      <body className="min-h-screen bg-background font-sans antialiased overflow-x-hidden max-w-full">
         <ThemeProvider nonce={nonce}>
           {children}
           <Toaster richColors closeButton position="top-right" />

@@ -40,7 +40,13 @@ function formatDate(iso: string) {
 
 export function AboutModal({ title, summary, body, attachments, updatedAt }: Props) {
   const [open, setOpen] = React.useState(false);
-  const updated = formatDate(updatedAt);
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const updated = mounted ? formatDate(updatedAt) : null;
 
   return (
     <>

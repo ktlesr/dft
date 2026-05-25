@@ -20,6 +20,7 @@ import {
 } from "@/features/kpi/actions";
 import { KPI_FORM_INITIAL, type KpiFormState } from "@/features/kpi/form-state";
 import type { CustomKpiListItem } from "@/lib/kpi/queries";
+import { formatDateTime } from "@/lib/utils";
 
 export function CustomKpiManagement({
   kpis,
@@ -400,7 +401,7 @@ function d(value: Date | null) {
 }
 
 function dt(value: Date) {
-  return value.toLocaleString("tr-TR");
+  return formatDateTime(value);
 }
 
 function dateInput(value: Date | null) {

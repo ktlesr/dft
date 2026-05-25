@@ -10,6 +10,7 @@ export function formatDate(date: Date | string | null | undefined, opts?: Intl.D
   const d = typeof date === "string" ? new Date(date) : date;
   if (Number.isNaN(d.getTime())) return "—";
   return new Intl.DateTimeFormat("tr-TR", {
+    timeZone: "Europe/Istanbul",
     year: "numeric",
     month: "short",
     day: "2-digit",

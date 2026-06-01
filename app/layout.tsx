@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
-import { Fraunces, Hanken_Grotesk } from "next/font/google";
+import { Poppins } from "next/font/google";
 
 import "./globals.css";
 
@@ -8,27 +8,20 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 
 /**
- * Brand typography — "Editöryel Güven" direction.
+ * Brand typography — Poppins across the whole project.
  *
- * Both faces are self-hosted by next/font at build time (served from the
- * app origin), so they satisfy the strict CSP (`font-src 'self'`) without
- * any external request. `latin-ext` carries the full Turkish glyph set
- * (İ ı Ş ş Ğ ğ Ç ç Ö ö Ü ü).
+ * Self-hosted by next/font at build time (served from the app origin), so it
+ * satisfies the strict CSP (`font-src 'self'`) without any external request.
+ * `latin-ext` carries the full Turkish glyph set (İ ı Ş ş Ğ ğ Ç ç Ö ö Ü ü).
  *
- *   Fraunces       → display / headings (optical-sized contemporary serif)
- *   Hanken Grotesk → body / UI text (warm humanist grotesque)
+ * Poppins is a static-weight family, so the needed weights are listed
+ * explicitly. The variable feeds both body text and display headings.
  */
-const fontDisplay = Fraunces({
+const fontSans = Poppins({
   subsets: ["latin", "latin-ext"],
   display: "swap",
-  variable: "--ff-display",
-  axes: ["opsz"],
-});
-
-const fontBody = Hanken_Grotesk({
-  subsets: ["latin", "latin-ext"],
-  display: "swap",
-  variable: "--ff-body",
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--ff-sans",
 });
 
 export const metadata: Metadata = {
@@ -81,7 +74,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html
       lang="tr"
-      className={`${fontDisplay.variable} ${fontBody.variable}`}
+      className={fontSans.variable}
       suppressHydrationWarning
     >
       <body className="min-h-screen bg-background font-sans antialiased">

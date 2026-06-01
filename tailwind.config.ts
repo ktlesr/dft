@@ -64,7 +64,7 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
-        display: ["var(--font-display)", "ui-serif", "Georgia", "serif"],
+        display: ["var(--font-display)", "Poppins", "ui-sans-serif", "sans-serif"],
       },
       boxShadow: {
         soft: "var(--shadow-soft)",

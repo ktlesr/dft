@@ -56,12 +56,13 @@
 
     --radius: 0.7rem;
 
-    /* Self-hosted faces with graceful fallbacks (Inter intentionally absent) */
+    /* Poppins everywhere — body and display share the one self-hosted family */
     --font-sans:
-      var(--ff-body), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-      "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+      var(--ff-sans), "Poppins", ui-sans-serif, system-ui, -apple-system,
+      BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     --font-display:
-      var(--ff-display), "Fraunces", ui-serif, Georgia, "Times New Roman", serif;
+      var(--ff-sans), "Poppins", ui-sans-serif, system-ui, -apple-system,
+      BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
     /* Layered, brand-tinted shadows for quiet premium depth */
     --shadow-color: 216 45% 28%;
@@ -184,8 +185,7 @@
 @layer utilities {
   .font-display {
     font-family: var(--font-display);
-    font-optical-sizing: auto;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
   }
 
   /*

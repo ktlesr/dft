@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 import { AlertCircle, Loader2, MessageSquarePlus } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -16,8 +17,22 @@ import { createDiscussion, type ForumFormState } from "./actions";
 
 const INITIAL: ForumFormState = { ok: true };
 
-export function NewDiscussionForm({ canPin }: { canPin: boolean }) {
-  const [state, action, pending] = useActionState(createDiscussion, INITIAL);
+type ForumAction = (prev: ForumFormState, fd: FormData) => Promise<ForumFormState>;
+
+export function NewDiscussionForm({
+  canPin,
+  defaults,
+  action: actionFn = createDiscussion,
+  cancelHref,
+  submitLabel = "Başlat",
+}: {
+  canPin: boolean;
+  defaults?: { title: string; body: string; pinned: boolean };
+  action?: ForumAction;
+  cancelHref?: string;
+  submitLabel?: string;
+}) {
+  const [state, action, pending] = useActionState(actionFn, INITIAL);
 
   return (
     <form action={action}>
@@ -37,6 +52,7 @@ export function NewDiscussionForm({ canPin }: { canPin: boolean }) {
               required
               maxLength={200}
               placeholder="Konuyu özetleyen kısa bir başlık"
+              defaultValue={defaults?.title}
             />
           </Field>
 
@@ -47,7 +63,7 @@ export function NewDiscussionForm({ canPin }: { canPin: boolean }) {
             hint="Üyelerinizin yorum yapabilmesi için yeterli bağlam sunun."
             error={state.errors?.body}
           >
-            <Textarea id="body" name="body" rows={8} required maxLength={20_000} />
+            <Textarea id="body" name="body" rows={8} required maxLength={20_000} defaultValue={defaults?.body} />
           </Field>
 
           <div className="space-y-1.5">
@@ -57,14 +73,19 @@ export function NewDiscussionForm({ canPin }: { canPin: boolean }) {
 
           {canPin ? (
             <div className="flex items-center gap-2">
-              <Checkbox id="pinned" name="pinned" value="on" />
+              <Checkbox id="pinned" name="pinned" value="on" defaultChecked={defaults?.pinned} />
               <Label htmlFor="pinned" className="text-sm font-normal">
                 Üste sabitle
               </Label>
             </div>
           ) : null}
 
-          <div className="flex justify-end border-t pt-5">
+          <div className="flex justify-end gap-2 border-t pt-5">
+            {cancelHref ? (
+              <Button asChild variant="ghost">
+                <Link href={cancelHref}>Vazgeç</Link>
+              </Button>
+            ) : null}
             <Button type="submit" variant="brand" disabled={pending}>
               {pending ? (
                 <>
@@ -74,7 +95,7 @@ export function NewDiscussionForm({ canPin }: { canPin: boolean }) {
               ) : (
                 <>
                   <MessageSquarePlus className="h-4 w-4" />
-                  Başlat
+                  {submitLabel}
                 </>
               )}
             </Button>

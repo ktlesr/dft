@@ -219,6 +219,53 @@ export async function replyToDiscussion(
   return OK;
 }
 
+/** Tartışma düzenleme — yazar, grup moderatörü veya admin. */
+export async function updateDiscussion(
+  id: string,
+  _prev: ForumFormState,
+  fd: FormData,
+): Promise<ForumFormState> {
+  const user = await requireActiveUser();
+  const discussion = await prisma.discussion.findUnique({ where: { id } });
+  if (!discussion || discussion.deletedAt) redirect("/calisma-grubum?tab=forum");
+
+  const isAuthor = discussion.authorId === user.id;
+  const sameGroupMod = isModerator(user) && discussion.groupId === user.groupId;
+  if (!isAuthor && !sameGroupMod && !isAdmin(user)) await redirectUnauthorized();
+
+  const parsed = discussionCreateSchema.safeParse({
+    title: fd.get("title"),
+    body: fd.get("body"),
+    pinned: fd.get("pinned"),
+  });
+  if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
+
+  try {
+    const files = fd.getAll("attachments").filter((v): v is File => v instanceof File);
+    await storeAttachments({
+      files,
+      uploadedById: user.id,
+      owner: { discussionId: id },
+    });
+  } catch (e) {
+    if (e instanceof UploadError) return { ok: false, message: "Ek dosya reddedildi." };
+    throw e;
+  }
+
+  await prisma.discussion.update({
+    where: { id },
+    data: {
+      title: parsed.data.title,
+      body: parsed.data.body,
+      pinned: parsed.data.pinned && (isAdmin(user) || sameGroupMod),
+    },
+  });
+  await audit({ action: "RECORD_UPDATED", actorId: user.id, targetType: "Discussion", targetId: id });
+  revalidatePath(`/forum/${id}`);
+  revalidatePath("/calisma-grubum");
+  redirect(`/forum/${id}`);
+}
+
 /** Tartışma silme — yazar, grup moderatörü veya admin. Soft delete. */
 export async function removeDiscussion(formData: FormData): Promise<void> {
   const user = await requireActiveUser();

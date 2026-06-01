@@ -240,6 +240,87 @@ export async function createNoticeFromPage(
   return result;
 }
 
+/** Update an existing notice. Edit permission mirrors soft-delete permission. */
+export async function updateNoticeFromPage(
+  id: string,
+  _prev: NoticeFormState,
+  fd: FormData,
+): Promise<NoticeFormState> {
+  const user = await requireActiveUser();
+  const values = snapshotValues(fd);
+  const notice = await prisma.notice.findUnique({ where: { id } });
+  if (!notice || notice.deletedAt) redirect("/duyurular");
+
+  const isAuthor = notice.authorId === user.id;
+  const sameGroupMod =
+    notice.scope === "GROUP" &&
+    canCreateNotice(user, "GROUP", notice.groupId);
+  if (!isAuthor && !isAdmin(user) && !sameGroupMod) await redirectUnauthorized();
+
+  const parsed = noticeCreateSchema.safeParse({
+    scope: fd.get("scope"),
+    kind: fd.get("kind"),
+    groupId: fd.get("groupId"),
+    title: fd.get("title"),
+    body: fd.get("body"),
+    externalUrl: fd.get("externalUrl"),
+    eventStartAt: fd.get("eventStartAt"),
+    eventEndAt: fd.get("eventEndAt"),
+    pinned: fd.get("pinned"),
+  });
+  if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error), values };
+
+  const groupId = parsed.data.scope === "GROUP" ? parsed.data.groupId ?? null : null;
+  if (!canCreateNotice(user, parsed.data.scope, groupId)) {
+    return { ok: false, message: "Bu kapsamda bildirim düzenleme yetkiniz yok.", values };
+  }
+
+  if (parsed.data.scope === "GROUP" && groupId) {
+    const exists = await prisma.group.findUnique({ where: { id: groupId }, select: { id: true } });
+    if (!exists) return { ok: false, errors: { groupId: ["Grup bulunamadı."] }, values };
+  }
+
+  try {
+    const files = fd.getAll("attachments").filter((v): v is File => v instanceof File);
+    await storeAttachments({
+      files,
+      uploadedById: user.id,
+      owner: { noticeId: id },
+    });
+  } catch (e) {
+    if (e instanceof UploadError) return { ok: false, message: "Ek dosya reddedildi.", values };
+    throw e;
+  }
+
+  await prisma.notice.update({
+    where: { id },
+    data: {
+      scope: parsed.data.scope,
+      kind: parsed.data.kind,
+      title: parsed.data.title,
+      body: parsed.data.body,
+      externalUrl: parsed.data.externalUrl ?? null,
+      eventAt: parsed.data.eventStartAt ?? null,
+      eventStartAt: parsed.data.eventStartAt ?? null,
+      eventEndAt: parsed.data.eventEndAt ?? null,
+      pinned: parsed.data.pinned,
+      groupId,
+    },
+  });
+
+  await audit({
+    action: "NOTICE_UPDATED",
+    actorId: user.id,
+    targetType: "Notice",
+    targetId: id,
+  });
+
+  revalidatePath("/duyurular");
+  revalidatePath("/calisma-grubum");
+  revalidatePath("/panel");
+  redirect(parsed.data.scope === "GENERAL" ? "/duyurular?kanal=genel" : "/duyurular?kanal=grup");
+}
+
 /** Soft-delete a notice. Author, admin, or — for GROUP scope — same-group moderator. */
 export async function removeNotice(id: string): Promise<void> {
   const user = await requireActiveUser();

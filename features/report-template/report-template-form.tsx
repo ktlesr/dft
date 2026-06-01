@@ -25,6 +25,13 @@ type GroupOption = {
   code: string;
   name: string;
 };
+type ReportTemplateAction = (prev: ReportTemplateFormState, fd: FormData) => Promise<ReportTemplateFormState>;
+type ReportTemplateDefaults = {
+  title: string;
+  description: string | null;
+  scope: "GENEL" | "GROUPS";
+  targetGroupIds: string[];
+};
 
 function groupLabel(group: GroupOption): string {
   return group.name.trim().toLowerCase() === group.code.trim().toLowerCase()
@@ -32,9 +39,19 @@ function groupLabel(group: GroupOption): string {
     : `${group.code} - ${group.name}`;
 }
 
-export function ReportTemplateForm({ groups }: { groups: GroupOption[] }) {
-  const [state, action, pending] = useActionState(createReportTemplate, INITIAL);
-  const [scope, setScope] = useState<"GENEL" | "GROUPS">("GENEL");
+export function ReportTemplateForm({
+  groups,
+  defaults,
+  action: actionFn = createReportTemplate,
+  submitLabel = "Şablonu kaydet",
+}: {
+  groups: GroupOption[];
+  defaults?: ReportTemplateDefaults;
+  action?: ReportTemplateAction;
+  submitLabel?: string;
+}) {
+  const [state, action, pending] = useActionState(actionFn, INITIAL);
+  const [scope, setScope] = useState<"GENEL" | "GROUPS">(defaults?.scope ?? "GENEL");
 
   // Başarılı submit sonrası "Şablon Dosyaları" yükleme kutusunda dosya
   // adının asılı kalmaması için: pending→ok geçişinde AttachmentInput'u
@@ -69,7 +86,7 @@ export function ReportTemplateForm({ groups }: { groups: GroupOption[] }) {
 
           <div className="grid gap-5 md:grid-cols-2">
             <Field name="title" label="Şablon Başlığı" required error={state.errors?.title} className="md:col-span-2">
-              <Input id="title" name="title" required maxLength={200} placeholder="Örn: Aylık Faaliyet Raporu Şablonu" />
+              <Input id="title" name="title" required maxLength={200} placeholder="Örn: Aylık Faaliyet Raporu Şablonu" defaultValue={defaults?.title} />
             </Field>
 
             <Field name="scope" label="Kapsam" required error={state.errors?.scope} className="md:col-span-2">
@@ -93,7 +110,7 @@ export function ReportTemplateForm({ groups }: { groups: GroupOption[] }) {
                 <div className="grid max-h-60 gap-2 overflow-y-auto rounded-md border border-border bg-muted/20 p-4 sm:grid-cols-2 md:grid-cols-3">
                   {groups.map((group) => (
                     <div key={group.id} className="flex items-center space-x-2 rounded-md p-1.5 transition-colors hover:bg-muted/40">
-                      <Checkbox id={`template-group-${group.id}`} name="targetGroupIds" value={group.id} />
+                      <Checkbox id={`template-group-${group.id}`} name="targetGroupIds" value={group.id} defaultChecked={defaults?.targetGroupIds.includes(group.id)} />
                       <label
                         htmlFor={`template-group-${group.id}`}
                         className="cursor-pointer select-none text-xs font-medium leading-none"
@@ -107,7 +124,7 @@ export function ReportTemplateForm({ groups }: { groups: GroupOption[] }) {
             ) : null}
 
             <Field name="description" label="Açıklama" error={state.errors?.description} className="md:col-span-2">
-              <Textarea id="description" name="description" rows={4} maxLength={3000} placeholder="Şablon kullanım notlarını ekleyin..." />
+              <Textarea id="description" name="description" rows={4} maxLength={3000} placeholder="Şablon kullanım notlarını ekleyin..." defaultValue={defaults?.description ?? ""} />
             </Field>
           </div>
 
@@ -128,7 +145,7 @@ export function ReportTemplateForm({ groups }: { groups: GroupOption[] }) {
                   Kaydediliyor...
                 </>
               ) : (
-                "Şablonu kaydet"
+                submitLabel
               )}
             </Button>
           </div>

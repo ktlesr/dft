@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, Lock, MessageCircle, Paperclip, Pin, Trash2 } from "lucide-react";
+import { ArrowLeft, Lock, MessageCircle, Paperclip, Pencil, Pin, Trash2 } from "lucide-react";
 
 import { PageHeader } from "@/components/app/page-header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,6 +14,7 @@ import { isAdmin, isModerator } from "@/lib/rbac";
 import { avatarUrl, avatarUrlLarge, formatDateTime, initials } from "@/lib/utils";
 import { getDiscussion } from "@/features/forum/queries";
 import { ReplyForm } from "@/features/forum/reply-form";
+import { LinkifiedText } from "@/features/shared/linkified-text";
 import { removeDiscussion, removeReply } from "@/features/forum/actions";
 
 export const metadata = { title: "Tartışma" };
@@ -57,12 +58,22 @@ export default async function DiscussionPage({ params }: { params: Params }) {
           { label: discussion.title },
         ]}
         actions={
-          <Button asChild variant="ghost">
-            <Link href="/calisma-grubum?sekme=forum">
-              <ArrowLeft className="h-4 w-4" />
-              Geri
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild variant="ghost">
+              <Link href="/calisma-grubum?sekme=forum">
+                <ArrowLeft className="h-4 w-4" />
+                Geri
+              </Link>
+            </Button>
+            {canDeleteTopic ? (
+              <Button asChild variant="outline">
+                <Link href={`/forum/${id}/duzenle`}>
+                  <Pencil className="h-4 w-4" />
+                  Düzenle
+                </Link>
+              </Button>
+            ) : null}
+          </div>
         }
       />
 
@@ -106,9 +117,7 @@ export default async function DiscussionPage({ params }: { params: Params }) {
                   </Badge>
                 ) : null}
               </div>
-              <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed">
-                {discussion.body}
-              </p>
+              <LinkifiedText text={discussion.body} className="mt-3 text-sm leading-relaxed" />
 
               {discussion.attachments.length > 0 ? (
                 <ul className="mt-3 flex flex-wrap gap-2">
@@ -204,9 +213,7 @@ export default async function DiscussionPage({ params }: { params: Params }) {
                               {formatDateTime(r.createdAt)}
                             </span>
                           </div>
-                          <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed">
-                            {r.body}
-                          </p>
+                          <LinkifiedText text={r.body} className="mt-1.5 text-sm leading-relaxed" />
                         </div>
                         {canDeleteReply ? (
                           <form action={removeReply}>

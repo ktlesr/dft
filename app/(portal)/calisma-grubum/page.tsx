@@ -7,6 +7,7 @@ import {
   MessageSquare,
   MessageSquarePlus,
   NotebookPen,
+  Pencil,
   Pin,
   Users,
 } from "lucide-react";
@@ -28,6 +29,7 @@ import { listGroupDiscussions } from "@/features/forum/queries";
 import { UserCard } from "@/features/users/user-card";
 import { CustomKpiManagement } from "@/features/kpi/custom-kpi-management";
 import { FixedKpiManagement } from "@/features/kpi/fixed-kpi-management";
+import { LinkifiedText } from "@/features/shared/linkified-text";
 
 export const metadata = { title: "Çalışma Grubum" };
 export const dynamic = "force-dynamic";
@@ -135,7 +137,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
       orderBy: [{ pinned: "desc" }, { publishedAt: "desc" }],
       take: 20,
       include: {
-        author: { select: { name: true, email: true } },
+        author: { select: { id: true, name: true, email: true } },
         attachments: { select: { id: true, originalName: true, size: true } },
       },
     }),
@@ -200,7 +202,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
       orderBy: { createdAt: "desc" },
       take: 20,
       include: {
-        author: { select: { name: true, email: true } },
+        author: { select: { id: true, name: true, email: true } },
         attachments: { select: { id: true, originalName: true, size: true } },
       },
     }),
@@ -458,9 +460,7 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
                             {BOARD_KIND_LABELS[b.kind]}
                           </Badge>
                         </div>
-                        <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-xs text-muted-foreground">
-                          {b.body}
-                        </p>
+                        <LinkifiedText text={b.body} className="mt-1 line-clamp-3 text-xs text-muted-foreground" />
                         {eventStartAt || eventEndAt || b.eventAt ? (
                           <p className="mt-1.5 text-[11px] font-medium text-primary">
                             {eventStartAt && eventEndAt
@@ -500,6 +500,14 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
                           {authorName} · {formatDateTime(b.publishedAt)}
                         </p>
                       </div>
+                      {isAdminUser || b.author.id === user.id || (user.roles.includes("MODERATOR") && b.groupId === user.groupId) ? (
+                        <Button asChild variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                          <Link href={`/bildirim/${b.id}/duzenle`}>
+                            <Pencil className="h-3.5 w-3.5" />
+                            Düzenle
+                          </Link>
+                        </Button>
+                      ) : null}
                     </div>
                   </li>
                 );
@@ -530,7 +538,20 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
                     return (
                       <tr key={`${item.type}-${item.id}`} className="hover:bg-muted/10 transition-colors">
                         <td className="p-4 font-medium max-w-[200px] truncate" title={item.title}>
-                          {item.title}
+                          {isResult ? (
+                            <span className="inline-flex items-center gap-1">
+                              {item.title}
+                              {isAdminUser ? (
+                                <Link href={`/toplanti-sonucu/${item.id}/duzenle`} className="text-primary" aria-label="Toplantı sonucunu düzenle">
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Link>
+                              ) : null}
+                            </span>
+                          ) : (
+                            <Link href={`/toplanti/${item.id}`} className="hover:text-primary">
+                              {item.title}
+                            </Link>
+                          )}
                         </td>
                         <td className="p-4">
                           {isResult ? (
@@ -648,7 +669,9 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
                   {reports.map((r) => (
                     <li key={r.id} className="rounded-md border p-4">
                       <div className="flex items-start justify-between gap-2">
-                        <p className="font-medium">{r.title}</p>
+                        <Link href={`/rapor/${r.id}`} className="font-medium hover:text-primary">
+                          {r.title}
+                        </Link>
                         <Badge variant="secondary">{REPORT_KIND_LABELS[r.kind]}</Badge>
                       </div>
                     </li>
@@ -793,11 +816,13 @@ export default async function MyGroupPage({ searchParams }: { searchParams: Grou
                 title={GROUP_NOTE_KIND_LABELS.ADVISOR_NOTE}
                 notes={advisorNotes}
                 emptyText="Danışman notu yok."
+                currentUser={{ id: user.id, isAdmin: isAdminUser }}
               />
               <NoteColumn
                 title={GROUP_NOTE_KIND_LABELS.KS_NOTE}
                 notes={ksNotes}
                 emptyText="KS notu yok."
+                currentUser={{ id: user.id, isAdmin: isAdminUser }}
               />
             </div>
           )}
@@ -849,7 +874,7 @@ type NoteListItem = {
   title: string;
   body: string;
   createdAt: Date;
-  author: { name: string | null; email: string };
+  author: { id: string; name: string | null; email: string };
   attachments: { id: string; originalName: string; size: number }[];
 };
 
@@ -857,10 +882,12 @@ function NoteColumn({
   title,
   notes,
   emptyText,
+  currentUser,
 }: {
   title: string;
   notes: NoteListItem[];
   emptyText: string;
+  currentUser: { id: string; isAdmin: boolean };
 }) {
   return (
     <Card>
@@ -878,9 +905,19 @@ function NoteColumn({
                 <li key={n.id} className="rounded-md border p-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium">{n.title}</p>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="font-medium">{n.title}</p>
+                        {currentUser.isAdmin || currentUser.id === n.author.id ? (
+                          <Button asChild variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                            <Link href={`/not/${n.id}/duzenle`}>
+                              <Pencil className="h-3.5 w-3.5" />
+                              Düzenle
+                            </Link>
+                          </Button>
+                        ) : null}
+                      </div>
 
-                      <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">{n.body}</p>
+                      <LinkifiedText text={n.body} className="mt-1 text-xs text-muted-foreground" />
 
                       {n.attachments.length > 0 ? (
                         <div className="mt-2 flex flex-wrap gap-1.5">

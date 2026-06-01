@@ -126,3 +126,55 @@ export async function createMeetingResult(
   revalidatePath("/calisma-grubum");
   redirect("/calisma-grubum?tab=toplantilar");
 }
+
+export async function updateMeetingResult(
+  id: string,
+  _prev: MeetingResultFormState,
+  fd: FormData,
+): Promise<MeetingResultFormState> {
+  const user = await requireActiveUser();
+  if (!isAdmin(user)) return { ok: false, message: "Toplantı sonucu düzenleme yetkiniz yok." };
+  const row = await prisma.meetingResult.findUnique({ where: { id } });
+  if (!row || row.deletedAt) redirect("/calisma-grubum?tab=toplantilar");
+
+  const parsed = meetingResultSchema.safeParse({
+    title: fd.get("title"),
+    description: fd.get("description"),
+    startAt: fd.get("startAt"),
+    endAt: fd.get("endAt"),
+    scope: fd.get("scope"),
+    mrdkTarget: fd.get("mrdkTarget") || undefined,
+    targetGroupIds: fd.getAll("targetGroupIds").map((v) => String(v)),
+  });
+  if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
+
+  try {
+    await storeAttachments({
+      files: filesFrom(fd),
+      uploadedById: user.id,
+      owner: { meetingResultId: id },
+    });
+  } catch (e) {
+    if (e instanceof UploadError) return { ok: false, message: "Ek dosya reddedildi." };
+    throw e;
+  }
+
+  await prisma.meetingResult.update({
+    where: { id },
+    data: {
+      title: parsed.data.title,
+      description: parsed.data.description ?? null,
+      startAt: parsed.data.startAt,
+      endAt: parsed.data.endAt,
+      scope: parsed.data.scope,
+      mrdkTarget: parsed.data.mrdkTarget ?? null,
+      targetGroupIds:
+        parsed.data.scope === "MRDK" && parsed.data.mrdkTarget === "SPECIFIC"
+          ? parsed.data.targetGroupIds
+          : [],
+    },
+  });
+  await audit({ action: "RECORD_UPDATED", actorId: user.id, targetType: "MeetingResult", targetId: id });
+  revalidatePath("/calisma-grubum");
+  redirect("/calisma-grubum?tab=toplantilar");
+}

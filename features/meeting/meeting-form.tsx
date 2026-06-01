@@ -17,8 +17,33 @@ import { createMeeting, type MeetingFormState } from "./actions";
 
 const INITIAL: MeetingFormState = { ok: true };
 
-export function MeetingForm() {
-  const [state, action, pending] = useActionState(createMeeting, INITIAL);
+type MeetingAction = (prev: MeetingFormState, fd: FormData) => Promise<MeetingFormState>;
+
+type MeetingDefaults = {
+  title: string;
+  startAt: string;
+  endAt: string;
+  location: string | null;
+  onlineUrl: string | null;
+  description: string | null;
+  agenda: string | null;
+  pinToBoard: boolean;
+};
+
+export function MeetingForm({
+  defaults,
+  action: actionFn = createMeeting,
+  cancelHref = "/calisma-grubum",
+  submitLabel = "Toplantıyı ilan et",
+  showPinToBoard = true,
+}: {
+  defaults?: MeetingDefaults;
+  action?: MeetingAction;
+  cancelHref?: string;
+  submitLabel?: string;
+  showPinToBoard?: boolean;
+} = {}) {
+  const [state, action, pending] = useActionState(actionFn, INITIAL);
 
   return (
     <form action={action}>
@@ -33,38 +58,40 @@ export function MeetingForm() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <Field name="title" label="Toplantı başlığı" required error={state.errors?.title} className="md:col-span-2">
-              <Input id="title" name="title" required maxLength={200} />
+              <Input id="title" name="title" required maxLength={200} defaultValue={defaults?.title} />
             </Field>
 
             <Field name="startAt" label="Başlangıç" required error={state.errors?.startAt}>
-              <Input id="startAt" name="startAt" type="datetime-local" required />
+              <Input id="startAt" name="startAt" type="datetime-local" required defaultValue={defaults?.startAt} />
             </Field>
             <Field name="endAt" label="Bitiş (opsiyonel)" error={state.errors?.endAt}>
-              <Input id="endAt" name="endAt" type="datetime-local" />
+              <Input id="endAt" name="endAt" type="datetime-local" defaultValue={defaults?.endAt} />
             </Field>
 
             <Field name="location" label="Yer" error={state.errors?.location}>
-              <Input id="location" name="location" maxLength={200} placeholder="Ankara — Toplantı Salonu A" />
+              <Input id="location" name="location" maxLength={200} placeholder="Ankara — Toplantı Salonu A" defaultValue={defaults?.location ?? ""} />
             </Field>
             <Field name="onlineUrl" label="Çevrim içi bağlantı" hint="Zoom/Teams/Google Meet vb." error={state.errors?.onlineUrl}>
-              <Input id="onlineUrl" name="onlineUrl" type="url" placeholder="https://…" />
+              <Input id="onlineUrl" name="onlineUrl" type="url" placeholder="https://…" defaultValue={defaults?.onlineUrl ?? ""} />
             </Field>
 
             <Field name="description" label="Kısa açıklama" error={state.errors?.description} className="md:col-span-2">
-              <Textarea id="description" name="description" rows={3} maxLength={2000} />
+              <Textarea id="description" name="description" rows={3} maxLength={2000} defaultValue={defaults?.description ?? ""} />
             </Field>
 
             <Field name="agenda" label="Gündem" hint="Madde madde yazabilirsiniz." error={state.errors?.agenda} className="md:col-span-2">
-              <Textarea id="agenda" name="agenda" rows={6} maxLength={5000} />
+              <Textarea id="agenda" name="agenda" rows={6} maxLength={5000} defaultValue={defaults?.agenda ?? ""} />
             </Field>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Checkbox id="pinToBoard" name="pinToBoard" value="on" defaultChecked />
-            <Label htmlFor="pinToBoard" className="text-sm font-normal">
-              Grup panosunda üste sabitle
-            </Label>
-          </div>
+          {showPinToBoard ? (
+            <div className="flex items-center gap-2">
+              <Checkbox id="pinToBoard" name="pinToBoard" value="on" defaultChecked={defaults?.pinToBoard ?? true} />
+              <Label htmlFor="pinToBoard" className="text-sm font-normal">
+                Grup panosunda üste sabitle
+              </Label>
+            </div>
+          ) : null}
 
           <div>
             <p className="mb-1.5 text-sm font-medium">Ek dosyalar</p>
@@ -73,7 +100,7 @@ export function MeetingForm() {
 
           <div className="flex items-center justify-end gap-2 border-t pt-5">
             <Button asChild variant="ghost" disabled={pending}>
-              <Link href="/calisma-grubum">Vazgeç</Link>
+              <Link href={cancelHref}>Vazgeç</Link>
             </Button>
             <Button type="submit" variant="brand" disabled={pending}>
               {pending ? (
@@ -82,7 +109,7 @@ export function MeetingForm() {
                   Kaydediliyor…
                 </>
               ) : (
-                "Toplantıyı ilan et"
+                submitLabel
               )}
             </Button>
           </div>

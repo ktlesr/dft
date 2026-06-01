@@ -27,6 +27,56 @@ function zodErrors(err: z.ZodError): Record<string, string[]> {
   return out;
 }
 
+export async function updateReportTemplate(
+  id: string,
+  _prev: ReportTemplateFormState,
+  fd: FormData,
+): Promise<ReportTemplateFormState> {
+  const user = await requireAdmin();
+  const row = await prisma.reportTemplate.findUnique({ where: { id } });
+  if (!row || row.deletedAt) return { ok: false, message: "Şablon bulunamadı." };
+
+  const parsed = reportTemplateSchema.safeParse({
+    title: fd.get("title"),
+    description: fd.get("description"),
+    scope: fd.get("scope"),
+    targetGroupIds: fd.getAll("targetGroupIds").map((v) => String(v)),
+  });
+  if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
+
+  const files = filesFrom(fd);
+  for (const file of files) {
+    if (!TEMPLATE_MIME.has(file.type)) {
+      return { ok: false, message: "Yalnızca docx, xlsx, pptx veya pdf dosyaları yüklenebilir." };
+    }
+  }
+
+  try {
+    await storeAttachments({
+      files,
+      uploadedById: user.id,
+      owner: { reportTemplateId: id },
+    });
+  } catch (e) {
+    if (e instanceof UploadError) return { ok: false, message: "Dosya yükleme başarısız oldu." };
+    throw e;
+  }
+
+  await prisma.reportTemplate.update({
+    where: { id },
+    data: {
+      title: parsed.data.title,
+      description: parsed.data.description ?? null,
+      scope: parsed.data.scope,
+      targetGroupIds: parsed.data.scope === "GROUPS" ? parsed.data.targetGroupIds : [],
+    },
+  });
+  await audit({ action: "RECORD_UPDATED", actorId: user.id, targetType: "ReportTemplate", targetId: id });
+  revalidatePath("/yonetim/sablonlar");
+  revalidatePath("/calisma-grubum");
+  return { ok: true, message: "Şablon başarıyla güncellendi." };
+}
+
 function filesFrom(fd: FormData): File[] {
   return fd.getAll("attachments").filter((v): v is File => v instanceof File && v.size > 0);
 }

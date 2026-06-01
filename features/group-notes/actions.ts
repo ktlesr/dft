@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { audit } from "@/lib/audit";
-import { requireActiveUser } from "@/lib/current-user";
+import { redirectUnauthorized, requireActiveUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { canCreateGroupNote } from "@/lib/rbac";
 import { MAX_ATTACHMENTS_PER_REQUEST, storeAttachments, UploadError } from "@/lib/upload";
@@ -145,5 +145,69 @@ export async function createGroupNote(
 
   revalidatePath("/calisma-grubum");
   revalidatePath("/not/yeni");
+  redirect("/calisma-grubum?tab=notlar");
+}
+
+export async function updateGroupNote(
+  id: string,
+  _prev: GroupNoteFormState,
+  fd: FormData,
+): Promise<GroupNoteFormState> {
+  const user = await requireActiveUser();
+  const note = await prisma.groupNote.findUnique({ where: { id } });
+  if (!note || note.deletedAt) redirect("/calisma-grubum?tab=notlar");
+  if (!user.roles.includes("ADMIN") && note.authorId !== user.id) await redirectUnauthorized();
+
+  const parsed = groupNoteSchema.safeParse({
+    kind: fd.get("kind"),
+    title: fd.get("title"),
+    body: fd.get("body"),
+    scope: fd.get("scope"),
+    groupId: fd.get("groupId"),
+  });
+  if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
+
+  const isAdvisorOrAdmin = user.roles.includes("ADMIN") || user.roles.includes("ADVISOR");
+  let finalScope = parsed.data.scope;
+  let finalGroupId = parsed.data.groupId;
+
+  if (!isAdvisorOrAdmin) {
+    if (!user.groupId) return { ok: false, message: "Not düzenlemek için bir çalışma grubuna atanmış olmalısınız." };
+    finalScope = "GROUP";
+    finalGroupId = user.groupId;
+  } else if (finalScope === "GENERAL") {
+    finalGroupId = null;
+  } else {
+    finalGroupId = finalGroupId || user.groupId;
+    if (!finalGroupId) return { ok: false, message: "Lütfen bir çalışma grubu seçin." };
+  }
+
+  if (!canCreateGroupNote(user, finalGroupId, parsed.data.kind)) {
+    return { ok: false, message: "Bu not türünü düzenleme yetkiniz yok." };
+  }
+
+  try {
+    await storeAttachments({
+      files: filesFrom(fd),
+      uploadedById: user.id,
+      owner: { groupNoteId: id },
+    });
+  } catch (e) {
+    if (e instanceof UploadError) return { ok: false, message: "Ek dosya reddedildi." };
+    throw e;
+  }
+
+  await prisma.groupNote.update({
+    where: { id },
+    data: {
+      scope: finalScope,
+      groupId: finalGroupId,
+      kind: parsed.data.kind,
+      title: parsed.data.title,
+      body: parsed.data.body,
+    },
+  });
+  await audit({ action: "RECORD_UPDATED", actorId: user.id, targetType: "GroupNote", targetId: id });
+  revalidatePath("/calisma-grubum");
   redirect("/calisma-grubum?tab=notlar");
 }

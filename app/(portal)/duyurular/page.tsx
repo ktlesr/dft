@@ -145,6 +145,13 @@ export default async function DuyurularPage({ searchParams }: { searchParams: Se
                       moderator &&
                       n.groupId !== null &&
                       n.groupId === user.groupId),
+                  canEdit:
+                    admin ||
+                    n.authorId === user.id ||
+                    (n.scope === "GROUP" &&
+                      moderator &&
+                      n.groupId !== null &&
+                      n.groupId === user.groupId),
                 }}
               />
             ))}

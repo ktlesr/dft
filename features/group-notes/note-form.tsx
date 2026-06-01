@@ -19,6 +19,14 @@ import { createGroupNote, type GroupNoteFormState } from "./actions";
 type NoteKind = keyof typeof GROUP_NOTE_KIND_LABELS;
 
 const INITIAL: GroupNoteFormState = { ok: true };
+type GroupNoteAction = (prev: GroupNoteFormState, fd: FormData) => Promise<GroupNoteFormState>;
+type GroupNoteDefaults = {
+  kind: NoteKind;
+  title: string;
+  body: string;
+  scope: "GENERAL" | "GROUP";
+  groupId: string | null;
+};
 
 export function GroupNoteForm({
   allowedKinds,
@@ -26,15 +34,23 @@ export function GroupNoteForm({
   isAdvisorOrAdmin,
   groups,
   defaultGroupId,
+  defaults,
+  action: actionFn = createGroupNote,
+  cancelHref = "/calisma-grubum?tab=notlar",
+  submitLabel = "Notu kaydet",
 }: {
   allowedKinds: NoteKind[];
   defaultKind: NoteKind;
   isAdvisorOrAdmin: boolean;
   groups: { id: string; name: string }[];
   defaultGroupId: string | null;
+  defaults?: GroupNoteDefaults;
+  action?: GroupNoteAction;
+  cancelHref?: string;
+  submitLabel?: string;
 }) {
-  const [state, action, pending] = useActionState(createGroupNote, INITIAL);
-  const [scope, setScope] = useState<"GENERAL" | "GROUP">("GROUP");
+  const [state, action, pending] = useActionState(actionFn, INITIAL);
+  const [scope, setScope] = useState<"GENERAL" | "GROUP">(defaults?.scope ?? "GROUP");
   const singleKind = allowedKinds.length === 1;
 
   return (
@@ -52,11 +68,11 @@ export function GroupNoteForm({
             <Field name="kind" label="Not türü" required error={state.errors?.kind}>
               {singleKind ? (
                 <div className="flex h-10 items-center rounded-md border px-3 text-sm">
-                  <input type="hidden" name="kind" value={defaultKind} />
-                  <Badge variant="secondary">{GROUP_NOTE_KIND_LABELS[defaultKind]}</Badge>
+                  <input type="hidden" name="kind" value={defaults?.kind ?? defaultKind} />
+                  <Badge variant="secondary">{GROUP_NOTE_KIND_LABELS[defaults?.kind ?? defaultKind]}</Badge>
                 </div>
               ) : (
-                <Select name="kind" defaultValue={defaultKind}>
+                <Select name="kind" defaultValue={defaults?.kind ?? defaultKind}>
                   <SelectTrigger id="kind">
                     <SelectValue />
                   </SelectTrigger>
@@ -91,7 +107,7 @@ export function GroupNoteForm({
 
                 {scope === "GROUP" && (
                   <Field name="groupId" label="Çalışma Grubu" required error={state.errors?.groupId}>
-                    <Select name="groupId" defaultValue={defaultGroupId ?? undefined}>
+                    <Select name="groupId" defaultValue={defaults?.groupId ?? defaultGroupId ?? undefined}>
                       <SelectTrigger id="groupId">
                         <SelectValue placeholder="Grup Seçin" />
                       </SelectTrigger>
@@ -109,11 +125,11 @@ export function GroupNoteForm({
             )}
 
             <Field name="title" label="Konu" required error={state.errors?.title}>
-              <Input id="title" name="title" required maxLength={200} />
+              <Input id="title" name="title" required maxLength={200} defaultValue={defaults?.title} />
             </Field>
 
             <Field name="body" label="Açıklama" required error={state.errors?.body} className="md:col-span-2">
-              <Textarea id="body" name="body" rows={6} required maxLength={5000} />
+              <Textarea id="body" name="body" rows={6} required maxLength={5000} defaultValue={defaults?.body} />
             </Field>
           </div>
 
@@ -124,7 +140,7 @@ export function GroupNoteForm({
 
           <div className="flex items-center justify-end gap-2 border-t pt-5">
             <Button asChild variant="ghost" disabled={pending}>
-              <Link href="/calisma-grubum?tab=notlar">Vazgeç</Link>
+              <Link href={cancelHref}>Vazgeç</Link>
             </Button>
             <Button type="submit" variant="brand" disabled={pending}>
               {pending ? (
@@ -133,7 +149,7 @@ export function GroupNoteForm({
                   Kaydediliyor…
                 </>
               ) : (
-                "Notu kaydet"
+                submitLabel
               )}
             </Button>
           </div>

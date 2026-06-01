@@ -121,3 +121,47 @@ export async function createDocument(
   revalidatePath("/panel");
   return OK;
 }
+
+export async function updateDocument(
+  id: string,
+  _prev: DocumentFormState,
+  fd: FormData,
+): Promise<DocumentFormState> {
+  const user = await requireActiveUser();
+  const row = await prisma.document.findUnique({ where: { id } });
+  if (!row || row.deletedAt) return { ok: false, message: "Belge bulunamadı." };
+  if (!isAdmin(user) && row.uploadedById !== user.id) {
+    return { ok: false, message: "Bu belgeyi düzenleme yetkiniz yok." };
+  }
+
+  const parsed = documentSchema.pick({ title: true, description: true, tags: true }).safeParse({
+    title: fd.get("title"),
+    description: fd.get("description"),
+    tags: fd.get("tags"),
+  });
+  if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
+
+  try {
+    await storeAttachments({
+      files: filesFrom(fd),
+      uploadedById: user.id,
+      owner: { documentId: id },
+    });
+  } catch (e) {
+    if (e instanceof UploadError) return { ok: false, message: "Ek dosya reddedildi." };
+    throw e;
+  }
+
+  await prisma.document.update({
+    where: { id },
+    data: {
+      title: parsed.data.title,
+      description: parsed.data.description ?? null,
+      tags: parsed.data.tags,
+    },
+  });
+  await audit({ action: "RECORD_UPDATED", actorId: user.id, targetType: "Document", targetId: id });
+  revalidatePath("/belgeler");
+  revalidatePath("/panel");
+  return OK;
+}

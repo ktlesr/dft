@@ -144,6 +144,60 @@ export async function createMeeting(
   redirect(`/toplanti/${row.id}`);
 }
 
+export async function updateMeeting(
+  id: string,
+  _prev: MeetingFormState,
+  fd: FormData,
+): Promise<MeetingFormState> {
+  const user = await requireActiveUser();
+  const meeting = await prisma.meeting.findUnique({ where: { id } });
+  if (!meeting || meeting.deletedAt) redirect("/calisma-grubum");
+  if (!isAdmin(user) && (meeting.createdById !== user.id || meeting.groupId !== user.groupId)) {
+    await redirectUnauthorized();
+  }
+
+  const parsed = meetingSchema.safeParse({
+    title: fd.get("title"),
+    startAt: fd.get("startAt"),
+    endAt: fd.get("endAt"),
+    location: fd.get("location"),
+    onlineUrl: fd.get("onlineUrl"),
+    description: fd.get("description"),
+    agenda: fd.get("agenda"),
+    pinToBoard: fd.get("pinToBoard"),
+  });
+  if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
+
+  try {
+    await storeAttachments({
+      files: filesFrom(fd),
+      uploadedById: user.id,
+      owner: { meetingId: id },
+    });
+  } catch (e) {
+    if (e instanceof UploadError) return { ok: false, message: "Ek dosya reddedildi." };
+    throw e;
+  }
+
+  await prisma.meeting.update({
+    where: { id },
+    data: {
+      title: parsed.data.title,
+      startAt: parsed.data.startAt,
+      endAt: parsed.data.endAt ?? null,
+      location: parsed.data.location ?? null,
+      onlineUrl: parsed.data.onlineUrl ?? null,
+      description: parsed.data.description ?? null,
+      agenda: parsed.data.agenda ?? null,
+      pinToBoard: meeting.pinToBoard,
+    },
+  });
+  await audit({ action: "MEETING_UPDATED", actorId: user.id, targetType: "Meeting", targetId: id });
+  revalidatePath("/calisma-grubum");
+  revalidatePath(`/toplanti/${id}`);
+  redirect(`/toplanti/${id}`);
+}
+
 export async function removeMeeting(id: string): Promise<void> {
   const user = await requireActiveUser();
   const meeting = await prisma.meeting.findUnique({ where: { id } });

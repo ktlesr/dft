@@ -6,6 +6,7 @@ import { AvatarLightbox } from "@/components/app/avatar-lightbox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { LinkifiedText } from "@/features/shared/linkified-text";
 import { BOARD_KIND_LABELS } from "@/lib/constants";
 import { avatarUrl, avatarUrlLarge, formatDateTime, initials } from "@/lib/utils";
 import { removeBoardPost, togglePin } from "./actions";
@@ -123,14 +124,14 @@ export function PostCard({ post, caps }: { post: PostRow; caps: Caps }) {
 
           <div className="min-w-0 flex-1">
             <h3 className="text-base font-semibold leading-snug">{post.title}</h3>
-            <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{post.body}</p>
+            <LinkifiedText text={post.body} className="mt-1 text-sm text-muted-foreground" />
 
             {post.assessment ? (
               <div className="mt-3 rounded-md border border-primary/20 bg-primary/5 p-3">
                 <p className="text-[11px] font-medium uppercase tracking-wider text-primary">
                   Değerlendirme/Yorum
                 </p>
-                <p className="mt-1 whitespace-pre-wrap text-sm">{post.assessment}</p>
+                <LinkifiedText text={post.assessment} className="mt-1 text-sm" />
               </div>
             ) : null}
 

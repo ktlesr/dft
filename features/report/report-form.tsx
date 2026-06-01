@@ -17,8 +17,22 @@ import { createReport, type ReportFormState } from "./actions";
 
 const INITIAL: ReportFormState = { ok: true };
 
-export function ReportForm({ defaultKind = "YOL_HARITASI" }: { defaultKind?: keyof typeof REPORT_KIND_LABELS }) {
-  const [state, action, pending] = useActionState(createReport, INITIAL);
+type ReportAction = (prev: ReportFormState, fd: FormData) => Promise<ReportFormState>;
+
+export function ReportForm({
+  defaultKind = "YOL_HARITASI",
+  defaults,
+  action: actionFn = createReport,
+  cancelHref = "/calisma-grubum",
+  submitLabel = "Raporu kaydet",
+}: {
+  defaultKind?: keyof typeof REPORT_KIND_LABELS;
+  defaults?: { title: string; summary: string | null };
+  action?: ReportAction;
+  cancelHref?: string;
+  submitLabel?: string;
+}) {
+  const [state, action, pending] = useActionState(actionFn, INITIAL);
 
   return (
     <form action={action}>
@@ -48,11 +62,11 @@ export function ReportForm({ defaultKind = "YOL_HARITASI" }: { defaultKind?: key
             </Field>
 
             <Field name="title" label="Başlık" required error={state.errors?.title}>
-              <Input id="title" name="title" required maxLength={200} />
+              <Input id="title" name="title" required maxLength={200} defaultValue={defaults?.title} />
             </Field>
 
             <Field name="summary" label="Özet" error={state.errors?.summary} className="md:col-span-2">
-              <Textarea id="summary" name="summary" rows={4} maxLength={3000} />
+              <Textarea id="summary" name="summary" rows={4} maxLength={3000} defaultValue={defaults?.summary ?? ""} />
             </Field>
           </div>
 
@@ -63,7 +77,7 @@ export function ReportForm({ defaultKind = "YOL_HARITASI" }: { defaultKind?: key
 
           <div className="flex items-center justify-end gap-2 border-t pt-5">
             <Button asChild variant="ghost" disabled={pending}>
-              <Link href="/calisma-grubum">Vazgeç</Link>
+              <Link href={cancelHref}>Vazgeç</Link>
             </Button>
             <Button type="submit" variant="brand" disabled={pending}>
               {pending ? (
@@ -72,7 +86,7 @@ export function ReportForm({ defaultKind = "YOL_HARITASI" }: { defaultKind?: key
                   Kaydediliyor…
                 </>
               ) : (
-                "Raporu kaydet"
+                submitLabel
               )}
             </Button>
           </div>

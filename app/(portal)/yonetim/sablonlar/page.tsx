@@ -1,6 +1,10 @@
+import Link from "next/link";
+import { Pencil } from "lucide-react";
+
 import { PageHeader } from "@/components/app/page-header";
 import { AdminPanelNav } from "@/components/app/admin-nav";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/app/empty-state";
 import { requireAdmin } from "@/lib/current-user";
@@ -76,6 +80,7 @@ export default async function AdminReportTemplatesPage() {
                     <th className="px-4 py-3 font-medium">Hedef Gruplar</th>
                     <th className="px-4 py-3 font-medium">Dosyalar</th>
                     <th className="px-4 py-3 font-medium">Oluşturan</th>
+                    <th className="px-4 py-3 font-medium text-right">İşlem</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -116,6 +121,14 @@ export default async function AdminReportTemplatesPage() {
                       <td className="px-4 py-3 text-xs text-muted-foreground">
                         <div>{t.createdBy.name?.trim() || t.createdBy.email}</div>
                         <div>{formatDateTime(t.createdAt)}</div>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <Button asChild variant="ghost" size="sm">
+                          <Link href={`/yonetim/sablonlar/${t.id}/duzenle`}>
+                            <Pencil className="h-3.5 w-3.5" />
+                            Düzenle
+                          </Link>
+                        </Button>
                       </td>
                     </tr>
                   ))}

@@ -1,8 +1,10 @@
-import { CalendarClock, ExternalLink, Paperclip, Pin, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { CalendarClock, ExternalLink, Paperclip, Pencil, Pin, Trash2 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { displayUrl, LinkifiedText } from "@/features/shared/linkified-text";
 import { BOARD_KIND_LABELS } from "@/lib/constants";
 import { groupBadgeClass } from "@/lib/group-badge";
 import { formatDateTime } from "@/lib/utils";
@@ -11,7 +13,7 @@ import { removeNotice, toggleNoticePin } from "./actions";
 
 type Props = {
   notice: NoticeWithAuthor;
-  caps: { canPin: boolean; canRemove: boolean };
+  caps: { canPin: boolean; canRemove: boolean; canEdit: boolean };
 };
 
 function humanSize(bytes: number) {
@@ -67,19 +69,18 @@ export function NoticeCard({ notice, caps }: Props) {
           </div>
         ) : null}
 
-        <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
-          {notice.body}
-        </p>
+        <LinkifiedText text={notice.body} className="text-sm leading-relaxed text-foreground" />
 
         {notice.externalUrl ? (
           <a
             href={notice.externalUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+            title={notice.externalUrl}
+            className="inline-flex max-w-full items-center gap-1.5 text-xs text-primary hover:underline"
           >
-            <ExternalLink className="h-3.5 w-3.5" />
-            {notice.externalUrl}
+            <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">{displayUrl(notice.externalUrl)}</span>
           </a>
         ) : null}
 
@@ -108,6 +109,14 @@ export function NoticeCard({ notice, caps }: Props) {
             {author} · {formatDateTime(notice.publishedAt)}
           </p>
           <div className="flex items-center gap-1">
+            {caps.canEdit ? (
+              <Button asChild variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                <Link href={`/bildirim/${notice.id}/duzenle`}>
+                  <Pencil className="h-3.5 w-3.5" />
+                  Düzenle
+                </Link>
+              </Button>
+            ) : null}
             {caps.canPin ? (
               <form action={togglePinAction}>
                 <Button

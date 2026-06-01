@@ -23,6 +23,16 @@ type GroupOption = {
   code: string;
   name: string;
 };
+type MeetingResultAction = (prev: MeetingResultFormState, fd: FormData) => Promise<MeetingResultFormState>;
+type MeetingResultDefaults = {
+  title: string;
+  description: string | null;
+  startAt: string;
+  endAt: string;
+  scope: "GENEL" | "MRDK";
+  mrdkTarget: "ALL" | "SPECIFIC" | null;
+  targetGroupIds: string[];
+};
 
 function groupLabel(group: GroupOption): string {
   return group.name.trim().toLowerCase() === group.code.trim().toLowerCase()
@@ -30,11 +40,23 @@ function groupLabel(group: GroupOption): string {
     : `${group.code} - ${group.name}`;
 }
 
-export function MeetingResultForm({ groups }: { groups: GroupOption[] }) {
-  const [state, action, pending] = useActionState(createMeetingResult, INITIAL);
+export function MeetingResultForm({
+  groups,
+  defaults,
+  action: actionFn = createMeetingResult,
+  cancelHref = "/calisma-grubum",
+  submitLabel = "Kaydet",
+}: {
+  groups: GroupOption[];
+  defaults?: MeetingResultDefaults;
+  action?: MeetingResultAction;
+  cancelHref?: string;
+  submitLabel?: string;
+}) {
+  const [state, action, pending] = useActionState(actionFn, INITIAL);
   
-  const [scope, setScope] = useState<"GENEL" | "MRDK" | "">("GENEL");
-  const [mrdkTarget, setMrdkTarget] = useState<"ALL" | "SPECIFIC" | "">("ALL");
+  const [scope, setScope] = useState<"GENEL" | "MRDK" | "">(defaults?.scope ?? "GENEL");
+  const [mrdkTarget, setMrdkTarget] = useState<"ALL" | "SPECIFIC" | "">(defaults?.mrdkTarget ?? "ALL");
 
   return (
     <form action={action}>
@@ -49,15 +71,15 @@ export function MeetingResultForm({ groups }: { groups: GroupOption[] }) {
 
           <div className="grid gap-5 md:grid-cols-2">
             <Field name="title" label="Toplantı Sonucu Başlığı" required error={state.errors?.title} className="md:col-span-2">
-              <Input id="title" name="title" required maxLength={200} placeholder="Örn: 2026 1. Olağan Kurul Toplantı Sonucu" />
+              <Input id="title" name="title" required maxLength={200} placeholder="Örn: 2026 1. Olağan Kurul Toplantı Sonucu" defaultValue={defaults?.title} />
             </Field>
 
             <Field name="startAt" label="Başlangıç Tarihi ve Saati" required error={state.errors?.startAt}>
-              <Input id="startAt" name="startAt" type="datetime-local" required />
+              <Input id="startAt" name="startAt" type="datetime-local" required defaultValue={defaults?.startAt} />
             </Field>
 
             <Field name="endAt" label="Bitiş Tarihi ve Saati" required error={state.errors?.endAt}>
-              <Input id="endAt" name="endAt" type="datetime-local" required />
+              <Input id="endAt" name="endAt" type="datetime-local" required defaultValue={defaults?.endAt} />
             </Field>
 
             <Field name="scope" label="Kapsam" required error={state.errors?.scope} className="md:col-span-2">
@@ -108,7 +130,7 @@ export function MeetingResultForm({ groups }: { groups: GroupOption[] }) {
                 <div className="grid gap-2 border rounded-md p-4 max-h-60 overflow-y-auto sm:grid-cols-2 md:grid-cols-3 bg-muted/20 border-border">
                   {groups.map((group) => (
                     <div key={group.id} className="flex items-center space-x-2 p-1.5 hover:bg-muted/40 rounded-md transition-colors">
-                      <Checkbox id={`group-${group.id}`} name="targetGroupIds" value={group.id} />
+                      <Checkbox id={`group-${group.id}`} name="targetGroupIds" value={group.id} defaultChecked={defaults?.targetGroupIds.includes(group.id)} />
                       <label htmlFor={`group-${group.id}`} className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer select-none">
                         <span className="font-bold text-brand-dark dark:text-brand">{groupLabel(group)}</span>
                       </label>
@@ -119,7 +141,7 @@ export function MeetingResultForm({ groups }: { groups: GroupOption[] }) {
             )}
 
             <Field name="description" label="Açıklama" error={state.errors?.description} className="md:col-span-2">
-              <Textarea id="description" name="description" rows={4} maxLength={3000} placeholder="Toplantı hakkında detaylı açıklama ekleyin..." />
+              <Textarea id="description" name="description" rows={4} maxLength={3000} placeholder="Toplantı hakkında detaylı açıklama ekleyin..." defaultValue={defaults?.description ?? ""} />
             </Field>
           </div>
 
@@ -130,7 +152,7 @@ export function MeetingResultForm({ groups }: { groups: GroupOption[] }) {
 
           <div className="flex items-center justify-end gap-2 border-t pt-5">
             <Button asChild variant="ghost" disabled={pending}>
-              <Link href="/calisma-grubum">Vazgeç</Link>
+              <Link href={cancelHref}>Vazgeç</Link>
             </Button>
             <Button type="submit" variant="brand" disabled={pending}>
               {pending ? (
@@ -139,7 +161,7 @@ export function MeetingResultForm({ groups }: { groups: GroupOption[] }) {
                   Kaydediliyor…
                 </>
               ) : (
-                "Kaydet"
+                submitLabel
               )}
             </Button>
           </div>

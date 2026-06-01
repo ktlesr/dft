@@ -14,6 +14,7 @@ import { DOCUMENT_CATEGORY_LABELS } from "@/lib/constants";
 import { isAdmin, isModerator } from "@/lib/rbac";
 import { formatDateTime } from "@/lib/utils";
 import { UploadDocumentDialog } from "@/features/documents/upload-dialog";
+import { EditDocumentDialog } from "@/features/documents/edit-document-dialog";
 import type { DocumentCategory } from "@prisma/client";
 
 export const metadata = { title: "Belgeler" };
@@ -65,7 +66,7 @@ export default async function DocumentsPage({ searchParams }: { searchParams: Se
     orderBy: { createdAt: "desc" },
     include: {
       attachments: { select: { id: true, originalName: true, size: true, mimeType: true } },
-      uploadedBy: { select: { name: true, email: true } },
+      uploadedBy: { select: { id: true, name: true, email: true } },
       group: { select: { code: true } },
     },
     take: 80,
@@ -148,6 +149,18 @@ export default async function DocumentsPage({ searchParams }: { searchParams: Se
                     </p>
                   </div>
                   <div className="min-w-0">
+                    {isAdmin(user) || d.uploadedById === user.id ? (
+                      <div className="mb-1 flex justify-end">
+                        <EditDocumentDialog
+                          document={{
+                            id: d.id,
+                            title: d.title,
+                            description: d.description,
+                            tags: d.tags,
+                          }}
+                        />
+                      </div>
+                    ) : null}
                     {d.attachments.length === 0 ? (
                       <p className="text-xs text-muted-foreground">Ek dosya yok</p>
                     ) : (

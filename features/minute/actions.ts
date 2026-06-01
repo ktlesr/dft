@@ -105,6 +105,71 @@ export async function createMinute(
   redirect(`/toplanti/${meeting.id}`);
 }
 
+export async function updateMinute(
+  id: string,
+  _prev: MinuteFormState,
+  fd: FormData,
+): Promise<MinuteFormState> {
+  const user = await requireActiveUser();
+  const minute = await prisma.meetingMinute.findUnique({
+    where: { id },
+    include: { meeting: { select: { id: true, groupId: true } } },
+  });
+  if (!minute || minute.deletedAt || !minute.meeting) redirect("/calisma-grubum");
+  if (!isAdmin(user) && (minute.authorId !== user.id || minute.meeting.groupId !== user.groupId)) {
+    await redirectUnauthorized();
+  }
+
+  const parsed = minuteSchema.safeParse({
+    meetingId: fd.get("meetingId"),
+    date: fd.get("date"),
+    attendees: fd.get("attendees"),
+    topics: fd.get("topics"),
+    decisions: fd.get("decisions"),
+    summary: fd.get("summary"),
+  });
+  if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
+
+  const meeting = await prisma.meeting.findUnique({
+    where: { id: parsed.data.meetingId },
+    select: { id: true, groupId: true, deletedAt: true },
+  });
+  if (!meeting || meeting.deletedAt) {
+    return { ok: false, errors: { meetingId: ["Toplantı bulunamadı."] } };
+  }
+  if (!canCreateMinute(user, meeting.groupId)) {
+    return { ok: false, message: "Bu grup için tutanak yazma yetkiniz yok." };
+  }
+
+  try {
+    await storeAttachments({
+      files: filesFrom(fd),
+      uploadedById: user.id,
+      owner: { minuteId: id },
+    });
+  } catch (e) {
+    if (e instanceof UploadError) return { ok: false, message: "Ek dosya reddedildi." };
+    throw e;
+  }
+
+  await prisma.meetingMinute.update({
+    where: { id },
+    data: {
+      meetingId: meeting.id,
+      date: parsed.data.date,
+      attendees: parsed.data.attendees,
+      topics: parsed.data.topics,
+      decisions: parsed.data.decisions,
+      summary: parsed.data.summary ?? null,
+    },
+  });
+  await audit({ action: "MINUTE_UPDATED", actorId: user.id, targetType: "MeetingMinute", targetId: id });
+  revalidatePath(`/toplanti/${minute.meeting.id}`);
+  revalidatePath(`/toplanti/${meeting.id}`);
+  revalidatePath("/calisma-grubum");
+  redirect(`/toplanti/${meeting.id}`);
+}
+
 export async function removeMinute(id: string): Promise<void> {
   const user = await requireActiveUser();
   const minute = await prisma.meetingMinute.findUnique({

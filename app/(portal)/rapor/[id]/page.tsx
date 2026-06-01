@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Paperclip, Trash2 } from "lucide-react";
+import { Paperclip, Pencil, Trash2 } from "lucide-react";
 
 import { PageHeader } from "@/components/app/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ import { canSeeGroupResource, isAdmin } from "@/lib/rbac";
 import { REPORT_KIND_LABELS } from "@/lib/constants";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { removeReport } from "@/features/report/actions";
+import { LinkifiedText } from "@/features/shared/linkified-text";
 
 export const dynamic = "force-dynamic";
 type Params = Promise<{ id: string }>;
@@ -49,12 +50,20 @@ export default async function ReportDetailPage({ params }: { params: Params }) {
         ]}
         actions={
           canRemove ? (
-            <form action={removeAction}>
-              <Button type="submit" variant="outline" className="text-destructive hover:text-destructive">
-                <Trash2 className="h-4 w-4" />
-                Sil
+            <div className="flex gap-2">
+              <Button asChild variant="outline">
+                <Link href={`/rapor/${id}/duzenle`}>
+                  <Pencil className="h-4 w-4" />
+                  Düzenle
+                </Link>
               </Button>
-            </form>
+              <form action={removeAction}>
+                <Button type="submit" variant="outline" className="text-destructive hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                  Sil
+                </Button>
+              </form>
+            </div>
           ) : null
         }
       />
@@ -78,7 +87,7 @@ export default async function ReportDetailPage({ params }: { params: Params }) {
               <Separator />
               <section>
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Özet</p>
-                <p className="mt-1 whitespace-pre-wrap text-sm">{report.summary}</p>
+                <LinkifiedText text={report.summary} className="mt-1 text-sm" />
               </section>
             </>
           ) : null}
@@ -88,7 +97,7 @@ export default async function ReportDetailPage({ params }: { params: Params }) {
               <Separator />
               <section>
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Rapor metni</p>
-                <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed">{report.body}</p>
+                <LinkifiedText text={report.body} className="mt-1 text-sm leading-relaxed" />
               </section>
             </>
           ) : null}
@@ -98,7 +107,7 @@ export default async function ReportDetailPage({ params }: { params: Params }) {
               <Separator />
               <section>
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Çıktılar / öneriler</p>
-                <p className="mt-1 whitespace-pre-wrap text-sm">{report.outputs}</p>
+                <LinkifiedText text={report.outputs} className="mt-1 text-sm" />
               </section>
             </>
           ) : null}

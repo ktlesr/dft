@@ -26,6 +26,8 @@ import { createNoticeFromPage, type NoticeFormState } from "./actions";
 const INITIAL: NoticeFormState = { ok: true };
 
 type GroupOpt = { id: string; code: string; name: string };
+type NoticeDefaults = NonNullable<NoticeFormState["values"]>;
+type NoticeAction = (prev: NoticeFormState, fd: FormData) => Promise<NoticeFormState>;
 
 function groupLabel(group: GroupOpt): string {
   return group.name.trim().toLowerCase() === group.code.trim().toLowerCase()
@@ -38,37 +40,46 @@ export function NoticePageForm({
   groups,
   defaultGroupId,
   canPin,
+  defaults,
+  action: actionFn = createNoticeFromPage,
+  cancelHref = "/calisma-grubum?tab=bildirimler",
+  submitLabel = "Bildirim ekle",
 }: {
   isAdmin: boolean;
   groups: GroupOpt[];
   defaultGroupId: string | null;
   canPin: boolean;
+  defaults?: NoticeDefaults;
+  action?: NoticeAction;
+  cancelHref?: string;
+  submitLabel?: string;
 }) {
-  const [state, action, pending] = useActionState(createNoticeFromPage, INITIAL);
+  const [state, action, pending] = useActionState(actionFn, INITIAL);
   const groupOptions = useMemo(() => groups, [groups]);
+  const sourceValues = state.values ?? defaults;
 
   const initialScope: "GENERAL" | "GROUP" =
-    state.values?.scope === "GROUP" || state.values?.scope === "GENERAL"
-      ? (state.values.scope as "GENERAL" | "GROUP")
+    sourceValues?.scope === "GROUP" || sourceValues?.scope === "GENERAL"
+      ? (sourceValues.scope as "GENERAL" | "GROUP")
       : isAdmin && !defaultGroupId
         ? "GENERAL"
         : "GROUP";
 
   const initialKind: "MEETING" | "EVENT" | "NEWS" | "OTHER" =
-    state.values?.kind && ["MEETING", "EVENT", "NEWS", "OTHER"].includes(state.values.kind)
-      ? (state.values.kind as "MEETING" | "EVENT" | "NEWS" | "OTHER")
+    sourceValues?.kind && ["MEETING", "EVENT", "NEWS", "OTHER"].includes(sourceValues.kind)
+      ? (sourceValues.kind as "MEETING" | "EVENT" | "NEWS" | "OTHER")
       : "NEWS";
 
-  const initialGroupId = state.values?.groupId ?? defaultGroupId ?? groupOptions[0]?.id ?? "";
+  const initialGroupId = sourceValues?.groupId ?? defaultGroupId ?? groupOptions[0]?.id ?? "";
 
   const [scope, setScope] = useState<"GENERAL" | "GROUP">(initialScope);
   const [kind, setKind] = useState<"MEETING" | "EVENT" | "NEWS" | "OTHER">(initialKind);
   const [groupId, setGroupId] = useState(initialGroupId);
-  const [title, setTitle] = useState(state.values?.title ?? "");
-  const [externalUrl, setExternalUrl] = useState(state.values?.externalUrl ?? "");
-  const [eventStartAt, setEventStartAt] = useState(state.values?.eventStartAt ?? "");
-  const [eventEndAt, setEventEndAt] = useState(state.values?.eventEndAt ?? "");
-  const [body, setBody] = useState(state.values?.body ?? "");
+  const [title, setTitle] = useState(sourceValues?.title ?? "");
+  const [externalUrl, setExternalUrl] = useState(sourceValues?.externalUrl ?? "");
+  const [eventStartAt, setEventStartAt] = useState(sourceValues?.eventStartAt ?? "");
+  const [eventEndAt, setEventEndAt] = useState(sourceValues?.eventEndAt ?? "");
+  const [body, setBody] = useState(sourceValues?.body ?? "");
   const submittedGroupId = groupId || defaultGroupId || groupOptions[0]?.id || "";
 
   const hydrated = useRef(false);
@@ -227,7 +238,7 @@ export function NoticePageForm({
 
           {canPin ? (
             <div className="flex items-center gap-2">
-              <Checkbox id="pinned" name="pinned" value="on" defaultChecked={Boolean(state.values?.pinned)} />
+              <Checkbox id="pinned" name="pinned" value="on" defaultChecked={Boolean(state.values?.pinned ?? defaults?.pinned)} />
               <Label htmlFor="pinned" className="text-sm font-normal">
                 Üste sabitle
               </Label>
@@ -241,7 +252,7 @@ export function NoticePageForm({
 
           <div className="flex items-center justify-end gap-2 border-t pt-5">
             <Button asChild variant="ghost" disabled={pending}>
-              <Link href="/calisma-grubum?tab=bildirimler">Vazgeç</Link>
+              <Link href={cancelHref}>Vazgeç</Link>
             </Button>
             <Button type="submit" variant="brand" disabled={pending || (isAdmin && scope === "GROUP" && groupOptions.length === 0)}>
               {pending ? (
@@ -252,7 +263,7 @@ export function NoticePageForm({
               ) : (
                 <>
                   <Send className="h-4 w-4" />
-                  Bildirim ekle
+                  {submitLabel}
                 </>
               )}
             </Button>

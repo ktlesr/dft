@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { CalendarDays, ExternalLink, MapPin, Paperclip, Plus, Trash2 } from "lucide-react";
+import { CalendarDays, ExternalLink, MapPin, Paperclip, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { PageHeader } from "@/components/app/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import { prisma } from "@/lib/prisma";
 import { canSeeGroupResource, isAdmin } from "@/lib/rbac";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { removeMeeting } from "@/features/meeting/actions";
+import { LinkifiedText } from "@/features/shared/linkified-text";
 
 export const dynamic = "force-dynamic";
 type Params = Promise<{ id: string }>;
@@ -64,6 +65,14 @@ export default async function MeetingDetailPage({ params }: { params: Params }) 
                 <Link href={`/tutanak/yeni?toplanti=${meeting.id}`}>
                   <Plus className="h-4 w-4" />
                   Tutanak ekle
+                </Link>
+              </Button>
+            ) : null}
+            {canRemove ? (
+              <Button asChild variant="outline">
+                <Link href={`/toplanti/${id}/duzenle`}>
+                  <Pencil className="h-4 w-4" />
+                  Düzenle
                 </Link>
               </Button>
             ) : null}
@@ -126,7 +135,7 @@ export default async function MeetingDetailPage({ params }: { params: Params }) 
               <Separator />
               <section>
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Kısa açıklama</p>
-                <p className="mt-1 whitespace-pre-wrap text-sm">{meeting.description}</p>
+                <LinkifiedText text={meeting.description} className="mt-1 text-sm" />
               </section>
             </>
           ) : null}
@@ -136,7 +145,7 @@ export default async function MeetingDetailPage({ params }: { params: Params }) 
               <Separator />
               <section>
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Gündem</p>
-                <p className="mt-1 whitespace-pre-wrap text-sm">{meeting.agenda}</p>
+                <LinkifiedText text={meeting.agenda} className="mt-1 text-sm" />
               </section>
             </>
           ) : null}
@@ -179,13 +188,21 @@ export default async function MeetingDetailPage({ params }: { params: Params }) 
                 <li key={m.id} className="rounded-md border p-4">
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-sm font-medium">{formatDate(m.date)} tarihli tutanak</p>
-                    <span className="text-[11px] text-muted-foreground">
-                      {m.author.name ?? m.author.email}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-muted-foreground">
+                        {m.author.name ?? m.author.email}
+                      </span>
+                      {isAdmin(user) || (m.author.id === user.id && meeting.groupId === user.groupId) ? (
+                        <Button asChild variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                          <Link href={`/tutanak/${m.id}/duzenle`}>
+                            <Pencil className="h-3.5 w-3.5" />
+                            Düzenle
+                          </Link>
+                        </Button>
+                      ) : null}
+                    </div>
                   </div>
-                  <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
-                    {m.summary ?? m.decisions.slice(0, 280)}
-                  </p>
+                  <LinkifiedText text={m.summary ?? m.decisions.slice(0, 280)} className="mt-1 text-sm text-muted-foreground" />
                   {m.attachments.length > 0 ? (
                     <div className="mt-2 flex flex-wrap gap-2">
                       {m.attachments.map((a) => (

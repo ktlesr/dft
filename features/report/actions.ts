@@ -115,6 +115,50 @@ export async function createReport(
   redirect(`/rapor/${row.id}`);
 }
 
+export async function updateReport(
+  id: string,
+  _prev: ReportFormState,
+  fd: FormData,
+): Promise<ReportFormState> {
+  const user = await requireActiveUser();
+  const row = await prisma.report.findUnique({ where: { id } });
+  if (!row || row.deletedAt) redirect("/calisma-grubum");
+  if (!isAdmin(user) && (row.authorId !== user.id || row.groupId !== user.groupId)) {
+    await redirectUnauthorized();
+  }
+
+  const parsed = reportSchema.safeParse({
+    kind: fd.get("kind"),
+    title: fd.get("title"),
+    summary: fd.get("summary"),
+  });
+  if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
+
+  try {
+    await storeAttachments({
+      files: filesFrom(fd),
+      uploadedById: user.id,
+      owner: { reportId: id },
+    });
+  } catch (e) {
+    if (e instanceof UploadError) return { ok: false, message: "Ek dosya reddedildi." };
+    throw e;
+  }
+
+  await prisma.report.update({
+    where: { id },
+    data: {
+      kind: parsed.data.kind,
+      title: parsed.data.title,
+      summary: parsed.data.summary ?? null,
+    },
+  });
+  await audit({ action: "REPORT_UPDATED", actorId: user.id, targetType: "Report", targetId: id });
+  revalidatePath("/calisma-grubum");
+  revalidatePath(`/rapor/${id}`);
+  redirect(`/rapor/${id}`);
+}
+
 export async function removeReport(id: string): Promise<void> {
   const user = await requireActiveUser();
   const row = await prisma.report.findUnique({ where: { id } });

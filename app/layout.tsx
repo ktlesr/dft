@@ -1,10 +1,35 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
+import { Fraunces, Hanken_Grotesk } from "next/font/google";
 
 import "./globals.css";
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+
+/**
+ * Brand typography — "Editöryel Güven" direction.
+ *
+ * Both faces are self-hosted by next/font at build time (served from the
+ * app origin), so they satisfy the strict CSP (`font-src 'self'`) without
+ * any external request. `latin-ext` carries the full Turkish glyph set
+ * (İ ı Ş ş Ğ ğ Ç ç Ö ö Ü ü).
+ *
+ *   Fraunces       → display / headings (optical-sized contemporary serif)
+ *   Hanken Grotesk → body / UI text (warm humanist grotesque)
+ */
+const fontDisplay = Fraunces({
+  subsets: ["latin", "latin-ext"],
+  display: "swap",
+  variable: "--ff-display",
+  axes: ["opsz"],
+});
+
+const fontBody = Hanken_Grotesk({
+  subsets: ["latin", "latin-ext"],
+  display: "swap",
+  variable: "--ff-body",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -54,7 +79,11 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (
-    <html lang="tr" suppressHydrationWarning>
+    <html
+      lang="tr"
+      className={`${fontDisplay.variable} ${fontBody.variable}`}
+      suppressHydrationWarning
+    >
       <body className="min-h-screen bg-background font-sans antialiased">
         <ThemeProvider nonce={nonce}>
           {children}

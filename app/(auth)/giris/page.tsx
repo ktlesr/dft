@@ -14,7 +14,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
   const banner = params.e === "dogrulandi" || params.e === "dogrulama-hata" ? params.e : null;
 
   return (
-    <Card className="border-border/60 shadow-lg">
+    <Card className="border-border/60 shadow-elevated">
       <CardHeader className="space-y-1.5">
         <CardTitle className="text-xl">Portala giriş yap</CardTitle>
         <CardDescription>

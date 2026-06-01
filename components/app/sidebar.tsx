@@ -41,7 +41,7 @@ export function Sidebar({ user, className }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "flex h-full w-64 flex-col border-r bg-card/50 backdrop-blur-sm",
+        "flex h-full w-64 flex-col border-r border-border/60 bg-card/40 backdrop-blur-xl",
         className,
       )}
     >
@@ -97,9 +97,9 @@ export function Sidebar({ user, className }: SidebarProps) {
                       href={item.href}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "group flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
+                        "group relative flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
                         active
-                          ? "bg-primary/10 text-primary"
+                          ? "bg-primary/10 text-primary before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-gradient-to-b before:from-[#0060ab] before:to-[#00bd8d]"
                           : "text-muted-foreground hover:bg-accent/10 hover:text-foreground",
                       )}
                     >

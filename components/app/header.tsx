@@ -40,7 +40,12 @@ type HeaderProps = {
 
 export function Header({ user, unreadNotifications = 0 }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur md:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border/60 bg-background/70 px-4 backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-background/60 md:px-6">
+      {/* Brand-coloured hairline along the header's lower edge. */}
+      <div
+        aria-hidden
+        className="brand-hairline pointer-events-none absolute inset-x-0 bottom-0 h-px"
+      />
       {/* Mobile sidebar trigger */}
       <Sheet>
         <SheetTrigger asChild>

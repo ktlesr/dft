@@ -180,7 +180,7 @@ export default async function DashboardPage() {
                     {s.label}
                   </p>
                   <div className="mt-2 flex items-baseline gap-2">
-                    <span className="text-3xl font-semibold tracking-tight">{s.value}</span>
+                    <span className="font-display text-[2.1rem] font-semibold leading-none tracking-tight">{s.value}</span>
                     <span className="text-sm text-muted-foreground">
                       / {s.total}
                       <span className="ml-1 text-xs">toplam</span>

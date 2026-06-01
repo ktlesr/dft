@@ -40,7 +40,7 @@ type HeaderProps = {
 
 export function Header({ user, unreadNotifications = 0 }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border/60 bg-background/70 px-4 backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-background/60 md:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border/60 bg-background/85 px-4 shadow-soft backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-background/70 md:px-6">
       {/* Brand-coloured hairline along the header's lower edge. */}
       <div
         aria-hidden

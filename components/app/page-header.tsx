@@ -42,7 +42,7 @@ export function PageHeader({ title, description, breadcrumbs, actions, className
       ) : null}
       <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight md:text-[26px]">{title}</h1>
+          <h1 className="font-display text-[28px] font-semibold leading-tight tracking-tight md:text-[32px]">{title}</h1>
           {description ? <p className="mt-1 break-words text-sm text-muted-foreground">{description}</p> : null}
         </div>
         {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}

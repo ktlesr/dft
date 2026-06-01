@@ -21,8 +21,8 @@
     --brand-blue: 207 100% 34%;
     --brand-green: 161 100% 37%;
 
-    /* Warm ivory paper rather than clinical pure white */
-    --background: 40 30% 98%;
+    /* Warm ivory paper — deep enough that white cards visibly float on it */
+    --background: 40 32% 95.5%;
     --foreground: 216 28% 14%;
 
     /* Cards stay pure white so they lift off the paper */
@@ -130,7 +130,10 @@
     -moz-text-size-adjust: 100%;
     text-size-adjust: 100%;
     max-width: 100vw;
-    overflow-x: hidden;
+    /* `clip` (not `hidden`) prevents horizontal overflow WITHOUT turning the
+     * element into a scroll container — otherwise nested scrollers break
+     * `position: sticky` on the header. */
+    overflow-x: clip;
   }
 
   body {
@@ -142,14 +145,20 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     max-width: 100vw;
-    overflow-x: hidden;
+    /* `clip` (not `hidden`) prevents horizontal overflow WITHOUT turning the
+     * element into a scroll container — otherwise nested scrollers break
+     * `position: sticky` on the header. */
+    overflow-x: clip;
   }
 
-  /* Display face on headings; optical sizing refines the serif at scale. */
+  /*
+   * Headings default to the grotesque body face so dense UI — small
+   * uppercase eyebrow labels, card titles — stays crisp. The Fraunces
+   * display serif is applied deliberately via `.font-display` on the
+   * editorial moments (page titles, hero, key numerals).
+   */
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-display);
-    font-optical-sizing: auto;
-    letter-spacing: -0.012em;
+    letter-spacing: -0.011em;
     font-weight: 600;
   }
 
@@ -165,6 +174,21 @@
 @layer utilities {
   .font-display {
     font-family: var(--font-display);
+    font-optical-sizing: auto;
+    letter-spacing: -0.02em;
+  }
+
+  /*
+   * Portal canvas — warm paper lifted by faint brand washes drifting in
+   * from the top corners. Gives the working area designed depth so the
+   * white cards read as floating, without noise behind dense data.
+   */
+  .bg-canvas {
+    background-color: hsl(var(--background));
+    background-image:
+      radial-gradient(72% 48% at 100% 0%, hsl(var(--brand-green) / 0.06), transparent 60%),
+      radial-gradient(64% 44% at 0% 0%, hsl(var(--brand-blue) / 0.07), transparent 56%);
+    background-attachment: fixed;
   }
 
   .brand-gradient {

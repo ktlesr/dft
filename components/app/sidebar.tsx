@@ -41,7 +41,7 @@ export function Sidebar({ user, className }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "flex h-full w-64 flex-col border-r border-border/60 bg-card/40 backdrop-blur-xl",
+        "flex h-full w-64 flex-col border-r border-border/60 bg-gradient-to-b from-card via-card to-secondary/50 backdrop-blur-xl",
         className,
       )}
     >

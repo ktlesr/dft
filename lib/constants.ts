@@ -214,6 +214,8 @@ export const CONTENT_KIND_LABELS = {
   RAPOR: "Rapor",
   SUNUM: "Sunum",
   VIDEO: "Video",
+  DIGER: "Diğer",
+  BAGLANTI_URL: "Bağlantı (URL)",
 } as const;
 
 /* ──────────────────────────────────────────────────────────────

@@ -296,7 +296,7 @@ export type TrainingInput = z.infer<typeof trainingSchema>;
 
 /* ════════════ 7) Dijital İçerik (Faz 8) ════════════ */
 
-// Yeni Tür listesi: Bilgi Notu / Kitap / Makale / Rapor / Sunum / Video.
+// Yeni Tür listesi: Bilgi Notu / Kitap / Makale / Rapor / Sunum / Video / Diğer / Bağlantı (URL).
 export const CONTENT_KINDS = [
   "BILGI_NOTU",
   "KITAP",
@@ -304,6 +304,8 @@ export const CONTENT_KINDS = [
   "RAPOR",
   "SUNUM",
   "VIDEO",
+  "DIGER",
+  "BAGLANTI_URL",
 ] as const;
 export type ContentKindCode = (typeof CONTENT_KINDS)[number];
 

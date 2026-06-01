@@ -6,6 +6,7 @@ import { meetingSchema } from "@/features/meeting/schemas";
 import { minuteSchema } from "@/features/minute/schemas";
 import { reportSchema } from "@/features/report/schemas";
 import {
+  contentSchema,
   eventSchema,
   projectApplicationSchema,
   projectIdeaSchema,
@@ -275,6 +276,24 @@ describe("record schemas", () => {
         role: "KATILIMCI",
       }).success,
     ).toBe(false);
+  });
+
+  it("contentSchema accepts the other kind", () => {
+    expect(
+      contentSchema.safeParse({
+        title: "Diğer içerik",
+        kind: "DIGER",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("contentSchema accepts the URL kind", () => {
+    expect(
+      contentSchema.safeParse({
+        title: "Bağlantı içeriği",
+        kind: "BAGLANTI_URL",
+      }).success,
+    ).toBe(true);
   });
 
   it("projectIdeaSchema accepts a minimal payload", () => {

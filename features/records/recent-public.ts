@@ -1,5 +1,6 @@
 import "server-only";
 
+import { CONTENT_KIND_LABELS } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 import type { ActiveRecordTypeSlug } from "./types";
 
@@ -170,7 +171,7 @@ export async function recentPublicRecords(
         id: r.id,
         type,
         title: r.title,
-        subtitle: r.kind ?? null,
+        subtitle: r.kind ? (CONTENT_KIND_LABELS as Record<string, string>)[r.kind] ?? r.kind : null,
         authorName: authorLabel(r.owner),
         groupCode: r.owner.group?.code ?? null,
         publishedAt: r.createdAt,

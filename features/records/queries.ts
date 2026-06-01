@@ -1,5 +1,6 @@
 import "server-only";
 
+import { CONTENT_KIND_LABELS } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 import type { RecordTypeSlug } from "./types";
 
@@ -251,7 +252,7 @@ async function listInternal(
       id: r.id,
       type: "dokuman-icerik" as const,
       title: r.title,
-      subtitle: r.kind ?? null,
+      subtitle: r.kind ? (CONTENT_KIND_LABELS as Record<string, string>)[r.kind] ?? r.kind : null,
       status: null,
       date: r.date,
       updatedAt: r.updatedAt,

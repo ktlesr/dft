@@ -899,7 +899,7 @@ model ContentRecord {
   ownerId     String
   owner       User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   title       String
-  // Faz 8: yeni `kind` listesi: Bilgi Notu / Kitap / Makale / Rapor / Sunum / Video
+  // Faz 8: yeni `kind` listesi: Bilgi Notu / Kitap / Makale / Rapor / Sunum / Video / Diğer / Bağlantı (URL)
   kind        String?
   // `date` legacy — yeni form tarih sormuyor. Eski kayıtlarda doluydu;
   // yeni satırlar için `createdAt` referans alınır. Sütun NOT NULL kalmaya

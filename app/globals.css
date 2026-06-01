@@ -129,11 +129,17 @@
     -webkit-text-size-adjust: 100%;
     -moz-text-size-adjust: 100%;
     text-size-adjust: 100%;
-    max-width: 100vw;
-    /* `clip` (not `hidden`) prevents horizontal overflow WITHOUT turning the
-     * element into a scroll container — otherwise nested scrollers break
-     * `position: sticky` on the header. */
-    overflow-x: clip;
+    /*
+     * `html` MUST keep `overflow: visible`. Browsers only propagate the
+     * body's overflow to the viewport when the root element is visible —
+     * and that propagation is exactly what lets Radix's scroll-lock
+     * (react-remove-scroll sets `body { overflow: hidden }`) actually
+     * freeze the page AND reclaim the scrollbar width its compensation
+     * margin fills. Clipping/hiding here breaks the lock, so opening a
+     * Select/Dialog shifts the sticky header sideways. Horizontal overflow
+     * is instead clipped on `body` below (which propagates to the
+     * viewport without disabling the lock).
+     */
   }
 
   body {
@@ -145,9 +151,13 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     max-width: 100vw;
-    /* `clip` (not `hidden`) prevents horizontal overflow WITHOUT turning the
-     * element into a scroll container — otherwise nested scrollers break
-     * `position: sticky` on the header. */
+    /*
+     * Clip horizontal overflow here (not on `html`). `clip` doesn't make
+     * `body` a scroll container, and with `html` visible this propagates to
+     * the viewport — so stray-wide content can't trigger a horizontal
+     * scrollbar, while vertical scroll, sticky positioning and Radix's
+     * scroll-lock all keep working.
+     */
     overflow-x: clip;
   }
 

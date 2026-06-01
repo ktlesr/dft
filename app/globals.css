@@ -131,6 +131,11 @@
     -moz-text-size-adjust: 100%;
     text-size-adjust: 100%;
     /*
+     * Permanently reserve the scrollbar gutter so navigating between short
+     * (no scrollbar) and tall (scrollbar) pages never shifts the layout.
+     */
+    scrollbar-gutter: stable;
+    /*
      * `html` MUST keep `overflow: visible`. Browsers only propagate the
      * body's overflow to the viewport when the root element is visible —
      * and that propagation is exactly what lets Radix's scroll-lock
@@ -160,6 +165,22 @@
      * scroll-lock all keep working.
      */
     overflow-x: clip;
+  }
+
+  /*
+   * Radix scroll-lock (react-remove-scroll) hides the scrollbar and adds a
+   * compensating margin/padding-right to <body> to keep content from
+   * reflowing. But with `scrollbar-gutter: stable` the gutter is permanently
+   * reserved and its width never changes on lock — so that compensation has
+   * nothing to offset and would only push the (sticky) header sideways,
+   * re-creating the shift we already fixed. Since the gutter is stable, no
+   * compensation is ever needed: neutralise it. The `html` prefix raises
+   * specificity above the library's runtime-injected `body[data-scroll-locked]`
+   * rule so this wins regardless of source order.
+   */
+  html body[data-scroll-locked] {
+    margin-right: 0 !important;
+    padding-right: 0 !important;
   }
 
   /*

@@ -104,7 +104,7 @@ export default function NewRecordPage() {
                 const Icon = t.icon;
                 return (
                   <Link key={t.href} href={t.href} className="group">
-                    <Card className="h-full transition-all hover:border-primary/40 hover:shadow-md">
+                    <Card className="h-full">
                       <CardContent className="flex h-full flex-col gap-3 p-5">
                         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                           <Icon className="h-5 w-5" />

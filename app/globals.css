@@ -21,8 +21,8 @@
     --brand-blue: 207 100% 34%;
     --brand-green: 161 100% 37%;
 
-    /* Warm ivory paper — deep enough that white cards visibly float on it */
-    --background: 40 32% 95.5%;
+    /* Faint brand-green tinted paper — white cards float crisply on it */
+    --background: 162 10% 96.5%;
     --foreground: 216 28% 14%;
 
     /* Cards stay pure white so they lift off the paper */
@@ -259,6 +259,58 @@
   }
   .shadow-elevated {
     box-shadow: var(--shadow-elevated);
+  }
+
+  /*
+   * Premium interactive surface for cards & form panels. On hover the static
+   * border dissolves into a masked brand gradient ring (blue→green) while the
+   * surface lifts a couple of px on a soft, elevated shadow. The ring is a
+   * masked pseudo-element — only the 1px edge paints, never the content — and
+   * the whole thing is motion-safe.
+   */
+  .card-interactive {
+    position: relative;
+    transition:
+      transform 0.28s cubic-bezier(0.2, 0.7, 0.2, 1),
+      box-shadow 0.28s ease,
+      border-color 0.28s ease;
+  }
+  .card-interactive::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--brand-blue)) 0%,
+      hsl(var(--brand-green)) 100%
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.28s ease;
+    pointer-events: none;
+  }
+  .card-interactive:hover {
+    transform: translateY(-2px);
+    border-color: transparent;
+    box-shadow: var(--shadow-elevated);
+  }
+  .card-interactive:hover::after {
+    opacity: 1;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card-interactive,
+    .card-interactive::after {
+      transition: none;
+    }
+    .card-interactive:hover {
+      transform: none;
+    }
   }
 
   /* Atmospheric brand wash for hero surfaces (auth screens, landing). */

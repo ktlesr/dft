@@ -51,7 +51,7 @@ export default async function AdminHomePage() {
           const Icon = s.icon;
           return (
             <Link key={s.label} href={s.href}>
-              <Card className="h-full transition-all hover:border-primary/40 hover:shadow-md">
+              <Card className="h-full">
                 <CardContent className="flex items-center gap-4 p-5">
                   <div
                     className={

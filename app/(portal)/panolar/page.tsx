@@ -17,7 +17,7 @@ export default function BoardsIndexPage() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <Link href="/panolar/genel" className="group">
-          <Card className="h-full transition-all hover:border-primary/40 hover:shadow-md">
+          <Card className="h-full">
             <CardContent className="flex items-start gap-4 p-6">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <Globe2 className="h-5 w-5" />
@@ -33,7 +33,7 @@ export default function BoardsIndexPage() {
         </Link>
 
         <Link href="/panolar/grup" className="group">
-          <Card className="h-full transition-all hover:border-accent/40 hover:shadow-md">
+          <Card className="h-full">
             <CardContent className="flex items-start gap-4 p-6">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-accent/15 text-accent">
                 <Users className="h-5 w-5" />

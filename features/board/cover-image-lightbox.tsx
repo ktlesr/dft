@@ -30,13 +30,26 @@ export function CoverImageLightbox({
   size = "cover",
 }: CoverImageLightboxProps) {
   const thumb = (
-    /* eslint-disable-next-line @next/next/no-img-element */
-    <img
-      src={src}
-      alt={alt}
-      className={`${SIZE_CLASS[size]} object-cover transition-transform group-hover:scale-[1.02]`}
-      loading="lazy"
-    />
+    // The whole image is shown un-cropped (object-contain); a blurred, zoomed
+    // copy of itself fills the frame behind it so wide logos / banners and tall
+    // photos alike sit smoothly with no empty bars.
+    <div className={`relative overflow-hidden ${SIZE_CLASS[size]}`}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt=""
+        aria-hidden
+        className="absolute inset-0 h-full w-full scale-125 object-cover blur-2xl saturate-150"
+        loading="lazy"
+      />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={alt}
+        className="absolute inset-0 h-full w-full object-contain p-1.5 transition-transform duration-300 ease-out group-hover:scale-[1.04]"
+        loading="lazy"
+      />
+    </div>
   );
 
   const wrapperClass = `group block shrink-0 overflow-hidden rounded-md border bg-muted ${

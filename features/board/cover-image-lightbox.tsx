@@ -63,7 +63,7 @@ export function CoverImageLightbox({
         target="_blank"
         rel="noopener noreferrer"
         className={wrapperClass}
-        title="Harici bağlantıyı aç"
+        title="Detaylı bilgi için tıklayın"
       >
         {thumb}
       </a>

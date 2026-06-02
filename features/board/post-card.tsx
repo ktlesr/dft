@@ -143,7 +143,7 @@ export function PostCard({ post, caps }: { post: PostRow; caps: Caps }) {
                 className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
-                Harici bağlantı
+                Detaylı bilgi için tıklayın
               </a>
             ) : null}
 

@@ -262,6 +262,35 @@
   }
 
   /*
+   * Always-on brand gradient border (blue→green) via a masked pseudo-element,
+   * matching the cards' aesthetic. Used to lift otherwise-plain buttons
+   * (outline/secondary) so they read as intentional, not unstyled — while the
+   * fill stays theme-appropriate. Interior is fully transparent, so it sits on
+   * any surface; never intercepts pointers.
+   */
+  .brand-ring {
+    position: relative;
+  }
+  .brand-ring::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--brand-blue)) 0%,
+      hsl(var(--brand-green)) 100%
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /*
    * Premium interactive surface for cards & form panels. On hover the static
    * border dissolves into a masked brand gradient ring (blue→green) while the
    * surface lifts a couple of px on a soft, elevated shadow. The ring is a
